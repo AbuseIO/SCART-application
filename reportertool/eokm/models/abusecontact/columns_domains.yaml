@@ -1,0 +1,24 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        searchable: true
+    domains:
+        label: domains
+        type: text
+        searchable: true
+        sortable: true
+    host_abusecontact:
+        label: hoster
+        type: text
+        relation: host_abusecontact
+        select: owner
+        searchable: true
+        sortable: true
+    registrar_abusecontact:
+        label: registrar
+        type: text
+        relation: registrar_abusecontact
+        select: owner
+        searchable: true
+        sortable: true

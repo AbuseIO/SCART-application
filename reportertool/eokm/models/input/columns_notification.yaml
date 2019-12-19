@@ -1,0 +1,25 @@
+columns:
+    url:
+        label: url
+        type: text
+    filenumber:
+        label: filenumber
+        type: text
+        readonly: 1
+        span: left
+    status_code:
+        label: status
+        type: text
+        relation: notificationStatus
+        select: title
+        searchable: true
+    grade_code:
+        label: classification
+        type: text
+        relation: notificationGrade
+        select: title
+        searchable: true
+    updated_at:
+        label: last update
+        type: datetime
+

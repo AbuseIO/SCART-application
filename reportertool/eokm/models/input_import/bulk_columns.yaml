@@ -1,0 +1,65 @@
+columns:
+    url:
+        label: url
+        type: text
+        required: true
+    url_base:
+        label: url_base
+        type: text
+    url_host:
+        label: url_host
+        type: text
+    url_image_width:
+        label: url_image_width
+        type: text
+    url_image_height:
+        label: url_image_height
+        type: text
+
+    registrar_owner:
+        label: registrar_owner
+        type: text
+        required: true
+    registrar_country:
+        label: registrar_country
+        type: text
+        required: true
+    registrar_abusecontact:
+        label: registrar_abusecontact
+        type: text
+    registrar_customcontact:
+        label: registrar_customcontact
+        type: text
+
+    host_owner:
+        label: host_owner
+        type: text
+        required: true
+    host_country:
+        label: host_country
+        type: text
+        required: true
+    host_abusecontact:
+        label: host_abusecontact
+        type: text
+    host_customcontact:
+        label: host_customcontact
+        type: text
+
+    custom_abusecontact:
+        label: custom_abusecontact
+        type: text
+
+    firstseen_at:
+        label: firstseen
+        type: text
+        required: true
+    online_counter:
+        label: online_counter
+        type: text
+        required: true
+    lastseen_at:
+        label: lastseen
+        type: text
+        required: true
+

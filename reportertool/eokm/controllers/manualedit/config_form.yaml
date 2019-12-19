@@ -1,0 +1,10 @@
+name: Manualedit
+form: $/reportertool/eokm/models/manual/fields.yaml
+modelClass: ReporterTool\EOKM\Models\Manual
+defaultRedirect: reportertool/eokm/manualedit
+create:
+    redirect: 'reportertool/eokm/manualedit/update/:id'
+    redirectClose: reportertool/eokm/manualedit
+update:
+    redirect: reportertool/eokm/manualedit
+    redirectClose: reportertool/eokm/manualedit

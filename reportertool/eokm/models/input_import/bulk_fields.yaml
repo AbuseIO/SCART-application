@@ -1,0 +1,37 @@
+fields:
+    url:
+        label: url
+        span: left
+        required: 1
+        type: text
+    reference:
+        label: 'external reference'
+        span: right
+        required: 0
+        type: text
+    url_referer:
+        label: referer
+        span: left
+        required: 0
+        type: text
+    workuser_id:
+        label: Workuser
+        span: right
+        required: true
+        type: dropdown
+    source_code:
+        label: source
+        span: left
+        type: dropdown
+        required: 1
+    type_code:
+        label: type
+        span: right
+        type: dropdown
+        required: 1
+    grade_questions:
+        type: partial
+        path: $/reportertool/eokm/controllers/inputs_import/_grade_questions.htm
+
+
+

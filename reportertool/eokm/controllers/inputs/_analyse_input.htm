@@ -1,0 +1,22 @@
+<span id="analyse_input" >
+
+    <button
+            type="button"
+            data-request="onAnalyseInput"
+            data-request-loading="#loadingDiv"
+            data-request-data="link: '<?= $formModel->url; ?>', input_id: '<?= $formModel->id; ?>'"
+            data-request-success="$.oc.relationBehavior.changed('logs')"
+            class="btn btn-default">
+       Analyze input
+    </button>
+
+    <span class="loading-indicator-container" style="margin-left: 20px;">
+
+        <div id="loadingDiv" style="display: none;" class="loading-indicator size-small">
+            <span></span>
+            <div>Analyzing...</div>
+        </div>
+
+    </span>
+
+</span>

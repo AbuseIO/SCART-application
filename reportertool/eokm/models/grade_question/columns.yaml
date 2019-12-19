@@ -1,0 +1,17 @@
+columns:
+    questiongroup:
+        label: group
+        type: text
+    sortnr:
+        label: sortnr
+        type: text
+        sortable: true
+    type:
+        label: type
+        type: text
+    label:
+        label: label
+        type: text
+    name:
+        label: name
+        type: text

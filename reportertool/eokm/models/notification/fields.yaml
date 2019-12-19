@@ -1,0 +1,92 @@
+fields:
+    url:
+        label: url
+        span: left
+        type: text
+        readOnly: true
+    filenumber:
+        label: 'internal reference'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: p-l-lg col-sm-3
+    reference:
+        label: 'external reference'
+        span: storm
+        readOnly: true
+        required: 0
+        type: text
+        cssClass: col-sm-3
+    url_host:
+        label: host
+        span: left
+        type: text
+        readOnly: true
+    url_ip:
+        label: IP
+        span: right
+        type: text
+        readOnly: true
+    status_code:
+        label: status
+        span: left
+        required: true
+        type: dropdown
+        readOnly: true
+    grade_code:
+        label: classification
+        span: right
+        required: true
+        type: dropdown
+        readOnly: true
+    host_abusecontact_id:
+        label: Hoster
+        type: recordfinder
+        span: left
+        list: $/reportertool/eokm/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Hoster
+        prompt: Click the %s button to find hoster
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: ReporterTool\EOKM\Models\Abusecontact
+        readOnly: true
+    registrar_abusecontact_id:
+        label: Registrar
+        type: recordfinder
+        span: right
+        list: $/reportertool/eokm/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Registrar
+        prompt: Click the %s button to find registrar
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: ReporterTool\EOKM\Models\Abusecontact
+        readOnly: true
+tabs:
+    fields:
+        Note:
+            tab: Notes
+            size: small
+            span: full
+            type: richeditor
+            toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+            readOnly: true
+        logs:
+            span: full
+            path: input_logs
+            type: partial
+            tab: Logging
+            content: update
+            readOnly: true
+        showImage:
+            span: full
+            path: get_image
+            type: partial
+            tab: Image

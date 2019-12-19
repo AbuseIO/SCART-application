@@ -1,0 +1,12 @@
+list: $/reportertool/eokm/models/inputnotification/columns.yaml
+modelClass: ReporterTool\EOKM\Models\Inputnotification
+title: Changed
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: false
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'reportertool/eokm/changed/preview/:id'

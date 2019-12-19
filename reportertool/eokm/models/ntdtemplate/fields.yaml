@@ -1,0 +1,18 @@
+fields:
+    title:
+        label: Title
+        span: auto
+        required: 1
+        type: text
+    subject:
+        label: Subject
+        span: full
+        required: 1
+        type: text
+    body:
+        label: Body
+        size: large
+        span: full
+        required: 1
+        type: richeditor
+        toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'

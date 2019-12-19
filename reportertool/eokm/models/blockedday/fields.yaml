@@ -1,0 +1,14 @@
+fields:
+    day:
+        label: Day
+        mode: date
+        span: auto
+        firstDay: 1
+        showWeekNumber: 1
+        type: datepicker
+        required: 1
+        ignoreTimezone: 1
+    description:
+        label: Description
+        span: auto
+        type: text

@@ -1,0 +1,5 @@
+fields:
+    rawtext:
+        label: WhoIs lookup
+        type: textarea
+        readonly: 1

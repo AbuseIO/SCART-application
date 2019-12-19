@@ -1,0 +1,11 @@
+options:
+  label: Options
+  modelClass: reportertool\eokm\models\Grade_question_option
+  view:
+    list: $/reportertool/eokm/models/grade_question_option/columns.yaml
+    toolbarButtons: create|delete
+    recordsPerPage: 20
+    defaultSort: sortnr ASC
+    showCheckboxes: true
+  manage:
+    form: $/reportertool/eokm/models/grade_question_option/fields.yaml

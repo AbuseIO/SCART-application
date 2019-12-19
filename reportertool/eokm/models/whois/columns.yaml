@@ -1,0 +1,19 @@
+columns:
+    whois_type:
+        label: 'Lookup type'
+        type: text
+    whois_timestamp:
+        label: 'Lookup timestamp'
+        type: text
+    whois_lookup:
+        label: 'Seen with lookup of'
+        type: text
+    name:
+        label: Owner
+        type: text
+    country:
+        label: Country
+        type: text
+    abusecontact:
+        label: abuse email
+        type: text

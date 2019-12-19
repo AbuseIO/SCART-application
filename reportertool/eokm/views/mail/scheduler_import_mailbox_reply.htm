@@ -1,0 +1,23 @@
+subject = "ERT Scheduler ReadImport job"
+==
+<p>Hi,</p>
+
+<p>
+
+    Thank you for your message with subject '{{ report.subject }}' received at '{{ report.arrived }}' <br />
+    <br />
+    Log from the processing of each (body)line:<br />
+    {% for logline in report.loglines %}
+    - {{ logline }} <br />
+    {% endfor %}
+    <br />
+
+    <br />
+    Your message is processed and removed from our mailbox.<br />
+
+</p>
+
+<p>
+    Regards<br />
+    ERT Scheduler
+</p>

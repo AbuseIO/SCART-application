@@ -1,0 +1,41 @@
+fields:
+    questiongroup:
+        label: group
+        type: dropdown
+        required: 1
+    sortnr:
+        label: sort
+        required: 1
+        span: auto
+        default: '1'
+        cssClass: w-100
+        type: number
+    type:
+        label: type
+        required: 1
+        options:
+            select: select
+            checkbox: checkbox
+            radio: radio
+            text: text
+        span: auto
+        showSearch: true
+        type: dropdown
+    name:
+        label: name
+        required: 1
+        span: left
+        type: text
+    label:
+        label: label
+        required: 1
+        span: auto
+        type: text
+tabs:
+    fields:
+        options:
+            span: full
+            path: question_options
+            context: update
+            type: partial
+            tab: Options

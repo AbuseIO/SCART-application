@@ -1,0 +1,11 @@
+name: Notifications
+modelClass: ReporterTool\EOKM\Models\Notification
+form: $/reportertool/eokm/models/notification/fields.yaml
+defaultRedirect: reportertool/eokm/report
+create:
+    redirect: 'reportertool/eokm/report/update/:id'
+    redirectClose: reportertool/eokm/report
+update:
+    redirect: reportertool/eokm/report
+    redirectClose: reportertool/eokm/report
+preview: {  }

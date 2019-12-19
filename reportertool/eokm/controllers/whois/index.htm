@@ -1,0 +1,64 @@
+<?= Block::put('body') ?>
+<div style="margin-left: 10px;">
+
+    <h1>WhoIs test</h1>
+
+    <br /><br />
+
+    <form class="form-elements" role="form">
+
+        <div class="row" >
+            <div class="col-xs-6">
+                <div class="form-group">
+                    <label>Provider</label>
+                    <select name="provider" class="form-control custom-select">
+                        <?php foreach ($providers AS $provider) { ?>
+                        <option <?= $provider['selected'] ?> value="<?= $provider['value'] ?>"><?= $provider['option'] ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+            </div>
+            <div class="col-xs-6">
+                &nbsp;
+            </div>
+        </div>
+
+        <div class="row" >
+            <div class="col-xs-12">
+                <div class="form-group span-left">
+                    <label>Url (format: http[s]://[domain])</label>
+                    <input type="text" name="domain" value="" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row" >
+            <div class="col-xs-1">
+                <button type="button"
+                        data-request="onWHoIs"
+                        data-request-update="show_result: '#idWhois'"
+                        data-request-loading="#loading"
+                        class="btn btn-default">
+                    Submit
+                </button>
+            </div>
+            <div class="col-xs-11">
+                <div id="loading" style="display: none;" class="loading-indicator size=small">
+                    <span> </span>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div id="idWhois"></div>
+        </div>
+    </div>
+
+
+</div>
+
+<?= Block::endPut() ?>
+    

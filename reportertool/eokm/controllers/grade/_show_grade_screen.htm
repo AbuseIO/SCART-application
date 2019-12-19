@@ -1,0 +1,41 @@
+<div >
+
+    <div id="idInputArea">
+        <?= $inputtxt ?>
+    </div>
+
+    <div id="idImageScrollArea" class="row " style="height: 600px; overflow-y: scroll; overflow-x: hidden;">
+        <div class="col-xs-12">
+            <?= $imagestxt ?>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var input_id = <?= $input_id ?>;
+        var lastLoading_id = <?= $imagelastloaded ?>;
+        var scrollTopStep = 250;
+        var scrollTopTrigger = 1000;
+        $(document).ready(function() {
+            //$("#layout-body").addClass('p-r-0');
+            $("#idImageScrollArea").height($('#layout-body').height() - $('#idInputArea').height() - 5);
+            // scroll lazy loading
+            //$('#input_grade_code').text('scrollTop: 0');
+            $("#idImageScrollArea").scrollTop(0);
+            $("#idImageScrollArea").scroll(function (evt) {
+                var top = $("#idImageScrollArea").scrollTop();
+                //$('#input_grade_code').text('scrollTop=' + top + ', scrollTopTrigger=' + scrollTopTrigger + ', lastid=' + lastLoading_id);
+                if (top > scrollTopTrigger) {
+                    $.request('onScrollNext',{
+                        update: { show_result: '#show_result' },
+                        data: { input_id: input_id, lastLoading_id: lastLoading_id }
+                    });
+                    scrollTopTrigger += scrollTopStep;
+                }
+            });
+
+        });
+    </script>
+
+    <!-- general result js -->
+    <div id="show_result"></div>
+
+</div>

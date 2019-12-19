@@ -1,0 +1,6 @@
+columns:
+    url:
+        label: url
+        type: text
+        searchable: true
+

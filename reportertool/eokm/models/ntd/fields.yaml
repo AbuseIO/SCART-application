@@ -1,0 +1,47 @@
+fields:
+    filenumber:
+        label: filenumber
+        type: text
+        span: left
+        readOnly: 1
+    status_code:
+        label: status
+        type: dropdown
+        span: right
+        readOnly: 1
+    abusecontact_owner:
+        label: abusecontact
+        type: text
+        span: left
+        readOnly: 1
+    msg_abusecontact:
+        label: 'abuse email'
+        span: right
+        readOnly: 1
+        type: text
+tabs:
+    fields:
+        urls:
+            span: full
+            path: show_urls
+            type: partial
+            tab: URLs
+        msg_subject:
+            label: subject
+            span: full
+            readOnly: 1
+            type: text
+            tab: Message
+        msg_body:
+            toolbarButtons: html
+            label: body
+            span: full
+            size: gaint
+            readOnly: 1
+            type: richeditor
+            tab: Message
+        logs:
+            span: full
+            path: show_logs
+            type: partial
+            tab: logs

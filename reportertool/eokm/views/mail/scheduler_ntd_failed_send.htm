@@ -1,0 +1,27 @@
+subject = "Scheduler NTD send job failed"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler NTDsend failed job report:<br />
+    <br />
+
+    {% if ntd_nots %}
+
+        {% for ntd_not in ntd_nots %}
+            NTD filenumber: {{ ntd_not.filenumber }} <br />
+            _status: {{ ntd_not.status }}. <br />
+            _please check abusecontact: {{ntd_not.abusecontact}}<br />
+            <br />
+        {% endfor %}
+
+    <br />
+
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    ERT Scheduler
+</p>

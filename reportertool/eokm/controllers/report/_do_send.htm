@@ -1,0 +1,14 @@
+<span id="id_do_send" style="float: right;" >
+    <button
+        type="button"
+        data-request="onDoSendNTD"
+        data-request-data="id: '<?= $formModel->id ?>'"
+        data-request-update="show_result: '#send_result'"
+        data-request-confirm="<?= e(trans('reportertool.eokm::lang.dosendntd.confirm')) ?>"
+        class="btn btn-default">
+        <?= e(trans('reportertool.eokm::lang.dosendntd.button')) ?>
+    </button>
+
+    <span id="send_result"></span>
+
+</span>

@@ -1,0 +1,8 @@
+columns:
+    day:
+        label: day
+        type: text
+        ignoreTimezone: 1
+    description:
+        label: description
+        type: text

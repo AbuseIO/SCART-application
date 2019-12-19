@@ -1,0 +1,220 @@
+
+<?php if ($rowfirst): ?>
+<div class="row">
+<?php endif ?>
+
+<?php if ($coladdnum == 0): ?>
+<div class="col-lg-<?= $colspan ?> p-t p-r" style="display: table-cell; vertical-align: top; " >
+
+    <div class="row table-bordered" ">
+
+        <div class="col-xs-12">
+
+            <div class="row " id="<?= $hash . '_rowheader'; ?>" >
+
+                <div class="col-xs-12 p-l-0 text-left grade-image-header">
+                    <button
+                            id="idButtonSELECT<?= $hash; ?>"
+                            type="button"
+                            data-request="onImageSelect"
+                            data-request-data="notification_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', hash: '<?= $hash; ?>' "
+                            data-request-update="show_result: '#show_result'"
+                            class="btn btn-default btn-sm icon-square-o ert-analyze-disable"
+                    ></button>
+                    <input id="<?= $hash . '_src'; ?>" title="<?= $url ?>" size="80" class="grade-image-header" value="<?= $url ?>" />
+                    <script type="text/javascript">
+                        $(document).ready(function() {
+                            var w = $('#<?= $hash . '_rowheader' ?>').width() - 65;
+                            $('#<?= $hash . '_src' ?>').width(w);
+                        });
+                    </script>
+                </div>
+
+            </div>
+
+            <div class="row " style=" " >
+
+                <div class="col-xs-12 p-a-0" style="height: <?= $boxheightsize ?>px; " >
+
+                    <div class="control-tabs content-tabs" data-control="tab">
+                        <ul class="nav nav-tabs" >
+                            <li class="active"><a href="#contentTabOne"><?= $tabtype ?></a></li>
+                            <li><a href="#contentTabThree">INFO</a></li>
+                        </ul>
+                        <div class="tab-content" style="padding: 5px;">
+
+                            <div class="tab-pane active" >
+                                <div class="row " style="">
+                                    <div class="col-xs-12 align-center" style="display: table-cell; width: 100%; text-align: center; vertical-align: middle">
+                                        <a data-toggle="modal" data-size="large" href="#notificationImage<?= $hash; ?>"><img id="notImgSrc<?= $hash; ?>" src="<?= $src ?>" style="display: inline; border: 2px solid black;" <?= $imgsize ?> /></a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane" style="padding: 5px;">
+
+                                <?php foreach ($info AS $field) { ?>
+                                <div class="row">
+                                    <div class="col-xs-2">
+                                        <?= $field['label'] ?>
+                                    </div>
+                                    <div class="col-xs-10" >
+                                        : <input style="" id="<?= $hash . '_' . $field['name']; ?>" readonly size="<?= $txtsize ?>" value="<?= $field['value'] ?>" class="grade-image-field-view <?= (($field['mark']) ? 'grade-image-field-mark' : '') ?>" />
+                                    </div>
+                                </div>
+                                <?php } ?>
+
+                                <div class="row" >
+                                    <div class="col-xs-12 p-l-0" >
+
+                                        <!--
+                                        <a  data-control="popup"
+                                            data-handler="onNotificationEdit"
+                                            data-extra-data="notification_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', hash: '<?= $hash; ?>' "
+                                            data-size="giant"
+                                            href="javascript:;"
+                                            class="ert-analyze-disable">
+                                            Edit
+                                        </a>
+                                        -->
+                                        &nbsp;&nbsp;&nbsp;
+                                        <a data-toggle="modal" data-size="large" href="#ImageWhoisRaw<?= $hash; ?>" >WhoIs (raw)</a>
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-xs-12 p-a-0 text-right">
+
+                    <button
+                            id="idButtonPOLICE<?= $hash; ?>"
+                            type="button"
+                            data-request-update="show_result: '#show_result'"
+                            data-request="onImagePolice"
+                            data-request-data="record_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                            data-request-loading="#loading_input"
+                            class="btn btn-sm btn-default oc-icon-exclamation-triangle ert-analyze-disable">POLICE</button>
+
+                    <div class="btn-group">
+
+                        <button
+                                id="idButtonYES<?= $hash; ?>"
+                                type="button"
+                                data-control="popup"
+                                data-handler="onImageIllegal"
+                                data-extra-data="record_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                                data-size="giant"
+                                class="btn btn-sm btn-default oc-icon-ban ert-analyze-disable">ILLEGAL</button>
+                        <button
+                                id="idButtonIGNORE<?= $hash; ?>"
+                                type="button"
+                                <?php if (!$showignore) { ?>
+                                onclick="$('#imagebox<?= $hash ?>').fadeOut('1000', function() {
+                                    $(this).remove();
+                                })"
+                                data-request-update="id_grade_screen: '#id_grade_screen'"
+                                <?php } else { ?>
+                                data-request-update="show_result: '#show_result'"
+                                <?php } ?>
+                                data-request="onImageIgnore"
+                                data-request-data="record_id: '<?= $id; ?>', recordtype: 'notification', 'input_id': '<?= ($input_id) ?>', workuser_id: '<?= $workuser_id; ?>' "
+                                data-request-loading="#loading_input"
+                                class="btn btn-sm btn-default oc-icon-eye-slash ert-analyze-disable">IGNORE</button>
+                        <button
+                                id="idButtonNO<?= $hash; ?>"
+                                type="button"
+                                data-control="popup"
+                                data-handler="onImageNotIllegal"
+                                data-extra-data="record_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                                data-size="giant"
+                                class="btn btn-sm btn-default oc-icon-check ert-analyze-disable">NOT ILLEGAL</button>
+
+                    </div>
+
+                    <button type="button"
+                            data-control="popup"
+                            data-handler="onNotificationEdit"
+                            data-extra-data="record_id: '<?= $id; ?>' "
+                            data-size="giant"
+                            id="idButtonNote<?= $hash; ?>"
+                            class="btn btn-default btn-sm <?= $cssnote ?> oc-icon-edit ert-analyze-disable">Edit</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="control-popup modal fade large" id="notificationImage<?= $hash; ?>">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h2>Image</h2>
+                    <img id="notImgBigSrc<?= $hash; ?>" style="border: 1px solid black; " src="<?= $src ?>" <?= $imgbigsize ?> />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-popup modal fade large" id="ImageWhoisRaw<?= $hash; ?>">
+        <div class="modal-dialog">
+            <div class="modal-content text-left">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">WhoIs information '<?= $info[0]['value'] ?>'</h4>
+                </div>
+                <div class="modal-body">
+                    <p id="<?= $hash . '_whoisraw'; ?>"><?= $imagewhoisraw ?></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function setButtonPrimary<?= $hash; ?>(but,yesno,bgclass) {
+            if (yesno) {
+                $('#idButton'+but+'<?= $hash; ?>').removeClass('grade_button_notset').addClass(bgclass);
+            } else {
+                $('#idButton'+but+'<?= $hash; ?>').removeClass(bgclass).addClass('grade_button_notset');
+            }
+        }
+        function setButtonSelect<?= $hash; ?>(but,yesno) {
+            if (yesno) {
+                $('#idButton'+but+'<?= $hash; ?>').removeClass('icon-square-o').addClass('icon-check-square-o');
+            } else {
+                $('#idButton'+but+'<?= $hash; ?>').removeClass('icon-check-square-o').addClass('icon-square-o');
+            }
+        }
+        function setButtonPolice<?= $hash; ?>(isactive) {
+            if (isactive) {
+                $('#idButtonPOLICE<?= $hash; ?>').addClass('grade_button_police');
+            } else {
+                $('#idButtonPOLICE<?= $hash; ?>').removeClass('grade_button_police');
+            }
+            $('#idButtonPOLICE<?= $hash; ?>').blur();
+        }
+    </script>
+    <?= $js_result ?>
+
+</div>
+<?php else: ?>
+    <div class="col-lg-<?= $coladdnum ?> p-a">&nbsp;</div>
+<?php endif ?>
+
+<?php if ($rowlast): ?>
+</div>
+<?php endif ?>
+

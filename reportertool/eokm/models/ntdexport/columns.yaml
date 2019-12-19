@@ -1,0 +1,27 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+    abusecontact_id:
+        label: abusecontact
+        type: text
+    status_code:
+        label: status
+        type: text
+    number_urls:
+        label: 'number of urls'
+        type: text
+        relation: ntd_urls
+        useRelationCount: true
+    groupby_start:
+        label: grouping start
+        type: text
+    groupby_hour_count:
+        label: active (hours)
+        type: text
+    groupby_hour_threshold:
+        label: threshold (hours)
+        type: text
+    msg_queued:
+        label: NTD sent
+        type: text

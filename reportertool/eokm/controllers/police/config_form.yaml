@@ -1,0 +1,10 @@
+name: Police
+form: $/reportertool/eokm/models/inputnotification/fields.yaml
+modelClass: ReporterTool\EOKM\Models\Inputnotification
+defaultRedirect: reportertool/eokm/police
+create:
+    redirect: 'reportertool/eokm/police/update/:id'
+    redirectClose: reportertool/eokm/police
+update:
+    redirect: reportertool/eokm/police
+    redirectClose: reportertool/eokm/police

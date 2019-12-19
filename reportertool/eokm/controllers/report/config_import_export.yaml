@@ -1,0 +1,15 @@
+# ===================================
+#  Export Behavior Config
+# ===================================
+
+defaultFormatOptions:
+  delimiter: ';'
+  enclosure: '"'
+  escape: '\'
+
+export:
+  title: Export Stats
+  fileName: ExportStats.csv
+  list: $/reportertool/eokm/models/notification/columns_export.yaml
+  form: $/reportertool/eokm/models/notification/fields_export.yaml
+  modelClass: ReporterTool\EOKM\Models\ReportExport

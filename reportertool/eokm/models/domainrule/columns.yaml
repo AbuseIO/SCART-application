@@ -1,0 +1,19 @@
+columns:
+    domain:
+        label: domain
+        type: text
+    type_code:
+        label: 'Type'
+        type: text
+    abusecontact:
+        label: abusecontact
+        type: text
+        relation: abusecontact
+        select: owner
+        searchable: true
+    ip:
+        label: ip
+        type: text
+    updated_at:
+        label: updated_at
+        type: datetime

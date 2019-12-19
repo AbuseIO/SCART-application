@@ -1,0 +1,23 @@
+fields:
+    status_code:
+        label: status
+        type: dropdown
+        span: right
+        default: '*'
+    abusecontacts:
+        label: abusecontact
+        type: dropdown
+        span: left
+        default: '*'
+    startDate:
+        label: Start
+        type: datepicker
+        mode: date
+        firstDay: 1
+        span: left
+    endDate:
+        label: End
+        type: datepicker
+        mode: date
+        firstDay: 1
+        span: right

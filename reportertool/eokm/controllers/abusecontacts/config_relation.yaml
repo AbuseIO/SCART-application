@@ -1,0 +1,19 @@
+whoislist:
+  label: whois
+  modelClass: reportertool\eokm\models\Whois
+  readOnly: true
+  view:
+    list: $/reportertool/eokm/models/whois/columns.yaml
+    showSorting: true
+    recordsPerPage: 5
+  manage:
+    title: View raw info
+    form: $/reportertool/eokm/models/whois/fields.yaml
+loglist:
+  label: log
+  modelClass: reportertool\eokm\models\Log
+  readOnly: true
+  view:
+    list: $/reportertool/eokm/models/log/columns.yaml
+    showSorting: true
+    recordsPerPage: 5

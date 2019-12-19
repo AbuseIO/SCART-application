@@ -1,0 +1,10 @@
+name: GradeQuestions
+form: $/reportertool/eokm/models/grade_question/fields.yaml
+modelClass: ReporterTool\EOKM\Models\Grade_question
+defaultRedirect: reportertool/eokm/grade_questions
+create:
+    redirect: 'reportertool/eokm/grade_questions/update/:id'
+    redirectClose: reportertool/eokm/grade_questions
+update:
+    redirect: reportertool/eokm/grade_questions
+    redirectClose: reportertool/eokm/grade_questions

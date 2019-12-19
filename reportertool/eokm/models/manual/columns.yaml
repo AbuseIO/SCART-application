@@ -1,0 +1,17 @@
+columns:
+    chapter:
+        label: chapter
+        type: number
+        searchable: true
+        sortable: true
+        cssClass: w-100
+    section:
+        label: section
+        type: number
+        searchable: true
+        sortable: true
+        cssClass: w-100
+    title:
+        label: title
+        type: text
+        searchable: true

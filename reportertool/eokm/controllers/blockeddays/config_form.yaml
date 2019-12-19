@@ -1,0 +1,10 @@
+name: Blockeddays
+form: $/reportertool/eokm/models/blockedday/fields.yaml
+modelClass: ReporterTool\EOKM\Models\Blockedday
+defaultRedirect: reportertool/eokm/blockeddays
+create:
+    redirect: 'reportertool/eokm/blockeddays/update/:id'
+    redirectClose: reportertool/eokm/blockeddays
+update:
+    redirect: reportertool/eokm/blockeddays
+    redirectClose: reportertool/eokm/blockeddays

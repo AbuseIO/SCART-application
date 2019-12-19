@@ -1,0 +1,38 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+    url:
+        label: url
+        type: text
+    url_host:
+        label: host
+        type: text
+    url_ip:
+        label: IP
+        type: text
+    firstseen_at:
+        label: 'first seen'
+        type: datetime
+    firstntd_at:
+        label: 'first NTD'
+        type: datetime
+    lastseen_at:
+        label: 'last seen'
+        type: datetime
+    status_code:
+        label: 'status'
+        type: datetime
+    abusecontact:
+        label: 'abuse email'
+    abusecountry:
+        label: 'country'
+    host:
+        label: 'hoster'
+        type: text
+    registrar:
+        label: registrar
+        type: text
+    grade_code:
+        label: 'classification'
+        type: text

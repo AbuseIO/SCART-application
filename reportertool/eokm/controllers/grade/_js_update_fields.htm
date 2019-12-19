@@ -1,0 +1,7 @@
+<script type="text/javascript">
+    <?php foreach ($hashes AS $hash) { ?>
+        <?php foreach ($fields AS $field) { ?>
+            $('#<?= $hash . '_' . $field['name']; ?>').val('<?= $field['value']; ?>');
+        <?php } ?>
+    <?php } ?>
+</script>

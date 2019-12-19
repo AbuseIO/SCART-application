@@ -1,0 +1,17 @@
+fields:
+    sortnr:
+        label: sortnr
+        span: auto
+        cssClass: w-100
+        type: number
+        required: 1
+    value:
+        label: value
+        span: left
+        type: text
+        required: 1
+    label:
+        label: label
+        span: left
+        type: text
+        required: 1

@@ -1,0 +1,10 @@
+columns:
+    updated_at:
+        label: updated_at
+        type: datetime
+    workuser_id:
+        label: workuser_id
+        type: number
+    importfile:
+        label: importfile
+        type: text

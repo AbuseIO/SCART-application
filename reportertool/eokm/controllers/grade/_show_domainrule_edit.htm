@@ -1,0 +1,58 @@
+
+<form class="form-elements" role="form">
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h2 class="modal-title">Create/update domainrule</h2>
+</div>
+
+<div class="modal-body">
+    <div class="row">
+        <div class="col-xs-12" >
+            <div class="row">
+                <div class="col-xs-12" >
+                    <?= $inputWidget->render() ?>
+                    <div id="loading" style="display: none;" class="popup-backdrop fade in loading">
+                        <div class="modal-content popup-loading-indicator indicator-center">
+                            <span> </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+
+    <br />
+    <div class="form-buttons">
+        <div class="loading-indicator-container">
+            <button
+                    type="button"
+                    data-request="onDomainruleEditSave"
+                    data-request-data="input_id: '<?= $input_id; ?>'"
+                    data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading"
+                    data-hotkey="ctrl+enter, cmd+enter"
+                    class="btn btn-primary">
+                Insert rule & process for this report
+            </button>
+            <button
+                    type="button"
+                    data-request="onDomainruleRunSave"
+                    data-request-data="input_id: '<?= $input_id; ?>'"
+                    data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading"
+                    data-hotkey="ctrl+enter, cmd+enter"
+                    class="btn btn-primary">
+                No insert - process rules for this report
+            </button>
+            <span class="btn-text">
+                <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('reportertool.eokm::lang.button.close')) ?></a>
+            </span>
+        </div>
+    </div>
+</div>
+
+</form>

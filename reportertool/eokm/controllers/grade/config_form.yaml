@@ -1,0 +1,3 @@
+name: Classification
+form: $/reportertool/eokm/models/input/fields_grade.yaml
+modelClass: ReporterTool\EOKM\Models\Input

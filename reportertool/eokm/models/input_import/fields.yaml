@@ -1,0 +1,28 @@
+fields:
+    workuser_id:
+        label: workuser
+        span: left
+        type: dropdown
+        context: create
+    import_file:
+        label: 'import file'
+        span: left
+        mode: file
+        fileTypes:
+            - txt
+            - csv
+        mimeTypes: 'txt,csv'
+        useCaption: 0
+        thumbOptions:
+            mode: crop
+            extension: auto
+        type: fileupload
+        context: create
+    import_result:
+        label: 'Import results'
+        span: full
+        size: giant
+        stretch: true
+        context: update
+        disabled: 1
+        type: textarea

@@ -1,0 +1,25 @@
+fields:
+    ntd_filenumber:
+        label: 'NTD filenumber'
+        relation: ntd
+        select: filenumber
+        type: text
+    url:
+        label: url
+        type: text
+    msg_queued:
+        label: queued
+        relation: ntd
+        select: msg_queued
+        type: datetime
+    status_code:
+        label: status
+        relation: ntd
+        select: status_code
+        type: text
+    status_time:
+        label: 'status time'
+        relation: ntd
+        select: status_time
+        type: text
+

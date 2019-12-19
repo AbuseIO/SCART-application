@@ -1,0 +1,25 @@
+
+<div class="form-preview">
+
+    <?php
+        foreach ($sections AS $section) {
+            $showchapter = (substr($section->title,0,1)!='*');
+            if (!$showchapter) {
+                $title = substr($section->title,1);
+            } else {
+                $title = $section->title;
+            }
+    ?>
+
+    <h2><?= (($showchapter)? $section->chapter.(($section->section!=0) ? '.'.$section->section : '').' ' : '').$title ?></h2>
+
+    <div>
+        <?= $section->text ?>
+    </div>
+
+    <?php } ?>
+
+
+</div>
+
+

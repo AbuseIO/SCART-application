@@ -1,0 +1,6 @@
+abusecontacts:
+  label: abusecontacts
+  modelClass: reportertool\eokm\models\Abusecontact
+  readOnly: true
+  manage:
+    form: $/reportertool/eokm/models/abusecontact/fields_select.yaml

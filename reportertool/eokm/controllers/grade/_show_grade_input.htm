@@ -1,0 +1,311 @@
+
+<div class="row" style="border-bottom: 1px solid black;">
+    <div class="col-xs-4">
+        <h4><strong>Input</strong> #<?= $filenumber; ?> - <strong>classified</strong>: <span id="input_grade_code"><?= $grade_code ?></span></h4>
+    </div>
+    <div class="col-xs-8 text-right ">
+        <div class="control-toolbar p-a-0">
+            <div class="toolbar-item">
+                <div data-control="toolbar">
+
+                    <div class="btn-group">
+
+                        <button type="button"
+                                data-control="popup"
+                                data-handler="onInputEdit"
+                                data-extra-data="record_id: '<?= $id; ?>', recordtype: 'input' "
+                                data-size="giant"
+                                id="inputeditbutton"
+                                class="btn btn-default <?= $classnotefilled ?> oc-icon-edit ert-analyze-disable">
+                            Edit
+                        </button>
+
+                        <div class="dropdown dropdown-fixed">
+                            <button type="button" class="btn btn-default oc-icon-users ert-analyze-disable"
+                                    data-toggle="dropdown">Classify...
+                            </button>
+                            <ul class="dropdown-menu" data-dropdown-title="Bulk...">
+                                <li><a href="#" tabindex="-1" class="oc-icon-ban ert-analyze-disable"
+                                       data-control="popup"
+                                       data-handler="onImageIllegal"
+                                       data-extra-data="record_id: '<?= $id; ?>', recordtype: 'input', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-size="giant">
+                                    Set INPUT as illegal</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-check ert-analyze-disable"
+                                       data-control="popup"
+                                       data-handler="onImageNotIllegal"
+                                       data-extra-data="record_id: '<?= $id; ?>', recordtype: 'input', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-size="giant">
+                                    Set INPUT NOT as illegal</a></li>
+                            </ul>
+                        </div>
+
+                        <button
+                           id="idButtonPOLICEinput<?= $id; ?>" class="btn btn-default oc-icon-exclamation-triangle ert-analyze-disable"
+                           type="button"
+                           data-request-update="show_result: '#show_result'"
+                           data-request="onImagePolice"
+                           data-request-data="record_id: '<?= $id; ?>', recordtype: 'input', workuser_id: '<?= $workuser_id; ?>' "
+                           data-request-loading="#loading_input">POLICE</button>
+                        <script type="text/javascript">
+                            function setButtonPoliceinput<?= $id; ?>(isactive) {
+                                if (isactive) {
+                                    $('#idButtonPOLICEinput<?= $id; ?>').addClass('grade_button_police');
+                                } else {
+                                    $('#idButtonPOLICEinput<?= $id; ?>').removeClass('grade_button_police');
+                                }
+                                $('#idButtonPOLICEinput<?= $id; ?>').blur();
+                            }
+                        </script>
+                        <?= $js_police ?>
+
+                        <button type="button" class="btn btn-default oc-icon-check-square ert-analyze-disable"
+                           data-request="onDone"
+                           data-request-data="'input_id': '<?= ( $id) ?>','workuser_id': '<?= $workuser_id ?>',screensize: '<?= $screensize ?>', columnsize: '<?= $columnsize ?>' "
+                           data-request-update="id_grade_screen: '#id_grade_screen' "
+                           data-request-confirm="Checkonline (NTD) will start for illegal classified url(s) - go?"
+                           data-request-loading="#loading_input">Done</button>
+
+                    </div>
+
+                    <div class="btn-group">
+
+                        <button type="button" class="btn btn-default oc-icon-list-ul ert-analyze-disable"
+                                data-control="popup"
+                                data-handler="onDomainruleEdit"
+                                data-extra-data="record_id: '<?= $id; ?>', recordtype: 'input' "
+                                data-size="giant"
+                                data-request-loading="#loading_input">Rules</button>
+                        <div class="dropdown dropdown-fixed">
+                            <button type="button" class="btn btn-default oc-icon-check-square-o ert-analyze-disable"
+                                    data-toggle="dropdown">Select...
+                            </button>
+                            <ul class="dropdown-menu" data-dropdown-title="Select...">
+                                <li><a href="#" tabindex="-1" class="oc-icon-circle ert-analyze-disable"
+                                       data-request="onSelect"
+                                       data-request-data="input_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', select: 'all' "
+                                       data-request-update="show_result: '#show_result' "
+                                       data-request-loading="#loading_input">
+                                    All</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-ban ert-analyze-disable"
+                                       data-request="onSelect"
+                                       data-request-data="input_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', select: 'none' "
+                                       data-request-update="show_result: '#show_result' "
+                                       data-request-loading="#loading_input">
+                                    None</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-adjust ert-analyze-disable"
+                                       data-request="onSelect"
+                                       data-request-data="input_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', select: 'invers' "
+                                       data-request-update="show_result: '#show_result' "
+                                       data-request-loading="#loading_input">
+                                    Invers</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-adjust ert-analyze-disable"
+                                       data-request="onSelect"
+                                       data-request-data="input_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>', select: 'unset' "
+                                       data-request-update="show_result: '#show_result' "
+                                       data-request-loading="#loading_input">
+                                    Not classified</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="dropdown dropdown-fixed">
+                            <button type="button" class="btn btn-default oc-icon-users ert-analyze-disable"
+                                    data-toggle="dropdown">Bulk...
+                            </button>
+                            <ul class="dropdown-menu" data-dropdown-title="Bulk...">
+                                <li><a href="#" tabindex="-1" class="oc-icon-ban ert-analyze-disable"
+                                       data-control="popup"
+                                       data-handler="onSelectedImageIllegal"
+                                       data-extra-data="input_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-size="giant">
+                                    Set SELECTED as illegal</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-eye-slash ert-analyze-disable"
+                                       data-request="onSelectedImageIgnore"
+                                       data-request-data="input_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-request-update="show_result: '#show_result'"
+                                       data-request-loading="#loading_input">
+                                    Set SELECTED as ignore</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-check ert-analyze-disable"
+                                       data-control="popup"
+                                       data-handler="onSelectedImageNotIllegal"
+                                       data-extra-data="input_id: '<?= $id; ?>', recordtype: 'notification', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-size="giant">
+                                    Set SELECTED as NOT illegal</a></li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-building ert-analyze-disable"
+                                       data-request="onSelectedPolice"
+                                       data-request-data="input_id: '<?= $id; ?>', workuser_id: '<?= $workuser_id; ?>' "
+                                       data-request-update="show_result: '#show_result'"
+                                       data-request-loading="#loading_input">
+                                    Set FIRST POLICE for SELECTED </a></li>
+                            </ul>
+                        </div>
+
+                    </div>
+
+                    <div class="btn-group">
+
+                        <div class="dropdown dropdown-fixed">
+                            <button type="button" class="btn btn-default oc-icon-table"
+                                    data-toggle="dropdown">Columns...
+                            </button>
+                            <ul class="dropdown-menu" data-dropdown-title="Columns...">
+                                <li><a href="#" tabindex="-1" class="oc-icon-th-large"
+                                       data-request="onColumnSet"
+                                       data-request-data="'input_id': '<?= ( $id) ?>','workuser_id': '<?= $workuser_id ?>', columnsize: '2'"
+                                       data-request-update="id_grade_screen: '#id_grade_screen' "
+                                       data-request-loading="#loading_input">
+                                    2 columns</a>
+                                </li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-th"
+                                       data-request="onColumnSet"
+                                       data-request-data="'input_id': '<?= ( $id) ?>','workuser_id': '<?= $workuser_id ?>', columnsize: '3'"
+                                       data-request-update="id_grade_screen: '#id_grade_screen' "
+                                       data-request-loading="#loading_input">
+                                    3 columns</a>
+                                </li>
+                                <li><a href="#" tabindex="-1" class="oc-icon-th"
+                                       data-request="onColumnSet"
+                                       data-request-data="'input_id': '<?= ( $id) ?>','workuser_id': '<?= $workuser_id ?>', columnsize: '4'"
+                                       data-request-update="id_grade_screen: '#id_grade_screen' "
+                                       data-request-loading="#loading_input">
+                                    4 columns</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button id="idIgnoreShowHide"
+                                type="button"
+                                class="btn btn-default oc-icon-check-square-o"
+                                data-request="onIgnoreShowHide"
+                                data-request-data="'input_id': '<?= ($id) ?>','workuser_id': '<?= $workuser_id ?>'"
+                                data-request-update="id_grade_screen: '#id_grade_screen' "
+                                data-request-loading="#loading_input">Hide ignore</button>
+                        <script type="text/javascript">
+                            function setIgnoreShowHide(show) {
+                                if (show) {
+                                    $('#idIgnoreShowHide').removeClass('oc-icon-check-square-o').addClass('oc-icon-square-o');
+                                } else {
+                                    $('#idIgnoreShowHide').removeClass('oc-icon-square-o').addClass('oc-icon-check-square-o');
+                                }
+                            }
+                        </script>
+                        <?= $js_showhide ?>
+
+                    </div>
+
+                    <div class="btn-group">
+
+                        <button type="button"
+                                class="btn btn-default oc-icon-arrow-circle-left"
+                                title="Previous record"
+                                data-request="onNext"
+                                data-request-data="'input_id': '<?= (-1 * $id) ?>','workuser_id': '<?= $workuser_id ?>'"
+                                data-request-update="id_grade_screen: '#id_grade_screen' "
+                                data-request-loading="#loading_input"
+                        <?php if ($inputfirst) echo 'disabled'; ?>></button>
+                        <button type="button"
+                                class="btn btn-default oc-icon-arrow-circle-right"
+                                title="Next record"
+                                data-request="onNext"
+                                data-request-data="'input_id': '<?= ($id) ?>','workuser_id': '<?= $workuser_id ?>'"
+                                data-request-update="id_grade_screen: '#id_grade_screen' "
+                                data-request-loading="#loading_input"
+                        <?php if ($inputlast) echo 'disabled'; ?>></button>
+
+                    </div>
+
+                    <button type="button" class="btn btn-default" disabled><?= $inputnum ?> of <?= $inputcnt ?></button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        <div id="locked_input" style="display: none; " class="">
+            <div class="flash-message static warning p-a-0 ">
+        <span><?= $locked_workuser . ' is working on this, input is locked ' ?>
+            <a href="#"
+               tabindex="-1"
+               class="oc"
+               data-request="onUnlockInput"
+               data-request-data="'input_id': '<?= ($id) ?>','workuser_id': '<?= $workuser_id ?>'"
+               data-request-update="id_grade_screen: '#id_grade_screen' "
+               data-request-confirm="Are sure to unlock this input; this can conflict with other worker?"
+               data-request-loading="#loading_input">
+            (unlock this input)
+            </a>
+        </span>
+                <script type="text/javascript">
+                    $(document).ready(function(){
+                    <?php if ($locked_workuser!='') { ?>
+                            $('#locked_input').show();
+                            $('.ert-analyze-disable').prop('disabled',true);
+                        <?php } ?>
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="idInputDetails" style="border-bottom: 1px solid black;">
+
+    <div class="col-xs-12">
+
+        <?php foreach ($details AS $detail) { ?>
+
+        <div class="row">
+
+            <?php foreach ($detail AS $label => $value) {
+            $arr = explode('|',$value);
+            $id = $arr[0];
+            $val = $arr[1];
+            ?>
+
+            <div class="col-xs-2 p-a-0 text-right">
+                <strong><?= $label ?></strong><?= (trim($val)!='')?':':''; ?>&nbsp;
+            </div>
+            <div class="col-xs-2 p-a-0 text-left">
+                <span id="<?= $id ?>"><?= $val ?></span>
+            </div>
+
+            <?php } ?>
+
+        </div>
+
+        <?php } ?>
+
+    </div>
+
+</div>
+
+<div id="loading_input" style="display: none;" class="popup-backdrop fade in loading">
+    <div class="modal-content popup-loading-indicator indicator-center">
+        <span> </span>
+    </div>
+</div>
+
+<div class="control-popup modal fade large" id="InputWhoisRaw">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">WhoIs information '<?= $url_host ?>'</h4>
+            </div>
+            <div class="modal-body">
+                <p id="inputwhoisrawdata"><?= $inputwhoisraw ?></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+

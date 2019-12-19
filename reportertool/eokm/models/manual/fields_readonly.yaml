@@ -1,0 +1,21 @@
+fields:
+    chapter:
+        label: chapter
+        span: storm
+        cssClass: col-xs-1
+        type: number
+    section:
+        label: section
+        span: storm
+        cssClass: col-xs-1
+        type: number
+    title:
+        label: title
+        span: storm
+        cssClass: col-xs-10
+        type: text
+    text:
+        label: content
+        span: full
+        size: ''
+        type: richeditor

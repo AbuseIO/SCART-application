@@ -1,0 +1,14 @@
+title: Inputs
+modelClass: ReporterTool\EOKM\Models\Input
+list: $/reportertool/eokm/models/input/columns.yaml
+recordUrl: 'reportertool/eokm/inputs/update/:id'
+noRecordsMessage: 'backend::lang.list.no_records'
+recordsPerPage: 20
+showSetup: false
+showCheckboxes: true
+defaultSort: filenumber asc
+filter: config_filter.yaml
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'

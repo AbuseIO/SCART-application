@@ -1,0 +1,10 @@
+columns:
+    sortnr:
+        label: sortnr
+        type: text
+    value:
+        label: value
+        type: text
+    label:
+        label: label
+        type: text

@@ -1,0 +1,26 @@
+subject = "Scheduler CHECKNTD job finished"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler check-online report:<br />
+    <br />
+
+    {% if job_inputs %}
+
+        {% for job_input in job_inputs %}
+            input filenumber: {{ job_input.filenumber }} <br />
+            _url: {{ job_input.url }} <br />
+            _status: {{ job_input.status }}. <br />
+            <br />
+        {% endfor %}
+
+        <br />
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    ERT Scheduler
+</p>
