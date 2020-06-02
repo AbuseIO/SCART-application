@@ -1,0 +1,24 @@
+
+# User-specific stuff
+.idea
+.idea/workspace.xml
+
+# vendor
+source/vendor
+source/node_modules/
+source/npm-debug.log
+
+# Laravel 5 & Lumen specific
+source/public/storage
+source/public/hot
+source/storage
+source/.env.*.php
+source/.env.php
+source/.env
+
+# publicatie
+source/public/.htaccess
+source/public/index.php
+
+# manual
+!source/storage/app/media/manual
