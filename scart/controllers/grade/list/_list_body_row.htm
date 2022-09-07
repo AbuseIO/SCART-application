@@ -1,0 +1,76 @@
+<tr class="<?= $this->getRowClass($record) ?> ">
+
+    <?php if ($showCheckboxes): ?>
+    <td class="nolink">
+        <div class="checkbox custom-checkbox nolabel">
+            <input
+                    type="checkbox"
+                    name="checked[]"
+                    class="ert-checked ert-analyze-disable"
+                    data-request="onImageSelect"
+                    data-request-data="record_id: '<?= $record->id; ?>' "
+                    data-request-update="show_result: '#show_result'"
+                    id="idButtonSELECT<?= $record->filenumber ?>"
+                    value="<?= $record->id ?>"
+            />
+            <label for="idButtonSELECT<?= $record->filenumber ?>"></label>
+        </div>
+    </td>
+    <?php endif ?>
+
+    <?php $index = $url = 0; foreach ($columns as $key => $column): ?>
+    <?php $index++; ?>
+    <td class="list-cell-index-<?= $index ?> list-cell-name-<?= $column->getName() ?> list-cell-type-<?= $column->type ?> <?= $column->clickable ? '' : 'nolink' ?> <?= $column->getAlignClass() ?> <?= $column->cssClass ?>">
+        <?= $this->getColumnValue($record, $column) ?>
+    </td>
+
+    <script type="text/javascript">
+        function setButtonPrimary<?= $record->filenumber; ?>(but,yesno,bgclass) {
+            if (yesno) {
+                $('#idButton'+but+'<?= $record->filenumber; ?>').removeClass('grade_button_notset').addClass(bgclass);
+            } else {
+                $('#idButton'+but+'<?= $record->filenumber; ?>').removeClass(bgclass).addClass('grade_button_notset');
+            }
+        }
+        function setButtonSelect<?= $record->filenumber; ?>(but,yesno) {
+            if (yesno) {
+                $('#idButton'+but+'<?= $record->filenumber; ?>').prop('checked', true);
+            } else {
+                $('#idButton'+but+'<?= $record->filenumber; ?>').prop('checked', false);
+            }
+        }
+        function setButtonPolice<?= $record->filenumber; ?>(isactive) {
+            if (isactive) {
+                $('#idButtonPOLICE<?= $record->filenumber; ?>').addClass('grade_button_police');
+            } else {
+                $('#idButtonPOLICE<?= $record->filenumber; ?>').removeClass('grade_button_police');
+            }
+            $('#idButtonPOLICE<?= $record->filenumber; ?>').blur();
+        }
+        function setButtonManual<?= $record->filenumber; ?>(isactive) {
+            if (isactive) {
+                $('#idButtonMANUAL<?= $record->filenumber; ?>').addClass('grade_button_manual');
+            } else {
+                $('#idButtonMANUAL<?= $record->filenumber; ?>').removeClass('grade_button_manual');
+            }
+            $('#idButtonMANUAL<?= $record->filenumber; ?>').blur();
+        }
+    </script>
+
+    <?php
+        $controller = $this->getController();
+        $setbuttons = $controller->setButtons($record,$controller->getWorkuserID() );
+        $js_result = $controller->makePartial('js_buttonresult',
+            ['hash' => $record->filenumber,
+            'buttonsets' => $setbuttons['buttonsets'],
+            'class' => $setbuttons['class']
+        ]);
+    ?>
+    <?= $js_result ?>
+
+    <?php endforeach ?>
+
+</tr>
+
+
+

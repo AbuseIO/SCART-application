@@ -1,0 +1,74 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="popup">&times;</button>
+    <h4 class="modal-title">
+Finder
+    </h4>
+</div>
+
+
+<div class="modal-body">
+    <form class="form-elements" role="form"
+          data-request="onSearchScart"
+          data-request-loading="#loading_input">
+
+        <link rel="canonical" href="https://octobercms.com/docs/ui/form">
+        <!--.layout-row-->
+        <?= $this->makePartial('preloader') ?>
+
+
+
+        <!--    data-request-update="mytime: '#myDiv'"-->
+        <!-- Drop down -->
+        <div class="form-group dropdown-field span-left">
+            <label>Field</label>
+            <?php
+                if (isset($finderconfig->Finder['searchfilters']['fields'])) {
+                    echo $this->makePartial('form/options', ['options' => $finderconfig->Finder['searchfilters']['fields']]);
+            }
+            ?>
+        </div>
+
+        <div class="form-group span-right is-required">
+            <label>Search</label>
+            <input type="text" name="criteria" value="" class="form-control form-control-lg" />
+        </div>
+
+
+
+        <!-- Checkbox List -->
+
+        <div class="xtrafilters" style="display: none">
+            <div class="form-group checkboxlist-field span-right is-required">
+                <?php
+             if (isset($finderconfig->Finder['searchfilters']['types'])) {
+               // $this->makePartial('form/dropdown', ['types' => $finderconfig->Finder['searchfilters']['types']]);
+                }
+                ?>
+            </div>
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-primary">Find</button>
+<!--        <span onclick="$('.xtrafilters').toggle(1, function(){-->
+<!--            $('.find.btn.btn-info.oc-icon-plus').toggleClass('oc-icon-minus btn-danger');-->
+<!--        });" class="find btn btn-info oc-icon-plus">filters</span>-->
+
+    </form>
+
+    <div style="height:50px;"></div>
+
+    <div class="finderResults">
+
+    </div>
+</div>
+
+
+<div class="modal-footer">
+
+</div>
+
+
+
+
+
+

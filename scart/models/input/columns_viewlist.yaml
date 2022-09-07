@@ -1,0 +1,20 @@
+columns:
+    urlData:
+        label: image
+        type: partial
+        path: list/list_url
+        sortable: false
+        width: 10%
+    optionData:
+        label: options
+        type: partial
+        path: list/list_options
+        sortable: false
+        width: 15%
+    infoData:
+        label: info
+        type: partial
+        path: list/list_info
+        sortable: false
+        width: 75%
+

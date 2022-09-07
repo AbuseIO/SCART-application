@@ -1,0 +1,10 @@
+name: Addons
+form: $/abuseio/scart/models/addon/fields.yaml
+modelClass: abuseio\scart\models\Addon
+defaultRedirect: abuseio/scart/addons
+create:
+    redirect: 'abuseio/scart/addons/update/:id'
+    redirectClose: abuseio/scart/addons
+update:
+    redirect: abuseio/scart/addons
+    redirectClose: abuseio/scart/addons

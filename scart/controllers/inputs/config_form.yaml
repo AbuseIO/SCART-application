@@ -1,0 +1,10 @@
+name: Inputs
+form: $/abuseio/scart/models/input/fields.yaml
+modelClass: abuseio\scart\models\Input
+defaultRedirect: abuseio/scart/inputs
+create:
+    redirect: 'abuseio/scart/inputs/update/:id'
+    redirectClose: abuseio/scart/inputs
+update:
+    redirect: abuseio/scart/inputs
+    redirectClose: abuseio/scart/inputs

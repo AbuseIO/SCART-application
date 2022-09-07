@@ -1,0 +1,39 @@
+columns:
+    created_at:
+        label: Timestamp
+        type: text
+        width: 15%
+        searchable: true
+        clickable: false
+    user:
+        label: user
+        type: text
+        relation: user
+        select: login
+        width: 10%
+        searchable: true
+        clickable: false
+    tag:
+        label: Tag
+        type: text
+        width: 10%
+        searchable: true
+        clickable: false
+    old:
+        label: Old
+        type: text
+        width: 15%
+        searchable: true
+        clickable: false
+    new:
+        label: New
+        type: text
+        width: 15%
+        searchable: true
+        clickable: false
+    comment:
+        label: Comment
+        type: text
+        width: 25%
+        searchable: true
+        clickable: false

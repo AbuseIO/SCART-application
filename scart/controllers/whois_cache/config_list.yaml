@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/whois_cache/columns.yaml
+modelClass: abuseio\scart\models\Whois_cache
+title: Whois_cache
+noRecordsMessage: 'backend::lang.list.no_records'
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+showSetup: false
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/whois_cache/update/:id'

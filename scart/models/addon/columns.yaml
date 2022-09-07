@@ -1,0 +1,22 @@
+columns:
+    type:
+        label: type
+        type: text
+    codename:
+        label: 'technical reference'
+        type: text
+    title:
+        label: title
+        type: text
+    enabled:
+        label: enabled
+        type: switch
+    classexists:
+        label: classexists
+        type: switch
+    valid:
+        label: valid
+        type: switch
+    filter:
+        label: filter
+        type: text

@@ -1,0 +1,10 @@
+name: Config
+form: $/abuseio/scart/models/systemconfig/fields.yaml
+modelClass: abuseio\scart\models\Systemconfig
+defaultRedirect: abuseio/scart/config/update/:id
+create:
+    redirect: 'abuseio/scart/config/update/:id'
+    redirectClose: abuseio/scart/config
+update:
+    redirect: 'abuseio/scart/config/update/:id'
+    redirectClose: 'abuseio/scart/config/update/:id'

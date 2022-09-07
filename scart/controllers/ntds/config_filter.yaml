@@ -1,0 +1,6 @@
+scopes:
+    status_code:
+        label: 'status'
+        type: group
+        conditions: 'status_code in (:filtered)'
+        modelClass: abuseio\scart\models\Ntd_status

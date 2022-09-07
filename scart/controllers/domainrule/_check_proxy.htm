@@ -1,0 +1,35 @@
+<?php if ($model::showCheckProxy()): ?>
+<span>
+    <button
+        type="button"
+        data-request="onCheckProxy"
+        onclick="$(this).data('request-data', {
+            domain: $('#Form-field-Domainrule-domain').val()
+        })"
+        data-request-success="
+            if (typeof data['real_ip'] != 'undefined') {
+                // load specific form fields
+                $('#Form-field-Domainrule-ip').val(data['real_ip']);
+                $('#Form-field-Domainrule-abusecontact_id').val(data['real_host_contact_id']);
+                // special rewrite action to show contact name
+                $('div#RecordFinder-formAbusecontactId-abusecontact_id .form-control').html(data['real_host_contact']);
+                $('#Form-field-Domainrule-proxy_abusecontact_id').val(data['proxy_service_id']);
+                // special rewrite action to show contact name
+                $('div#RecordFinder-formProxyAbusecontactId-container-proxy_abusecontact_id .form-control').html(data['proxy_service_owner']);
+            }
+        "
+        data-request-loading="#checking_proxy"
+        class="btn btn-default">
+        Check proxy service
+    </button>
+    <div id="checking_proxy" style="display: none;" class="popup-backdrop fade in loading">
+        <div class="modal-content popup-loading-indicator indicator-center">
+            <span> </span>
+        </div>
+    </div>
+</span>
+<?php else: ?>
+<span>
+    <i>(note: no proxy service api set)</i>
+</span>
+<?php endif ?>

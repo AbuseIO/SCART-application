@@ -1,0 +1,79 @@
+
+<div class="row " style="margin-bottom: 10px;">
+    <div class="col-xs-12 p-b-sm">
+        <button
+                id="idButtonYES<?= $record->filenumber; ?>"
+                type="button"
+                data-control="popup"
+                data-handler="onImageIllegal"
+                data-type="questions"
+                data-extra-data="record_id: '<?= $record->id; ?>' "
+                data-size="giant"
+                data-toggle="tooltip"
+                title="<?= e(trans('abuseio.scart::lang.button.illegal')) ?>"
+                data-recordid=<?=$record->id; ?>
+                class="btn btn-default btn-sm icon-ban icon-2x ert-analyze-disable popoverbutton btn_<?=$record->id; ?>">
+            </button>
+        <button
+                id="idButtonNO<?= $record->filenumber; ?>"
+                type="button"
+                data-control="popup"
+                data-handler="onImageNotIllegal"
+                data-extra-data="record_id: '<?= $record->id; ?>' "
+                data-size="giant"
+                data-toggle="tooltip"
+                title="<?= e(trans('abuseio.scart::lang.button.not_illegal')) ?>"
+                class="btn btn-default btn-sm icon-check icon-2x ert-analyze-disable text-right">
+            </button>
+        <button
+            id="idButtonIGNORE<?= $record->filenumber; ?>"
+            type="button"
+            data-request-update="show_result: '#show_result'"
+            data-request="onImageIgnore"
+            data-request-data="record_id: '<?= $record->id; ?>' "
+            data-request-loading="#loading_input"
+            data-toggle="tooltip"
+            title="<?= e(trans('abuseio.scart::lang.button.ignore')) ?>"
+            class="btn btn-sm btn-default icon-eye-slash icon-2x ert-analyze-disable">
+        </button>
+    </div>
+</div>
+<div class="row " style="margin-bottom: 10px;">
+    <div class="col-xs-12 p-b-sm">
+        <button
+                id="idButtonPOLICE<?= $record->filenumber; ?>"
+                type="button"
+                data-control="popup"
+                data-handler="onImagePolice"
+                data-extra-data="record_id: '<?= $record->id; ?>' "
+                data-size="giant"
+                data-toggle="tooltip"
+                title="<?= e(trans('abuseio.scart::lang.button.police')) ?>"
+                class="btn btn-default btn-sm icon-user-secret icon-2x ert-analyze-disable text-right">
+            </button>
+        <button
+                id="idButtonMANUAL<?= $record->filenumber; ?>"
+                type="button"
+                data-request-update="show_result: '#show_result'"
+                data-request="onManualCheck"
+                data-request-data="record_id: '<?= $record->id; ?>' "
+                data-request-loading="#loading_input"
+                data-toggle="tooltip"
+                title="<?= e(trans('abuseio.scart::lang.button.manual')) ?>"
+                class="btn btn-default btn-sm icon-television icon-2x ert-analyze-disable">
+            </button>
+        <button type="button"
+                data-control="popup"
+                data-handler="onInputEdit"
+                data-extra-data="record_id: '<?= $record->id; ?>' "
+                data-size="giant"
+                data-type="input"
+                data-toggle="tooltip"
+                title="<?= e(trans('abuseio.scart::lang.button.edit')) ?>"
+                id="idButtonNote<?= $record->filenumber; ?>"
+                data-recordid="<?= $record->id; ?>"
+                class="btn btn-default btn-sm <?= $record->optionData ?> icon-edit icon-2x ert-analyze-disable popoverbutton btn_<?=$record->id;?>">
+            </button>
+    </div>
+</div>
+

@@ -1,0 +1,29 @@
+fields:
+    title:
+        label: Title
+        span: left
+        required: 1
+        type: text
+    add_only_url:
+        label: 'Add only urls'
+        span: left
+        type: checkbox
+        comment: 'If checked only the abuse link url(s) will be included'
+    csv_attachment:
+        label: 'CSV attachment'
+        span: left
+        default: true
+        type: checkbox
+        comment: 'If checked the abuse urls will be included in a CSV-attachment (and not in the body)'
+    subject:
+        label: Subject
+        span: full
+        required: 1
+        type: text
+    body:
+        label: Body
+        size: large
+        span: full
+        required: 1
+        type: richeditor
+        toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'

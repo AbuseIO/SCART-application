@@ -1,0 +1,25 @@
+columns:
+    updated_at:
+        label: updated
+        type: datetime
+    target:
+        label: target
+        type: text
+        searchable: true
+    target_type:
+        label: type
+        type: text
+        searchable: true
+    max_age:
+        label: 'max age'
+        type: text
+    abusecontact:
+        label: abusecontact
+        type: text
+        relation: abusecontact
+        select: owner
+        searchable: true
+    real_ip:
+        label: 'real IP'
+        type: text
+        searchable: true

@@ -1,0 +1,333 @@
+Finder:
+  searchfilters:
+    fields:
+      filenumber: filenumber
+      url: urladres
+    types:
+      ntd: NTD
+      input: Input
+      domainrule: Domainrule
+  searchlist:
+    input:
+      1: input
+    filenumber:
+      1: filenumber
+    source:
+      1: source
+    type:
+      1: type
+    received:
+      1: received
+pages:
+  mainsection:
+    input:
+      0: verder vormgeven
+    ntd:
+      0: verder vormgeven
+    domainrule:
+      0: verder vormgeven
+  input:
+    scartworkflowTimelinewidget:
+      name: timeline
+      type: timeline
+      model: \Input_history
+      workflow:
+        input:
+          model: \abuseio\scart\models\Input
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                id: id
+            select:
+              1: received_at
+              2: source_code
+            altworkflow:
+              1:
+                new: close
+            show:
+              1:
+                query: 1
+                time: '#received_at#'
+                title: 'Input received'
+                txt: '#source_code#'
+                type: 'Import'
+        scrapefirst:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                new: scheduler_scrape
+            order: oldest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Start scrape'
+                txt: '#comment#'
+                type: 'Scrape'
+        scrapelast:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                old: scheduler_scrape
+            order: latest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Finished scrape'
+                txt: '#comment#'
+                type: 'Scrape'
+        classifyfirst:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                new: grade
+            order: oldest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Start classify'
+                txt: '#comment#'
+                type: 'Classify'
+        classifylast:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                old: grade
+            order: latest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Finished classify'
+                txt: '#comment#'
+                type: 'Classify'
+                button: 'more'
+        classifymore:
+          model: \abuseio\scart\models\Input_parent
+          method: getTimeLineData
+          param:
+            select:
+              1: abuseio_scart_input.url
+              2: abuseio_scart_input.grade_code
+              3: abuseio_scart_input_parent.created_at
+              4: abuseio_scart_input.status_code
+            join:
+              0:
+                table: abuseio_scart_input
+                relation: abuseio_scart_input_parent.input_id
+                operator: =
+                otherrelation: abuseio_scart_input.id
+            query:
+              1:
+                abuseio_scart_input_parent.parent_id: id
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Url: #url#'
+                txt: '<b><i class="icon-tag"></i> Classification: #grade_code#</b> <br> <b><i class="icon-check-square"></i> Status: #status_code#</b>'
+                type: 'InnerClassify'
+                belongsTo: 'Classify'
+        checkonlinefirst:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                new: scheduler_checkonline
+            order: oldest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Start checkonline'
+                txt: '#comment#'
+                type: 'Checkonline'
+        checkonlinelast:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                old: scheduler_checkonline
+            order: latest
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Finished checkonline'
+                txt: '#comment#'
+                type: 'Checkonline'
+                button: 'more'
+        ntds:
+          model: \abuseio\scart\models\Ntd_url
+          method: getTimeLineData
+          param:
+            select:
+              1: abuseio_scart_ntd.status_time
+              2: abuseio_scart_ntd.status_code
+              3: abuseio_scart_ntd_url.url
+            join:
+              0:
+                table: abuseio_scart_ntd
+                relation: abuseio_scart_ntd_url.ntd_id
+                operator: =
+                otherrelation: abuseio_scart_ntd.id
+            query:
+              1:
+                abuseio_scart_ntd_url.record_id: id
+            show:
+              1:
+                query: 1
+                time: '#status_time#'
+                title: 'NTD #status_code#'
+                txt: '<b><i class="icon-tag"></i> #url# </b> <br>'
+                type: 'InnerCheckonline'
+                belongsTo: 'Checkonline'
+        closed:
+          model: \abuseio\scart\models\Input_history
+          method: getTimeLineData
+          param:
+            query:
+              1:
+                input_id: id
+                new: close
+            select:
+              1: created_at
+              2: comment
+            show:
+              1:
+                query: 1
+                time: '#created_at#'
+                title: 'Close'
+                txt: '#comment#'
+                type: 'Close'
+    inputhistorylistinputwidget:
+      name: history
+      model: \Input_history
+      query:
+        0:
+          column: input_id
+          operator: =
+          value: idvalue
+    imageslistinputwidget:
+      name: items
+      model: \Input
+      redirect: abuseio/scart/inputs/update/:id
+      join:
+        0:
+          table: abuseio_scart_input_parent
+          relation: abuseio_scart_input.id
+          operator: =
+          otherrelation: abuseio_scart_input_parent.input_id
+      query:
+        0:
+          column: url_type
+          operator: =
+          value: imageurl
+        1:
+          column: abuseio_scart_input_parent.parent_id
+          operator: =
+          value: idvalue
+    loglistinputwidget:
+      name: log
+      model: \Log
+      query:
+        0:
+          column: record_type
+          operator: =
+          value: abuseio_scart_input
+        2:
+          column: record_id
+          operator: =
+          value: idvalue
+  ntd:
+    urlslistinputwidget:
+      name: urls
+      model: \Ntd_url
+      query:
+        0:
+          column: ntd_id
+          operator: =
+          value: idvalue
+    messagelistinputwidget:
+      name: message
+      model: \Ntd
+      query:
+        0:
+          column: abuseio_scart_ntd.id
+          operator: =
+          value: idvalue
+        1:
+          column: abuseio_scart_ntd.status_code
+          operator: IN
+          value: sent_succes,sent_api_succes
+    logslistinputwidget:
+      name: log
+      model: \Log
+      query:
+        0:
+          column: record_id
+          operator: =
+          value: idvalue
+        1:
+          column: record_type
+          operator: =
+          value: abuseio_scart_ntd
+  domainrule:
+    logslistinputwidget:
+      name: log
+      model: \Log
+      query:
+        0:
+          column: record_id
+          operator: =
+          value: idvalue
+        1:
+          column: record_type
+          operator: =
+          value: abuseio_scart_domainrule
+#    imageslistinputwidget:
+#      name: items
+#      model: \Input
+#      query:
+#        0:
+#          column: id
+#          operator: =
+#          value: idvalue
+

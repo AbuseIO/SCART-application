@@ -1,0 +1,16 @@
+columns:
+    updated_at:
+        label: timestamp
+        type: datetime
+        width: 15%
+    user:
+        label: user
+        type: text
+        relation: user
+        select: login
+        searchable: true
+        width: 10%
+    logtext:
+        label: logtext
+        type: text
+        width: 75%

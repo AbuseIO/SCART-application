@@ -1,0 +1,10 @@
+name: Reports
+form: $/abuseio/scart/models/report/fields.yaml
+modelClass: abuseio\scart\models\Report
+defaultRedirect: abuseio/scart/reports
+create:
+    redirect: 'abuseio/scart/reports/update/:id'
+    redirectClose: abuseio/scart/reports
+update:
+    redirect: abuseio/scart/reports
+    redirectClose: abuseio/scart/reports

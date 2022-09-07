@@ -1,0 +1,56 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        searchable: true
+    url:
+        label: input
+        type: text
+        searchable: true
+    delivered_items:
+        label: 'found images'
+        type: text
+        searchable: true
+    note:
+        label: memo
+        type: partial
+        path: show_memo
+        searchable: true
+    source_code:
+        label: source
+        type: text
+        relation: inputSource
+        select: title
+        searchable: true
+    type_code:
+        label: type
+        type: text
+        relation: inputType
+        select: title
+        searchable: true
+    status_code:
+        label: status
+        type: text
+        relation: inputStatus
+        select: title
+        searchable: true
+    workuser_id:
+        label: workuser
+        type: text
+        relation: workuser
+        select: login
+        searchable: true
+    reference:
+        label: reference
+        type: text
+        searchable: true
+    grade_code:
+        label: 'classification'
+        type: text
+        searchable: true
+    updated_at:
+        label: 'last update'
+        type: datetime
+    received_at:
+        label: received
+        type: datetime

@@ -1,0 +1,16 @@
+title: Inputs
+modelClass: abuseio\scart\models\Input
+list: $/abuseio/scart/models/input/columns.yaml
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+recordUrl: 'abuseio/scart/inputs/update/:id'
+noRecordsMessage: 'backend::lang.list.no_records'
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: true
+defaultSort: filenumber asc
+filter: config_filter.yaml
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+

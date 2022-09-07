@@ -1,0 +1,32 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        searchable: true
+    reference:
+        label: 'external reference'
+        type: text
+        searchable: true
+    url:
+        label: url
+        type: text
+        searchable: true
+    status_code:
+        label: status
+        type: text
+        relation: inputStatus
+        select: title
+        searchable: true
+    grade_code:
+        label: classification
+        type: text
+        relation: inputGrade
+        select: title
+        searchable: true
+    firstseen_at:
+        label: first seen
+        type: datetime
+    lastseen_at:
+        label: last seen
+        type: datetime
+

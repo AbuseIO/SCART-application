@@ -1,0 +1,33 @@
+fields:
+    disabled:
+        label: 'login disabled'
+        span: full
+        type: switch
+    be_first_name:
+        label: 'first name'
+        span: left
+        type: text
+        required: true
+    be_last_name:
+        label: 'last name'
+        span: right
+        type: text
+    be_password:
+        label: password
+        span: left
+        type: password
+        required: true
+    be_email:
+        label: 'email (login)'
+        span: auto
+        type: text
+        required: true
+    be_role_id:
+        label: role
+        type: dropdown
+        span: left
+    workschedule:
+        label: Work schedule
+        type: partial
+        span: full
+        context: update

@@ -1,0 +1,16 @@
+# ===================================
+#  Export Behavior Config
+# ===================================
+
+defaultFormatOptions:
+  delimiter: ';'
+  enclosure: '"'
+  escape: '\'
+
+export:
+  title: Export NTD
+  fileName: exportNTD.csv
+  modelClass: abuseio\scart\models\NtdExport
+  form: $/abuseio/scart/models/ntdexport/fields.yaml
+  list: $/abuseio/scart/models/ntdexport/columns.yaml
+  redirect: abuseio/scart/ntds

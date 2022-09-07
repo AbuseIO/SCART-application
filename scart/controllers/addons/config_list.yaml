@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/addon/columns.yaml
+modelClass: abuseio\scart\models\Addon
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+title: Addons
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/addons/update/:id'

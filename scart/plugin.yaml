@@ -1,0 +1,167 @@
+plugin:
+    name: 'abuseio.scart::lang.plugin.name'
+    description: 'abuseio.scart::lang.plugin.description'
+    author: AbuseIO
+    icon: oc-icon-check
+    homepage: 'https://abuse.io/'
+navigation:
+    Startpage:
+        label: 'abuseio.scart::lang.menu.startpage'
+        url: /abuseio/scart/Startpage
+        icon: icon-dashboard
+        permissions:
+            - abuseio.scart.startpage
+        order: '1'
+    Inputs:
+        label: 'abuseio.scart::lang.menu.inputs'
+        url: /abuseio/scart/Inputs
+        icon: icon-file-photo-o
+        permissions:
+            - abuseio.scart.input_manage
+        order: '2'
+    Grade:
+        label: 'abuseio.scart::lang.menu.classify'
+        url: /abuseio/scart/Grade
+        icon: icon-check-circle
+        permissions:
+            - abuseio.scart.grade_notifications
+        order: '3'
+    Police:
+        label: 'abuseio.scart::lang.menu.police'
+        url: /abuseio/scart/Police
+        icon: icon-warning
+        permissions:
+            - abuseio.scart.police
+        order: '4'
+    NTD:
+        label: 'abuseio.scart::lang.menu.ntd'
+        url: /abuseio/scart/ntds
+        icon: icon-external-link
+        permissions:
+            - abuseio.scart.ntds
+        order: '5'
+    Changed:
+        label: 'abuseio.scart::lang.menu.changed'
+        url: /abuseio/scart/Changed
+        icon: icon-user-circle
+        permissions:
+            - abuseio.scart.changed
+        order: '6'
+    Abusecontacts:
+        label: 'abuseio.scart::lang.menu.abusecontacts'
+        url: /abuseio/scart/Abusecontacts
+        icon: icon-group
+        permissions:
+            - abuseio.scart.abusecontact_manage
+        order: '7'
+    Reports:
+        label: 'abuseio.scart::lang.menu.reports'
+        url: /abuseio/scart/reports
+        icon: icon-image
+        permissions:
+            - abuseio.scart.reporting
+        order: '8'
+    Domainrules:
+        label: 'abuseio.scart::lang.menu.rules'
+        url: /abuseio/scart/domainrule
+        icon: icon-list-ul
+        permissions:
+            - abuseio.scart.rules
+        order: '9'
+    Checkonline:
+        label: 'abuseio.scart::lang.menu.checkonline'
+        url: /abuseio/scart/Checkonline
+        icon: icon-television
+        permissions:
+            - abuseio.scart.checkonline
+        order: '10'
+    utility:
+        label: 'abuseio.scart::lang.menu.settings'
+        url: /abuseio/scart/Users
+        icon: icon-gears
+        permissions:
+            - abuseio.scart.utility
+        order: '20'
+        sideMenu:
+            config:
+                label: 'abuseio.scart::lang.menu.config'
+                url: /abuseio/scart/Config
+                icon: icon-sliders
+                permissions:
+                    - abuseio.scart.system_config
+                order: '1'
+            addons:
+                label: 'abuseio.scart::lang.menu.addons'
+                url: /abuseio/scart/Addons
+                icon: icon-sitemap
+                permissions:
+                    - abuseio.scart.system_addons
+                order: '2'
+            Users:
+                label: 'abuseio.scart::lang.menu.users'
+                url: /abuseio/scart/Users
+                icon: icon-address-book-o
+                permissions:
+                    - abuseio.scart.user_write
+                order: '3'
+            Blockedday:
+                label: 'abuseio.scart::lang.menu.blockeddays'
+                url: /abuseio/scart/Blockeddays
+                icon: icon-birthday-cake
+                permissions:
+                    - abuseio.scart.blocked_days
+                order: '4'
+            Whitelist:
+                label: 'White list'
+                url: /abuseio/scart/whitelist
+                icon: icon-list-ul
+                permissions:
+                    - abuseio.scart.system_whitelist
+                order: '5'
+            NTDtemplates:
+                label: 'abuseio.scart::lang.menu.ntdtemplates'
+                url: /abuseio/scart/NTDtemplates
+                icon: icon-files-o
+                permissions:
+                    - abuseio.scart.ntdtemplate_manage
+                order: '6'
+            GradeQuestions:
+                label: 'abuseio.scart::lang.menu.gradequestions'
+                url: /abuseio/scart/Grade_questions
+                icon: icon-table
+                permissions:
+                    - abuseio.scart.grade_questions
+            Manualedit:
+                label: 'abuseio.scart::lang.menu.manualedit'
+                url: /abuseio/scart/Manualedit
+                icon: icon-book
+                permissions:
+                    - abuseio.scart.manual_write
+                order: '7'
+            whois:
+                label: 'abuseio.scart::lang.menu.whoistest'
+                url: /abuseio/scart/Whois
+                icon: icon-file-archive-o
+                permissions:
+                    - abuseio.scart.whois
+                order: '10'
+            Whois_cache:
+                label: 'abuseio.scart::lang.menu.whoiscache'
+                url: /abuseio/scart/Whois_cache
+                icon: icon-building
+                order: '11'
+                permissions:
+                    - abuseio.scart.whois_cache
+            Iccam_hotline:
+                label: 'abuseio.scart::lang.menu.iccamhotline'
+                url: /abuseio/scart/iccam_hotline
+                icon: icon-table
+                order: '12'
+                permissions:
+                    - abuseio.scart.iccam_hotline
+            Exporterrors:
+                label: 'abuseio.scart::lang.menu.exporterrors'
+                url: /abuseio/scart/Exporterrors
+                icon: icon-exclamation-circle
+                permissions:
+                    - abuseio.scart.whois

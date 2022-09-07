@@ -1,0 +1,22 @@
+columns:
+    url:
+        label: Url
+        type: text
+        width: 10%
+        clickable: false
+    firstseen_at:
+        label: First seen
+        type: text
+        width: 10%
+        clickable: false
+    lastseen_at:
+        label: Last seen
+        type: text
+        width: 10%
+        clickable: false
+    online_counter:
+        label: Online counter
+        type: text
+        width: 10%
+        clickable: false
+

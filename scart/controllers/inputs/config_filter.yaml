@@ -1,0 +1,38 @@
+scopes:
+  status_code:
+    label: 'status'
+    type: group
+    conditions: 'status_code in (:filtered)'
+    modelClass: abuseio\scart\models\Input_status
+    options: getStatusOptions
+  source_code:
+    label: source
+    type: group
+    conditions: 'source_code in (:filtered)'
+    modelClass: abuseio\scart\models\Input_source
+    options: getSourceOptions
+  grade_code:
+      label: 'classified'
+      type: group
+      modelClass: abuseio\scart\models\Input
+      options: getGradeCodes
+      conditions: 'grade_code in (:filtered)'
+  published_at:
+      label: 'date'
+      type: daterange
+      modelClass: abuseio\scart\models\Input
+      conditions: received_ >= ':after' AND received_ <= ':before'
+  url:
+      modelClass: abuseio\scart\models\Input
+      options:
+          'lastday': 'last day'
+          'lastweek': 'last week'
+          'lastmonth': 'last month'
+          'lastyear': 'last year'
+  workuser_id:
+      label: 'My work'
+      type: checkbox
+      default: 1
+
+
+

@@ -1,0 +1,27 @@
+fields:
+    chapter:
+        label: chapter
+        span: left
+        cssClass: w-150
+        type: number
+    section:
+        label: section
+        span: left
+        cssClass: w-100
+        type: number
+    lang:
+        label: language
+        span: auto
+        showSearch: true
+        default: NL
+        type: dropdown
+    title:
+        label: title
+        span: full
+        type: text
+        comment: (note; when * as first character then chapter/section number is not show)
+    text:
+        label: contents
+        size: ''
+        span: full
+        type: richeditor

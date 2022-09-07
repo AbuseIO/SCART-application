@@ -1,0 +1,19 @@
+whoislist:
+  label: whois
+  modelClass: abuseio\scart\models\Whois
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/whois/columns.yaml
+    showSorting: true
+    recordsPerPage: 5
+  manage:
+    title: View raw info
+    form: $/abuseio/scart/models/whois/fields.yaml
+loglist:
+  label: log
+  modelClass: abuseio\scart\models\Log
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/log/columns.yaml
+    showSorting: true
+    recordsPerPage: 5

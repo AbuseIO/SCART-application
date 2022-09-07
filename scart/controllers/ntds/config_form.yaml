@@ -1,0 +1,11 @@
+name: Inputs
+modelClass: abuseio\scart\models\Ntd
+form: $/abuseio/scart/models/ntd/fields.yaml
+defaultRedirect: abuseio/scart/ntd
+create:
+    redirect: 'abuseio/scart/ntd/preview/:id'
+    redirectClose: abuseio/scart/ntd
+update:
+    redirect: abuseio/scart/ntd
+    redirectClose: abuseio/scart/ntd
+preview: {  }

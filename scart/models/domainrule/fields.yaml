@@ -1,0 +1,133 @@
+fields:
+    enabled:
+        label: Enabled
+        type: switch
+        span: full
+        default: true
+    type_code:
+        label: Type
+        showSearch: true
+        span: auto
+        type: dropdown
+        required: 1
+    detail_section:
+        type: section
+    domain:
+        label: Domain
+        span: full
+        type: text
+        comment: 'Domain specification: domain.com or media.domain.com or sub.domain.com or .onion - remark: do not specify www'
+        trigger:
+            action: hide
+            field: type_code
+            condition:
+                value[proxy_service_api]
+        content: update
+    ip:
+        label: IP
+        span: left
+        type: text
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+        content: update
+    check_proxy:
+        span: right
+        cssClass: p-t-md
+        type: partial
+        path: $/abuseio/scart/controllers/domainrule/_check_proxy.htm
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+    proxy_abusecontact_id:
+        label: 'Proxy service contact'
+        type: recordfinder
+        span: left
+        comment: 'Fill if proxy contact API can be used for getting real IP'
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find provider
+        prompt: Click the %s button to find contact
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+    addon_id:
+        label: 'Addon'
+        span: left
+        type: dropdown
+        dependsOn: type_code
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[link_checker]
+                value[proxy_service_api]
+        content: update
+    _addon_description:
+        label: 'Description'
+        dependsOn: addon_id
+        span: left
+        type: textarea
+        size: small
+        readOnly: true
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[link_checker]
+                value[proxy_service_api]
+        content: update
+    abusecontact_id:
+        label: Abusecontact
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find provider
+        prompt: Click the %s button to find contact
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+                value[proxy_service_api]
+                value[site_owner]
+                value[host_whois]
+                value[registrar_whois]
+        content: update
+    grade_questions_illegal:
+        type: partial
+        path: $/abuseio/scart/controllers/domainrule/_classify_illegal.htm
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[direct_classify_illegal]
+        content: update
+    grade_questions_not_illegal:
+        type: partial
+        path: $/abuseio/scart/controllers/domainrule/_classify_not_illegal.htm
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[direct_classify_not_illegal]
+        content: update

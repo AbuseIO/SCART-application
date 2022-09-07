@@ -1,0 +1,14 @@
+list: $/abuseio/scart/models/grade_question/columns.yaml
+modelClass: abuseio\scart\models\Grade_question
+title: GradeQuestions
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+noRecordsMessage: 'backend::lang.list.no_records'
+recordUrl: 'abuseio/scart/grade_questions/update/:id'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+defaultSort: sortnr ASC
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'

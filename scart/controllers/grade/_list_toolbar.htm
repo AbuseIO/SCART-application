@@ -1,0 +1,85 @@
+<div data-control="toolbar">
+
+    <input type="hidden" name="currentsize" id="currentsize" value="0" />
+
+    <button
+            class="btn btn-default oc-icon-check-square-o"
+            disabled="disabled"
+            onclick="$(this).data('request-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+            data-request="onClassifySelected"
+            data-trigger-action="enable"
+            data-trigger=".control-list input[type=checkbox]"
+            data-trigger-condition="checked"
+            data-request-success="$(this).prop('disabled', true)"
+            data-request-update="id_grade_screen: '#id_grade_screen' "
+            data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.classify_selected')) ?>
+    </button>
+
+    <!-- 2022/1/5; DISABLED BECAUSE IT IS A CONFUSING OPTION
+    <button
+            class="btn btn-default oc-icon-window-close"
+            disabled="disabled"
+            onclick="$(this).data('request-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+            data-request="onIgnoreClose"
+            data-trigger-action="enable"
+            data-trigger=".control-list input[type=checkbox]"
+            data-trigger-condition="checked"
+            data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.ignore_close')) ?>"
+            data-request-success="$(this).prop('disabled', true)"
+            data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.set_ignore_close')) ?>
+    </button>
+    -->
+
+    <button
+            class="btn btn-default oc-icon-user-plus"
+            disabled="disabled"
+            onclick="$(this).data('request-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+            data-request="onSetworker"
+            data-trigger-action="enable"
+            data-trigger=".control-list input[type=checkbox]"
+            data-trigger-condition="checked"
+            data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.add_ownwork')) ?>"
+            data-request-success="$(this).prop('disabled', true)"
+            data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.add_work')) ?>
+    </button>
+
+    <!-- 2022/1/5; DISABLED BECAUSE NOT YET NEEDED
+    <button
+        class="btn btn-info oc-icon-repeat btn-primary"
+        data-request="onContinueRating"
+        data-request-loading="#loading"
+        data-toggle="tooltip"
+        title="<?= e(trans('abuseio.scart::lang.tooltip.continue_withmywork')) ?>"
+        data-stripe-load-indicator
+       style="background-color: #00bbab;">
+        <?= e(trans('abuseio.scart::lang.button.continue_withmywork')) ?>
+    </button>
+    -->
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // set backend screen size
+            var w = $(window).width();
+            $.request('onSetScreensize', {
+                data: { screensize: w }
+            });
+        });
+    </script>
+
+</div>
+
+
+<div id="loading" style="display: none;" class="popup-backdrop fade in loading">
+    <div class="modal-content popup-loading-indicator indicator-center">
+        <span> </span>
+    </div>
+</div>

@@ -1,9 +1,0 @@
-logs:
-  label: log
-  modelClass: reportertool\eokm\models\Log
-  readOnly: true
-  view:
-    list: $/reportertool/eokm/models/log/columns.yaml
-    defaultSort: id DESC
-    showSorting: false
-    recordsPerPage: 25

@@ -1,0 +1,30 @@
+subject = "Scheduler IMPORT ICCAM job report"
+==
+<p>Hi,</p>
+
+<p>
+    <strong>Report import ICCAM</strong><br />
+    <br />
+
+    {% if reports %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for report in reports %}
+        Process reportID '{{ report.reportID }}'  <br />
+            {% for logline in report.loglines %}
+                - {{ logline }} <br />
+            {% endfor %}
+        <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Report(s) processed and imported into ERT.
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

@@ -1,0 +1,10 @@
+name: Whitelist
+form: $/abuseio/scart/models/whitelist/fields.yaml
+modelClass: abuseio\scart\Models\Whitelist
+defaultRedirect: abuseio/scart/whitelist
+create:
+    redirect: 'abuseio/scart/whitelist/update/:id'
+    redirectClose: abuseio/scart/whitelist
+update:
+    redirect: abuseio/scart/whitelist
+    redirectClose: abuseio/scart/whitelist

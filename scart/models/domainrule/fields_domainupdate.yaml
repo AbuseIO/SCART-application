@@ -1,0 +1,77 @@
+fields:
+    enabled:
+        label: Enabled
+        type: switch
+        span: full
+        default: true
+    domain:
+        label: Domain
+        span: full
+        type: text
+        readOnly: true
+    type_code:
+        label: Type
+        span: full
+        type: text
+        readOnly: true
+    ip:
+        label: IP
+        span: left
+        type: text
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+    check_proxy:
+        span: right
+        cssClass: p-t-md
+        type: partial
+        path: $/abuseio/scart/controllers/grade/_check_proxy.htm
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+    proxy_abusecontact_id:
+        label: 'Proxy service contact'
+        type: recordfinder
+        span: left
+        comment: 'Fill if proxy contact API can be used for getting real IP'
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find provider
+        prompt: Click the %s button to find contact
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+    abusecontact_id:
+        label: Abusecontact
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find provider
+        prompt: Click the %s button to find contact
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        trigger:
+            action: show
+            field: type_code
+            condition:
+                value[proxy_service]
+                value[site_owner]
+                value[host_whois]
+                value[registrar_whois]

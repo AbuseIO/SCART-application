@@ -1,0 +1,228 @@
+fields:
+
+    maintenance_section:
+        label: 'Maintenance'
+        type: section
+    maintenance-mode:
+        label: 'mode'
+        span: left
+        type: switch
+        comment: 'Note: if ON, users and scheduler jobs will  be logout (stopped)'
+    maintenance-view:
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: partial
+        path: view_maintenance
+
+    jobs_section:
+        label: 'Functions'
+        type: section
+    iccam-active:
+        label: 'ICCAM (interface) active'
+        type: switch
+        span: auto
+    scheduler-importexport-iccam_active:
+        label: 'Import/export ICCAM (interface) active'
+        type: switch
+        span: auto
+        comment: 'Note: if OFF, ICCAM import/export is buffered, other import/export continue to work'
+    hashapi-active:
+        label: 'HASH API'
+        span: auto
+        type: switch
+
+    alerts_section:
+        label: 'Alerts'
+        type: section
+    alerts-recipient:
+        label: 'alert info e-mail'
+        span: left
+        type: text
+        cssClass: w-350
+    alerts-bcc_recipient:
+        label: 'alert BCC e-mail'
+        type: text
+        span: storm
+        cssClass: p-l-lg col-sm-3
+    scheduler-sendalerts-info:
+        label: 'alert info after (minutes)'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 1
+        max: 60
+    scheduler-sendalerts-warning:
+        label: 'alert warning after (minutes)'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 0
+        max: 60
+    alert-language:
+        label: 'language'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: dropdown
+    alerts-admin_recipient:
+        label: 'alert admin e-mail'
+        span: left
+        type: text
+    scheduler-sendalerts-admin:
+        label: 'alert admin after (minutes)'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 0
+        max: 60
+    errors-email:
+        label: 'Error e-mail'
+        span: left
+        type: text
+    errors-domain:
+        label: 'Error domain'
+        span: right
+        type: text
+
+    scrape_section:
+        label: 'Scraping'
+        type: section
+    browser-provider:
+        label: 'browser'
+        span: left
+        type: dropdown
+        emptyOption: -- no browser --
+        default: 'BrowserBasic'
+        options:
+            BrowserBasic: 'BrowserBasic'
+            BrowserDragon: 'BrowserDragon'
+    scheduler-scrape-min_image_size:
+        label: 'scrape min image size (bytes)'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+
+    checkonline_section:
+        label: 'Checkonline'
+        type: section
+    scheduler-checkntd-mode:
+        label: 'Check online mode'
+        span: left
+        cssClass: w-200
+        type: dropdown
+        options:
+            CRON: 'Cron'
+            REALTIME: 'Realtime'
+    scheduler-checkntd-check_online_every:
+        label: 'Check online every (minutes)'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 1
+        max: 60
+    scheduler-checkntd-realtime_inputs_max:
+        label: 'Realtime records/min'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 1
+        max: 60
+    scheduler-checkntd-realtime_min_diff_spindown:
+        label: 'Realtime spin down minutes'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 1
+        max: 60
+    scheduler-checkntd-realtime_look_again:
+        label: 'Realtime look again minutes'
+        span: storm
+        cssClass: p-l-lg col-sm-2
+        type: number
+        step: 1
+        min: 1
+        max: 60
+
+    ntd_section:
+        label: 'NTDs'
+        type: section
+    scheduler-sendntd-from:
+        label: ' NTD from'
+        span: left
+        type: text
+    scheduler-sendntd-reply_to:
+        label: 'NTD reply to'
+        span: right
+        type: text
+    scheduler-sendntd-bcc:
+        label: 'NTD bcc'
+        span: left
+        type: text
+    ntd-use_blockeddays:
+        label: 'Use blocked days'
+        type: switch
+        span: storm
+        cssClass: p-l-lg p-t-md col-sm-2
+    ntd-registrar_active:
+        label: 'Send NTD to registrar'
+        type: switch
+        span: storm
+        cssClass: p-l-lg p-t-md col-sm-2
+    scheduler-sendntd-maillogfile:
+        label: 'Send email logfile (verify)'
+        span: full
+        type: text
+    ntd-abusecontact_default_hours:
+        label: 'Default hours hoster'
+        type: number
+        cssClass: w-200
+        span: left
+    ntd-siteowner_interval:
+        label: 'Interval for site owner'
+        type: number
+        span: storm
+        cssClass: p-l-lg col-sm-2
+    ntd-registrar_interval:
+        label: 'Interval for registrar '
+        type: number
+        span: storm
+        cssClass: p-l-lg col-sm-2
+    ntd-after_blockedday_hours:
+        label: 'Start hour after blocked day'
+        type: number
+        span: storm
+        cssClass: p-l-lg col-sm-2
+    scheduler-sendntd-alt_email:
+        label: 'ALTERNATIVE send NTD'
+        span: storm
+        cssClass: p-l-lg col-sm-4
+        type: text
+        comment: 'Note: if set all NTDs are sent to this email'
+
+    iccam_section:
+        label: 'ICCAM'
+        type: section
+    iccam-hotlineid:
+        label: 'ICCAM HotlineID'
+        type: number
+        cssClass: w-200
+        span: left
+    iccam-last_date:
+        label: 'ICCAM current import date'
+        type: datepicker
+        mode: datetime
+        format: 'Y-m-d'
+        span: right
+
+    end_section:
+        type: section
+
+
+
+
+

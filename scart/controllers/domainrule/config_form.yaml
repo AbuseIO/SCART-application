@@ -1,0 +1,11 @@
+name: Domainrule
+modelClass: abuseio\scart\models\Domainrule
+form: $/abuseio/scart/models/domainrule/fields.yaml
+defaultRedirect: abuseio/scart/domainrule
+create:
+    redirect: 'abuseio/scart/domainrule/update/:id'
+    redirectClose: abuseio/scart/domainrule
+update:
+    redirect: abuseio/scart/domainrule
+    redirectClose: abuseio/scart/domainrule
+preview: {  }

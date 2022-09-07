@@ -1,0 +1,27 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        width: 10%
+        searchable: true
+        clickable: false
+    status_code:
+        label: status
+        type: text
+        relation: inputStatus
+        select: title
+        width: 10%
+        searchable: true
+        clickable: false
+    url_type:
+        label: type
+        type: text
+        width: 10%
+        searchable: true
+        clickable: false
+    url:
+        label: url
+        type: text
+        width: 60%
+        searchable: true
+        clickable: false

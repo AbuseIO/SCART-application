@@ -1,0 +1,31 @@
+fields:
+  filenumber:
+    label: filenumber
+    type: text
+    span: left
+    readOnly: 1
+  status_code:
+    label: status
+    type: dropdown
+    span: right
+    readOnly: 1
+  abusecontact_owner:
+    label: 'contact'
+    type: text
+    span: left
+    readOnly: 1
+  abusecontact_mail:
+    label: email
+    span: right
+    readOnly: 1
+    type: text
+  abusecontact_senddate:
+    label: send date
+    span: left
+    readOnly: 1
+    type: text
+  abusecontact_interface:
+    label: Interface
+    span: right
+    readOnly: 1
+    type: text

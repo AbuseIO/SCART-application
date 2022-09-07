@@ -1,0 +1,17 @@
+logs:
+  label: log
+  modelClass: abuseio\scart\models\Log
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/log/columns.yaml
+    defaultSort: id DESC
+    showSorting: false
+    recordsPerPage: 10
+history:
+    label: history
+    modelClass: abuseio\scart\models\Input_history
+    readOnly: true
+    view:
+        list: $/abuseio/scart/models/input_history/columns.yaml
+        showSorting: false
+        recordsPerPage: 5

@@ -1,0 +1,40 @@
+<tr class="<?= $this->getRowClass($record) ?> "  >
+
+    <?php if ($showCheckboxes): ?>
+    <td class="nolink">
+        <div class="checkbox custom-checkbox nolabel">
+            <input
+                    type="checkbox"
+                    name="checked[]"
+                    class="ert-checked ert-analyze-disable"
+                    data-request="onImageSelect"
+                    data-request-data="record_id: '<?= $record->id; ?>' "
+                    data-request-update="show_result: '#show_result'"
+                    id="idButtonSELECT<?= $record->filenumber ?>"
+                    value="<?= $record->id ?>"
+            />
+            <label for="idButtonSELECT<?= $record->filenumber ?>"></label>
+        </div>
+    </td>
+    <?php endif ?>
+
+    <?php $index = $url = 0; foreach ($columns as $key => $column): ?>
+    <?php $index++; ?>
+    <td class="list-cell-index-<?= $index ?> list-cell-name-<?= $column->getName() ?> list-cell-type-<?= $column->type ?> <?= $column->clickable ? '' : 'nolink' ?> <?= $column->getAlignClass() ?> <?= $column->cssClass ?>">
+        <?php if ($index == 1): ?>
+        <a href="#"
+           data-request="onDomainruleEdit"
+           data-request-data="id: '<?= $record->id ?>'"
+           data-request-update="show_result: '#show_result2'"
+           data-request-loading="#loading"
+        ><?= $this->getColumnValue($record, $column) ?></a>
+        <?php else: ?>
+        <?= $this->getColumnValue($record, $column) ?>
+        <?php endif ?>
+    </td>
+    <?php endforeach ?>
+
+</tr>
+
+
+

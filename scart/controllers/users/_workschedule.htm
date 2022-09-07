@@ -1,0 +1,173 @@
+
+<div class="row p-a">
+
+    <div class="col-xs-12">
+
+        <div class="row" >
+
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                &nbsp;
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Ma
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Di
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Wo
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Do
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Vr
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Za
+            </div>
+            <div class="col-xs-1" style="border-bottom: 1px solid gray">
+                Zo
+            </div>
+            <div class="col-xs-4">
+            </div>
+
+        </div>
+
+        <div class="row ">
+
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left" style="padding-top: 8px">
+                    Working
+                </div>
+            </div>
+            <div class="col-xs-1" >
+                <input type="hidden" name="daynr[]" value="0" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[0][0]) ? 'CHECKED' : '') ?> id="dag_1" name="day[]" value="1" type="checkbox" />
+                    <label class="choice" for="dag_1"></label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="1" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[1][0]) ? 'CHECKED' : '') ?> id="dag_2" name="day[]" value="2" type="checkbox" />
+                    <label class="choice" for="dag_2"></label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="2" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[2][0]) ? 'CHECKED' : '') ?> id="dag_3" name="day[]" value="3" type="checkbox" />
+                    <label class="choice" for="dag_3"> </label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="3" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[3][0]) ? 'CHECKED' : '') ?> id="dag_4" name="day[]" value="4" type="checkbox" />
+                    <label class="choice" for="dag_4"> </label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="4" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[4][0]) ? 'CHECKED' : '') ?> id="dag_5" name="day[]" value="5" type="checkbox" />
+                    <label class="choice" for="dag_5"> </label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="5" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[5][0]) ? 'CHECKED' : '') ?> id="dag_6" name="day[]" value="6" type="checkbox" />
+                    <label class="choice" for="dag_6"> </label>
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <input type="hidden" name="daynr[]" value="6" />
+                <div class="checkbox custom-checkbox">
+                    <input <?= (isset($workschedule[6][0]) ? 'CHECKED' : '') ?> id="dag_7" name="day[]" value="7" type="checkbox" />
+                    <label class="choice" for="dag_7"> </label>
+                </div>
+            </div>
+            <div class="col-xs-4">
+            </div>
+
+        </div>
+
+        <div class="row ">
+
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    Start&nbsp;(hh:mm)
+                </div>
+                <div class="form-group text-field span-left">
+                    End&nbsp;(hh:mm)
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[0][0]) ? $workschedule[0][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[0][1]) ? $workschedule[0][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[1][0]) ? $workschedule[1][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[1][1]) ? $workschedule[1][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[2][0]) ? $workschedule[2][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[2][1]) ? $workschedule[2][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[3][0]) ? $workschedule[3][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[3][1]) ? $workschedule[3][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[4][0]) ? $workschedule[4][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[4][1]) ? $workschedule[4][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[5][0]) ? $workschedule[5][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[5][1]) ? $workschedule[5][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-1">
+                <div class="form-group text-field span-left">
+                    <input name="start[]" type="text" value="<?= (isset($workschedule[6][0]) ? $workschedule[6][0] : '') ?>" size="3" />
+                </div>
+                <div class="form-group text-field span-left">
+                    <input name="end[]" type="text" value="<?= (isset($workschedule[6][1]) ? $workschedule[6][1] : '') ?>" size="3" />
+                </div>
+            </div>
+            <div class="col-xs-4">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+

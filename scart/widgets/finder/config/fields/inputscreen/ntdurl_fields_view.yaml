@@ -1,0 +1,18 @@
+fields:
+    firstseen_at:
+        span: left
+        label: 'First'
+        type: text
+        readOnly: true
+    lastseen_at:
+        span: right
+        label: 'Last'
+        type: text
+        readOnly: true
+    status_code:
+        span: left
+        label: status
+        relation: ntd
+        select: status_code
+        type: text
+        readOnly: true

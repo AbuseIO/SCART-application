@@ -1,0 +1,28 @@
+subject = "Scheduler IMPORT MAILBOX job report"
+==
+<p>Hi,</p>
+
+<p>
+    <strong>Report import mailbox</strong><br />
+    <br />
+
+    {% if reports %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for report in reports %}
+        Process message '{{ report.subject }}' from '{{ report.from }}' received at '{{ report.arrived }}' <br />
+            {% for logline in report.loglines %}
+                - {{ logline }} <br />
+            {% endfor %}
+        <br />
+        {% endfor %}
+    {% endif %}
+
+    <br />
+    Message(s) processed and removed from mailbox.<br />
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

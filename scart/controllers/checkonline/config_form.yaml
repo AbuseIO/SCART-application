@@ -1,0 +1,10 @@
+name: Checkonline
+form: $/abuseio/scart/models/input/fields_view.yaml
+modelClass: abuseio\scart\models\Input
+defaultRedirect: abuseio/scart/checkonline
+create:
+    redirect: 'abuseio/scart/checkonline/update/:id'
+    redirectClose: abuseio/scart/checkonline
+update:
+    redirect: abuseio/scart/checkonline
+    redirectClose: abuseio/scart/checkonline

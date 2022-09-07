@@ -1,0 +1,12 @@
+scopes:
+  source_code:
+    label: 'source'
+    type: group
+    conditions: 'source_code in (:filtered)'
+    modelClass: abuseio\scart\models\Input_source
+    options: getSourceOptions
+  workuser_id:
+    label: 'my work'
+    type: checkbox
+    default: 1
+

@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/whitelist/columns.yaml
+modelClass: abuseio\scart\Models\Whitelist
+title: Whitelist
+noRecordsMessage: 'backend::lang.list.no_records'
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/whitelist/update/:id'

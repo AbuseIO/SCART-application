@@ -1,0 +1,50 @@
+<div id="view_maintenance" style="position: relative; left: -400px; padding-top: 4px; color: red"></div>
+<script type="text/javascript">
+    var int=0;
+    function switchMode() {
+        if ($('#Form-field-Systemconfig-maintenance-mode').is(':checked')) {
+
+            $('#view_maintenance').css('color','red');
+            $('#view_maintenance').html('(schedulers active)');
+            int = setInterval(function() {
+                $.request('onCheckMaintenance',{
+                    'data' : { id: '<?= $formModel->id ?>',setmode: '1' },
+                    'success': function(data) {
+                        console.log(data.result);
+                        if (data.result=='ok') {
+                            $('#view_maintenance').html('(all schedulers on hold)');
+                            $('#view_maintenance').css('color','green');
+                            clearInterval(int);
+                            int = 0;
+                        }
+                    }
+                });
+
+            },2000);
+
+        } else {
+            $('#view_maintenance').html('');
+            if (int != 0) {
+                clearInterval(int);
+                int = 0;
+            }
+            $.request('onCheckMaintenance', {
+                'data': { id: '<?= $formModel->id ?>',setmode: '0'}
+            });
+        }
+    }
+    $(document).ready(function() {
+
+        /**
+         * Check if all scheduler jobs are in maintenance (not active) mode
+         * Show maint
+         */
+
+        switchMode();
+
+        $('#Form-field-Systemconfig-maintenance-mode').change(function() {
+            switchMode();
+        });
+
+    });
+</script>

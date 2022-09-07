@@ -1,0 +1,26 @@
+columns:
+    questiongroup:
+        label: group
+        type: text
+    sortnr:
+        label: sortnr
+        type: text
+        sortable: true
+    type:
+        label: type
+        type: text
+    url_type:
+        label: 'url type'
+        type: text
+    label:
+        label: label
+        type: text
+    name:
+        label: name
+        type: text
+    span:
+        label: span
+        type: text
+    iccam_field:
+        label: 'ICCAM field'
+        type: text

@@ -1,0 +1,61 @@
+<!--https://codepen.io/pranjal-goswami/pen/RNdpOP-->
+
+
+
+
+
+
+
+<link href='//fonts.googleapis.com/css?family=Roboto:200,400,600' rel='stylesheet' type='text/css'>
+<div class="history-tl-container">
+    <ul class="tl">
+
+    <?php
+    $color = 1;
+        foreach ($timeline as $key => $messages)
+        {
+            $cntmessage = count($messages);
+            $cnt = 1;
+            foreach ($messages as $key2 => $message)
+            {
+                $date = explode(' ', $message->time);
+
+                $cssClassColor = $color;
+                $style='';
+                $xrtraclass = '';
+                if (strpos($message->type, 'Inner') !== false) {
+                    $cssClassColor = 'Inner';
+                    $style = 'display:none;';
+
+                    if (isset($message->belongsTo)) {
+                        $xrtraclass = $message->belongsTo;
+                    }
+
+                }
+            ?>
+
+            <li style="<?=$style;?>" class="tl-item <?=($cnt == 1 || $cnt == $cntmessage) ? 'check' : '';?> color<?=$cssClassColor;?> <?=$xrtraclass;?>">
+                <div class="timestamp"><?=$date[0];?><br> <?=$date[1];?></div>
+                <div class="item-title color<?=$cssClassColor;?>"><?=$message->title;?></div>
+                <div class="item-detail"><?=$message->txt;?></div>
+
+                <?php if(isset($message->button)) { ?>
+
+                <div class="showmorebutton" style="cursor: pointer" onclick="$('.<?=$message->type?>').toggle();
+$(this).text($(this).text() == 'more' ? 'close' : 'more')
+
+
+">more</div>
+               <?php }
+                ?>
+
+            </li>
+
+                <?php
+            } // end foreach
+            $color++;
+        } // end foreach
+        ?>
+    </ul>
+
+</div>

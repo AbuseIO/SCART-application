@@ -1,0 +1,27 @@
+subject = "Scheduler CHECK ONLINE job report"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler check-online report:<br />
+    <br />
+
+    {% if job_inputs %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for job_input in job_inputs %}
+            Input filenumber: {{ job_input.filenumber }} <br />
+            - url: {{ job_input.url }} <br />
+            - status: {{ job_input.status }}. <br />
+            <br />
+        {% endfor %}
+
+        <br />
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

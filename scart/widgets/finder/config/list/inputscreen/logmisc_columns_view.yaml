@@ -1,0 +1,24 @@
+columns:
+    updated_at:
+        label: timestamp
+        type: datetime
+        width: 15%
+        clickable: false
+    record_type:
+        label: type
+        type: text
+        width: 10%
+        clickable: false
+    user:
+        label: user
+        type: text
+        relation: user
+        select: login
+        searchable: true
+        width: 10%
+        clickable: false
+    logtext:
+        label: logtext
+        type: text
+        width: 65%
+        clickable: false

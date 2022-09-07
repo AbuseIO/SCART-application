@@ -1,0 +1,26 @@
+
+<div style="margin:15px;">
+    <div class="control-tabs master-tabs" data-control="tab">
+        <ul class="nav nav-tabs">
+
+            <?php if(isset($inputfinderresult)) { ?>
+                 <li class="Inputtabs Input active"><a href="#primaryTabOne">Input <span class="numberCircle"></span></a></li>
+            <?php } if(isset($ntdfinderresult)) { ?>
+            <li class="Inputtabs NTD"><a href="#primaryTabTwo">NTD <span class="numberCircle"></span></a></li>
+            <?php } if(isset($domainrulefinderresult)) { ?>
+            <li class="Inputtabs Domainrule"><a href="#primaryTabthree">Rules <span class="numberCircle"></span></a></li>
+            <?php } ?>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane Input active">
+                <?php if (isset($inputfinderresult)) echo $inputfinderresult->render(); ?>
+            </div>
+            <div class="tab-pane NTD">
+                <?php if (isset($ntdfinderresult)) echo $ntdfinderresult->render(); ?>
+            </div>
+            <div class="tab-pane Domainrule">
+                <?php if (isset($domainrulefinderresult)) echo $domainrulefinderresult->render(); ?>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/importexport_job/columns.yaml
+modelClass: abuseio\scart\models\ImportExport_job
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+title: Exporterrors
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: false
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+#recordUrl: 'abuseio/scart/exporterrors/update/:id'

@@ -1,0 +1,9 @@
+<script type="text/javascript">
+    $(document).ready(function(){
+        <?php if ($btn): ?>
+        setShowHide('<?= $btn ?>');
+        <?php else: ?>
+        setShowHideOff();
+        <?php endif ?>
+    });
+</script>

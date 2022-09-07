@@ -1,0 +1,13 @@
+fields:
+    hotlineid:
+        label: Hotlineid
+        span: left
+        type: number
+    country:
+        label: Country
+        span: left
+        type: text
+    country_code:
+        label: Country_code
+        span: auto
+        type: text

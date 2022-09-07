@@ -1,0 +1,31 @@
+subject = "Abuse contact (emailaddress) filled by analyzer"
+==
+<p>Hi,</p>
+
+<p><strong>
+    The SCART analyzer has set (filled) abusecontact email(s).
+</strong></p>
+
+<p>
+    {% if new_abuses %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for new_abuse in new_abuses %}
+            Abuse owner: {{ new_abuse.abuseowner }} <br />
+            - based on WhoIs type: {{new_abuse.whois_type}} <br />
+            - email set on: {{ new_abuse.abusecontact }} <br />
+            - country: {{ new_abuse.abusecountry }} <br />
+            <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Please verify if correct. The abuse emailaddresses will be used when a NTD is send.
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

@@ -1,0 +1,10 @@
+columns:
+    id:
+        label: id
+        type: number
+        align: left
+        width: 100px;
+    email:
+        label: email
+        type: text
+

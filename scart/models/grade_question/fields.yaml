@@ -1,0 +1,72 @@
+fields:
+    questiongroup:
+        label: group
+        type: dropdown
+        required: 1
+        span: left
+    sortnr:
+        label: sort
+        required: 1
+        span: storm
+        default: '1'
+        cssClass: p-l-lg col-sm-1
+        type: number
+    type:
+        label: 'type'
+        required: 1
+        span: left
+        showSearch: true
+        type: dropdown
+    url_type:
+        label: 'URL type'
+        required: false
+        span: right
+        showSearch: true
+        type: dropdown
+    label:
+        label: label
+        required: 1
+        span: left
+        type: text
+    span:
+        label: span
+        required: 1
+        options:
+            full: full
+            right: right
+            left: left
+        span: auto
+        type: dropdown
+    section:
+        label: "New section"
+        type: section
+    name:
+        label: name
+        required: 1
+        span: left
+        type: text
+    iccam_field:
+        label: 'ICCAM field'
+        required: false
+        span: right
+        type: dropdown
+        trigger:
+            action: hide
+            field: type
+            condition:
+                value[section]
+
+tabs:
+    fields:
+        options:
+            span: full
+            path: question_options
+            context: update
+            type: partial
+            tab: Options
+            dependsOn: iccam_field
+            trigger:
+                action: hide
+                field: type
+                condition:
+                    value[section]

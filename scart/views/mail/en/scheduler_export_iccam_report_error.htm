@@ -1,0 +1,27 @@
+subject = "Warning: ICCAM EXPORT report error"
+==
+<p>Hi,</p>
+
+<p>
+    <strong>Error(s) exporting report(s) to ICCAM</strong><br />
+    <br />
+    {% if reports %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for report in reports %}
+            Filenumber: {{ report.filenumber }}  <br />
+            - url: {{ report.url }} <br />
+            - cannot export to ICCAM <br />
+        <br />
+        {% endfor %}
+    {% endif %}
+</p>
+
+<p>
+    May be url(s) is/are already exported?
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

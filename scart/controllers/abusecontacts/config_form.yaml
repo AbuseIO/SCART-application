@@ -1,0 +1,11 @@
+name: Abusecontacts
+modelClass: abuseio\scart\models\Abusecontact
+form: $/abuseio/scart/models/abusecontact/fields.yaml
+defaultRedirect: abuseio/scart/abusecontacts
+create:
+    redirect: 'abuseio/scart/abusecontacts/update/:id'
+    redirectClose: abuseio/scart/abusecontacts
+update:
+    redirect: abuseio/scart/abusecontacts
+    redirectClose: abuseio/scart/abusecontacts
+preview: {  }

@@ -1,0 +1,6 @@
+name: Manual
+form: $/abuseio/scart/models/manual/fields_readonly.yaml
+modelClass: abuseio\scart\models\Manual
+defaultRedirect: abuseio/scart/manual
+preview:
+  title: View manual

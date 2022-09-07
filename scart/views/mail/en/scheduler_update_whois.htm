@@ -1,0 +1,25 @@
+subject = "Scheduler UPDATE WHOIS job report"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler Update WHOIS report:<br />
+    <br />
+
+    {% if job_records %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for job_record in job_records %}
+            Domain rule type '{{job_record.type_code}}' for domain '{{job_record.domain}}'<br />
+            - {{ job_record.message }} <br />
+            <br />
+        {% endfor %}
+        <br />
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

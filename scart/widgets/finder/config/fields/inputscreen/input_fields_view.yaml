@@ -1,0 +1,38 @@
+fields:
+    url:
+        label: 'url'
+        span: full
+        readOnly: true
+    url_type:
+        label: 'type'
+        span: left
+        type: text
+        readOnly: true
+    received_at:
+        label: 'received'
+        span: right
+        type: text
+        readOnly: true
+    filenumber:
+        label: 'filenumber'
+        span: left
+        readOnly: true
+        required: false
+    reference:
+        label: 'external reference'
+        span: right
+        readOnly: true
+    source_code:
+        label: 'source'
+        span: left
+        readOnly: true
+        required: false
+    delivered_items:
+        label: 'items'
+        span: right
+        readOnly: true
+        trigger:
+            action: show
+            field: url_type
+            condition: value[mainurl]
+

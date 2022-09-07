@@ -1,0 +1,19 @@
+<!--<a class="btn btn-default btn-sm" href="<?= $downloadfile ?>" target="_blank">Download file <?= $downloadname ?></a>-->
+
+<button
+        type="button"
+        data-request="onDownload"
+        data-request-data="record_id: '<?= $recordId; ?>' "
+        data-request-update="show_result: '#show_result'"
+        class="btn btn-default btn-sm oc-icon-download"
+><?= e(trans('abuseio.scart::lang.button.download_report')) ?></button>
+&nbsp;&nbsp;&nbsp;
+<button
+        type="button"
+        data-request="onRecreate"
+        data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.reset_recreate')) ?>"
+        data-request-data="record_id: '<?= $recordId; ?>' "
+        data-request-update="show_result: '#show_result'"
+        class="btn btn-default btn-sm oc-icon-refresh"
+><?= e(trans('abuseio.scart::lang.button.recreate')) ?></button>
+

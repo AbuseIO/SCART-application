@@ -1,0 +1,10 @@
+name: Users
+form: $/abuseio/scart/models/user/fields.yaml
+modelClass: abuseio\scart\models\User
+defaultRedirect: abuseio/scart/users
+create:
+    redirect: 'abuseio/scart/users/update/:id'
+    redirectClose: abuseio/scart/users
+update:
+    redirect: abuseio/scart/users
+    redirectClose: abuseio/scart/users

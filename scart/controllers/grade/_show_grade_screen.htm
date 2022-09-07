@@ -1,0 +1,53 @@
+<div >
+
+    <div id="idInputArea">
+        <?= $inputtxt ?>
+    </div>
+
+    <div id="idImageScrollArea" class="row " style="height: 600px; overflow-y: scroll; overflow-x: hidden;">
+        <div class="col-xs-12">
+            <?= $imagestxt ?>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function copyClipboard(id) {
+            var text = document.getElementById(id);
+            text.select();
+            text.setSelectionRange(0, 99999); /*For mobile devices*/
+            /* Copy the text inside the text field */
+            document.execCommand("copy");
+            $.oc.flashMsg({
+                'text': 'Url copied',
+                'class': 'success',
+                'interval': 3
+            })
+        }
+        // lazyloading variabelen
+        var lastLoading = '<?= $imagelastloaded ?>';
+        var scrollTop = <?= $scrollTop ?>;
+
+
+        var scrollTopStep = 250;
+        var scrollTopTrigger = 1000;
+        $(document).ready(function() {
+            $("#idImageScrollArea").height($('#layout-body').height() - $('#idInputArea').height() - 5);
+            $("#idImageScrollArea").scrollTop(<?= $scrollTop ?>);
+            $("#idImageScrollArea").scroll(function (evt) {
+                var top = $("#idImageScrollArea").scrollTop();
+                //$('#input_grade_code').text('scrollTop=' + top + ', scrollTopTrigger=' + scrollTopTrigger + ', lastid=' + lastLoading_id);
+                if (top > scrollTopTrigger) {
+                    $.request('onScrollNext',{
+                        update: { show_result: '#show_result' },
+                        data: { lastLoading: lastLoading }
+                    });
+                    scrollTopTrigger += scrollTopStep;
+                }
+            });
+        });
+
+    </script>
+
+    <!-- general result js -->
+    <div id="show_result"></div>
+
+</div>

@@ -1,0 +1,23 @@
+<div data-control="toolbar">
+    <a
+        href="<?= Backend::url('abuseio/scart/ntds/export') ?>"
+        class="btn btn-primary oc-icon-download">
+        Export
+    </a>
+    <button
+            class="btn btn-default oc-icon-check-square"
+            disabled="disabled"
+            onclick="$(this).data('request-data', {
+                checked: $('.control-list').listWidget('getChecked'),
+            })"
+            data-request="onSelectedClose"
+            data-trigger-action="enable"
+            data-trigger=".control-list input[type=checkbox]"
+            data-trigger-condition="checked"
+            data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.close_selected')) ?>"
+            data-request-success="$(this).prop('disabled', true)"
+            data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.close_selected')) ?>
+    </button>
+
+</div>

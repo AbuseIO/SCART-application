@@ -1,0 +1,24 @@
+subject = "This senders (mail adresses) are not found at the whitelist"
+
+==
+<p>Hi,</p>
+
+<p><strong>
+    This senders (mail adresses) are not found at the whitelist.
+</strong></p>
+
+<p>
+    {% if not_founds %}
+        (number of not found email adresses at the whitelist: {{ records_count }}) <br />
+        <br />
+        {% for not_found in not_founds %}
+             - Message '{{ not_found.subject }}' from '{{ not_found.from }}' arrived at '{{ not_found.date }}' with {{ not_found.bodylines }} bodylines<br /> <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

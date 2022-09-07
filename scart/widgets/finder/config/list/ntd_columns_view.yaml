@@ -1,0 +1,39 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        width: 5%
+    status_code:
+        label: status
+        type: text
+        width: 8%
+    status_time:
+        label: 'status time'
+        type: text
+        width: 20%
+    contact:
+        label: 'abuse e-mail'
+        relation: abusecontact
+        select: abusecustom
+        type: text
+        readOnly: true
+        width: 10%
+        clickable: false
+    msg_subject:
+        label: subject
+        readOnly: 1
+        type: text
+        clickable: false
+        searchable: true
+#    record_type:
+#        relation: ntd_urls
+#        select: record_type
+#        label: type
+#        type: text
+#        width: 10%
+#    url:
+#        relation: ntd_urls
+#        select: url
+#        label: url
+#        type: text
+#        width: 50%

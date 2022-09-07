@@ -1,0 +1,18 @@
+<?php
+
+$id = $record->abusecontact->ntd_template_id;
+$template = abuseio\scart\models\Ntd_template::find($id);
+if(!empty($template)) {
+?>
+
+<div>
+    Title : <?=$template->title;?>
+</div>
+
+<div>
+    Body :  <span class="text-muted"><small><?=$template->body;?></small></span>
+</div>
+
+<?php
+}
+?>

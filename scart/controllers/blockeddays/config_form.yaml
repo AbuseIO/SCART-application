@@ -1,0 +1,10 @@
+name: Blockeddays
+form: $/abuseio/scart/models/blockedday/fields.yaml
+modelClass: abuseio\scart\models\Blockedday
+defaultRedirect: abuseio/scart/blockeddays
+create:
+    redirect: 'abuseio/scart/blockeddays/update/:id'
+    redirectClose: abuseio/scart/blockeddays
+update:
+    redirect: abuseio/scart/blockeddays
+    redirectClose: abuseio/scart/blockeddays

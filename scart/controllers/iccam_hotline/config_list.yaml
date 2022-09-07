@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/iccam_hotline/columns.yaml
+modelClass: abuseio\scart\models\Iccam_hotline
+title: Iccam_hotline
+noRecordsMessage: 'backend::lang.list.no_records'
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/iccam_hotline/update/:id'

@@ -1,0 +1,8 @@
+export:
+  useList: true
+
+defaultFormatOptions:
+  delimiter: ';'
+  enclosure: '"'
+  escape: '\'
+  encoding: 'utf-8'

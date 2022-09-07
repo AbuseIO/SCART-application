@@ -1,0 +1,13 @@
+fields:
+    action:
+        label: action
+        span: auto
+        type: text
+    status:
+        label: status
+        span: auto
+        type: text
+    status_text:
+        label: 'status text'
+        span: auto
+        type: text

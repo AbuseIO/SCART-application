@@ -1,0 +1,37 @@
+subject = "Scheduler CLEANUP job report"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler cleanup report:<br />
+    <br />
+
+    {% if job_inputs %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for job_input in job_inputs %}
+            Input filenumber: {{ job_input.filenumber }} <br />
+            - url: {{ job_input.url }} <br />
+            - status: {{ job_input.status }}. <br />
+            <br />
+        {% endfor %}
+
+        <br />
+    {% endif %}
+
+    {% if scrapecleaned %}
+        {{scrapecleaned}} records scrape cache cleaned.
+        <br />
+    {% endif %}
+
+    {% if cleanlog %}
+        Systemlog purged
+    <br />
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

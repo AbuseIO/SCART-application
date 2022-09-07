@@ -1,0 +1,10 @@
+name: Iccam_hotline
+form: $/abuseio/scart/models/iccam_hotline/fields.yaml
+modelClass: abuseio\scart\models\Iccam_hotline
+defaultRedirect: abuseio/scart/iccam_hotline
+create:
+    redirect: 'abuseio/scart/iccam_hotline/update/:id'
+    redirectClose: abuseio/scart/iccam_hotline
+update:
+    redirect: abuseio/scart/iccam_hotline
+    redirectClose: abuseio/scart/iccam_hotline

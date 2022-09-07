@@ -1,0 +1,25 @@
+fields:
+    filenumber:
+        label: 'internal reference'
+        span: left
+        type: text
+        readOnly: true
+    source_code:
+        label: source
+        span: left
+        type: dropdown
+    type_code:
+        label: type
+        span: right
+        required: 1
+        type: dropdown
+    note:
+        label: 'Note (ICCAM memo)'
+        size: large
+        span: full
+        type: textarea
+    ntd_note:
+        label: 'NTD Note (memo url in NTD)'
+        size: small
+        span: full
+        type: textarea

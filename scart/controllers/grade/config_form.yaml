@@ -1,0 +1,3 @@
+name: Classify
+form: $/abuseio/scart/models/input/fields_gradedummy.yaml
+modelClass: abuseio\scart\models\Input

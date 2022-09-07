@@ -1,0 +1,41 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        searchable: true
+    owner:
+        label: owner
+        type: text
+        searchable: true
+        sortable: true
+    aliases:
+        label: aliases
+        type: text
+        searchable: true
+        sortable: true
+    abusecustom:
+        label: 'abuse email'
+        type: text
+        searchable: true
+        sortable: true
+    abusecountry:
+        label: 'abuse country'
+        type: text
+        searchable: true
+        sortable: true
+    ntd_type:
+        label: 'NTD type'
+        type: text
+        searchable: true
+        sortable: true
+    gdpr_approved:
+        label: 'GDPR approved'
+        type: switch
+        searchable: true
+        sortable: true
+    police_contact:
+        label: 'Police contact'
+        type: switch
+        searchable: true
+        sortable: true
+

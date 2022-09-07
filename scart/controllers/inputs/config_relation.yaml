@@ -1,0 +1,30 @@
+logs:
+  label: log
+  modelClass: abuseio\scart\models\Log
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/log/columns.yaml
+    showSorting: false
+    recordsPerPage: 5
+history:
+    label: history
+    modelClass: abuseio\scart\models\Input_history
+    readOnly: true
+    view:
+        list: $/abuseio/scart/models/input_history/columns.yaml
+        showSorting: false
+        recordsPerPage: 5
+items:
+  label: items
+  modelClass: abuseio\scart\models\Input
+  readOnly: false
+  view:
+    list: $/abuseio/scart/models/input/columns_items.yaml
+    showCheckboxes: false
+    toolbarButtons: create
+    showSorting: false
+    showSearching: true
+    recordsPerPage: 5
+  manage:
+    form: $/abuseio/scart/models/input/fields_items.yaml
+    list: $/abuseio/scart/models/input/columns_items.yaml

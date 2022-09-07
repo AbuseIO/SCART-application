@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/manual/columns_readonly.yaml
+modelClass: abuseio\scart\models\Manual
+title: Manual
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: false
+showCheckboxes: false
+showSorting: true
+defaultSort: chapter
+recordsPerPage: 30
+toolbar:
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/manual/preview/:id'

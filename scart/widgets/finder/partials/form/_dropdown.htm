@@ -1,0 +1,20 @@
+
+
+<!-- Drop down -->
+<div class="form-group dropdown-field span-center">
+    <label>Type</label>
+    <select class="form-control custom-select" name="typeTable">
+
+        <?php foreach($types as $key => $name) {
+        if($name == 'Input') { ?>
+        <option selected="selected" value="<?=$key;?>"><?=$name;?></option>
+        <?php
+        continue; } // end if
+        ?>
+        <option value="<?=$key;?>"><?=$name;?></option>
+        <?php } ?>
+
+    </select>
+</div>
+
+

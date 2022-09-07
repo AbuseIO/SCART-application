@@ -1,0 +1,242 @@
+
+<?php if ($rowfirst): ?>
+<div class="row">
+    <?php endif ?>
+
+    <?php if ($coladdnum == 0): ?>
+    <div class="col-lg-<?= $colspan ?> p-t p-r" style="display: table-cell; vertical-align: top; " >
+
+        <div class="row table-bordered" >
+
+            <div class="col-xs-12 <?= ($url_type=='mainurl') ? 'grade-mainurl-background' : '' ?>">
+
+                <div class="row " id="<?= $hash . '_rowheader'; ?>" >
+
+                    <div class="col-xs-12 p-l-0 text-left grade-image-header">
+                        <button
+                            id="idButtonSELECT<?= $hash; ?>"
+                            type="button"
+                            data-request="onImageSelect"
+                            data-request-data="record_id: '<?= $record_id; ?>' "
+                            data-request-update="show_result: '#show_result'"
+                            class="btn btn-default btn-sm icon-square-o ert-analyze-disable"
+                        ></button>
+                        <input id="<?= $hash . '_src'; ?>" title="<?= $url ?>" size="70" class="grade-image-header" value="<?= $imgtitle ?>" />
+                        <span class="icon-clone" title="copy url" style="cursor: pointer" onclick="copyClipboard('<?= $hash ?>' +'_src');"></span>
+                        <script type="text/javascript">
+                            $(document).ready(function() {
+                                var w = $('#<?= $hash . '_rowheader' ?>').width() - 95;
+                                $('#<?= $hash . '_src' ?>').width(w);
+                            });
+                        </script>
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 p-a-0" style="height: <?= $boxheightsize ?>px;" >
+                        <div class="control-tabs content-tabs" data-control="tab">
+                            <ul class="nav nav-tabs" >
+                                <li class="active"><a href="#contentTabOne"><?= e(trans('abuseio.scart::lang.head.'.$tabtype)) ?></a></li>
+                                <li><a href="#contentTabThree"><?= e(trans('abuseio.scart::lang.head.INFO')) ?></a></li>
+                                <?php if (count($extra) > 0): ?>
+                                <li><a href="#contentTabThree"><?= e(trans('abuseio.scart::lang.head.EXTRA')) ?></a></li>
+                                <?php endif ?>
+                            </ul>
+                            <div class="tab-content" style="padding: 5px;">
+                                <div class="tab-pane active" >
+                                    <div class="row " style="">
+                                        <div class="col-xs-12 align-center" style="display: table-cell; width: 100%; text-align: center; vertical-align: middle">
+                                            <a style="cursor: zoom-in" data-toggle="modal" data-size="large" href="#notificationImage<?= $hash; ?>"><img id="notImgSrc<?= $hash; ?>" src="<?= $src ?>" style="display: inline; border: 2px solid black; " <?= $imgsize ?> /></a>
+                                            <?php if ($hashcheck_return): ?>
+                                            <span class="icon-exclamation-triangle" title="<?= e(trans('abuseio.scart::lang.text.found_hash')) ?>" data-toggle="tooltip" data-placement="right" data-delay="150" style="color: red;">&nbsp;</span>
+                                            <?php endif ?>
+                                            <?php if ($proxy_call_error): ?>
+                                            <span class="icon-exclamation-triangle" title="<?= e(trans('abuseio.scart::lang.text.proxy_error')) ?> <?php echo $proxy_call_error ?>" data-toggle="tooltip" data-placement="right" data-delay="150" style="color: #FDA43A;">&nbsp;</span>
+                                            <?php endif ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane" style="padding: 5px;">
+                                    <?php foreach ($info AS $field) { ?>
+                                    <div class="row">
+                                        <div class="col-xs-2">
+                                            <?= $field['label'] ?>
+                                        </div>
+                                        <div class="col-xs-10" >
+                                            : <input style="" id="<?= $hash . '_' . $field['name']; ?>" readonly size="<?= $txtsize ?>" value="<?= $field['value'] ?>" class="grade-image-field-view <?= (($field['mark']) ? 'grade-image-field-mark' : '') ?>" />
+                                        </div>
+                                    </div>
+                                    <?php } ?>
+                                </div>
+                                <?php if (count($extra) > 0): ?>
+                                <div class="tab-pane" style="padding: 5px; overflow-y: auto; overflow-x:hidden; height: <?= $extraheight ?>px;" >
+                                    <?php foreach ($extra AS $field) { ?>
+                                    <div class="row">
+                                        <div class="col-xs-9">
+                                            <?= $field['label'] ?>
+                                        </div>
+                                        <div class="col-xs-3" >
+                                            : <input style="" id="<?= $hash . '_' . $field['name']; ?>" readonly size="3" value="<?= $field['value'] ?>" class="grade-image-field-view <?= (($field['mark']) ? 'grade-image-field-mark' : '') ?>" />
+                                        </div>
+                                    </div>
+                                    <?php } ?>
+                                </div>
+                                <?php endif ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-xs-12 p-a-0 text-center">
+
+
+                        <button
+                            id="idButtonPOLICE<?= $hash; ?>"
+                            type="button"
+                            data-control="popup"
+                            data-handler="onImagePolice"
+                            data-extra-data="record_id: '<?= $record_id; ?>' "
+                            data-size="giant"
+                            data-toggle="tooltip"
+                            title="<?= e(trans('abuseio.scart::lang.button.police')) ?>"
+                            class="btn btn-sm btn-default icon-user-secret icon-2x ert-analyze-disable">
+                        </button>
+                        <button
+                            id="idButtonMANUAL<?= $hash; ?>"
+                            type="button"
+                            data-request-update="show_result: '#show_result'"
+                            data-request="onManualCheck"
+                            data-request-data="record_id: '<?= $record_id; ?>' "
+                            data-request-loading="#loading_input"
+                            data-toggle="tooltip"
+                            title="<?= e(trans('abuseio.scart::lang.button.manual')) ?>"
+                            class="btn btn-default btn-sm icon-television icon-2x ert-analyze-disable">
+                        </button>
+                        <button
+                            id="idButtonYES<?= $hash; ?>"
+                            type="button"
+                            data-control="popup"
+                            data-handler="onImageIllegal"
+                            data-type="questions"
+                            data-extra-data="record_id: '<?= $record_id; ?>' "
+                            data-size="giant"
+                            data-recordid=<?=$record_id; ?>
+                            class="btn btn-sm btn-default icon-ban icon-2x ert-analyze-disable popoverbutton btn_<?=$record_id; ?>">
+                        </button>
+                        <button
+                            id="idButtonIGNORE<?= $hash; ?>"
+                            type="button"
+                            data-request-update="show_result: '#show_result'"
+                            data-request="onImageIgnore"
+                            data-request-data="record_id: '<?= $record_id; ?>' "
+                            data-request-loading="#loading_input"
+                            data-toggle="tooltip"
+                            title="<?= e(trans('abuseio.scart::lang.button.ignore')) ?>"
+                            class="btn btn-sm btn-default icon-eye-slash icon-2x ert-analyze-disable">
+                        </button>
+                        <button
+                            id="idButtonNO<?= $hash; ?>"
+                            type="button"
+                            data-control="popup"
+                            data-handler="onImageNotIllegal"
+                            data-extra-data="record_id: '<?= $record_id; ?>' "
+                            data-size="giant"
+                            data-toggle="tooltip"
+                            title="<?= e(trans('abuseio.scart::lang.button.not_illegal')) ?>"
+                            class="btn btn-sm btn-default icon-check icon-2x ert-analyze-disable">
+                        </button>
+
+                        <button type="button"
+                                data-control="popup"
+                                data-handler="onInputEdit"
+                                data-extra-data="record_id: '<?= $record_id; ?>' "
+                                data-type="input"
+                                data-size="giant"
+                                data-toggle="tooltip"
+                                id="idButtonNote<?= $hash; ?>"
+                                data-recordid=<?=$record_id; ?>
+                            title="<?= e(trans('abuseio.scart::lang.button.edit')) ?>"
+                            class="btn btn-default btn-sm <?= $cssnote ?> icon-edit icon-2x  ert-analyze-disable popoverbutton btn_<?=$record_id; ?>">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-popup modal fade large" id="notificationImage<?= $hash; ?>">
+            <a href="#" style="cursor: zoom-out" data-dismiss="modal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <br />
+                            <img id="notImgBigSrc<?= $hash; ?>" style="border: 1px solid black; " src="<?= $src ?>" <?= $imgbigsize ?> /><br />
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="control-popup modal fade large" id="ImageWhoisRaw<?= $hash; ?>">
+            <div class="modal-dialog">
+                <div class="modal-content text-left">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">WhoIs information '<?= $info[0]['value'] ?>'</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="<?= $hash . '_whoisraw'; ?>"><?= $imagewhoisraw ?></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            function setButtonPrimary<?= $hash; ?>(but,yesno,bgclass) {
+                if (yesno) {
+                    $('#idButton'+but+'<?= $hash; ?>').removeClass('grade_button_notset').addClass(bgclass);
+                } else {
+                    $('#idButton'+but+'<?= $hash; ?>').removeClass(bgclass).addClass('grade_button_notset');
+                }
+            }
+            function setButtonSelect<?= $hash; ?>(but,yesno) {
+                if (yesno) {
+                    $('#idButton'+but+'<?= $hash; ?>').removeClass('icon-square-o').addClass('icon-check-square-o');
+                } else {
+                    $('#idButton'+but+'<?= $hash; ?>').removeClass('icon-check-square-o').addClass('icon-square-o');
+                }
+            }
+            function setButtonPolice<?= $hash; ?>(isactive) {
+                if (isactive) {
+                    $('#idButtonPOLICE<?= $hash; ?>').addClass('grade_button_police');
+                } else {
+                    $('#idButtonPOLICE<?= $hash; ?>').removeClass('grade_button_police');
+                }
+                $('#idButtonPOLICE<?= $hash; ?>').blur();
+            }
+            function setButtonManual<?= $hash; ?>(isactive) {
+                if (isactive) {
+                    $('#idButtonMANUAL<?= $hash; ?>').addClass('grade_button_manual');
+                } else {
+                    $('#idButtonMANUAL<?= $hash; ?>').removeClass('grade_button_manual');
+                }
+                $('#idButtonMANUAL<?= $hash; ?>').blur();
+            }
+        </script>
+        <?= $js_result ?>
+
+    </div>
+    <?php else: ?>
+    <div class="col-lg-<?= $coladdnum ?> p-a">&nbsp;</div>
+    <?php endif ?>
+
+    <?php if ($rowlast): ?>
+</div>
+<?php endif ?>

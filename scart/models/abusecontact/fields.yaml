@@ -1,0 +1,115 @@
+fields:
+    owner:
+        label: 'owner name'
+        span: left
+        required: 1
+        type: text
+    filenumber:
+        label: 'internal reference'
+        span: right
+        cssClass: w-150
+        readOnly: true
+        type: text
+    aliases:
+        label: aliases
+        mode: array
+        separator: comma
+        customTags: true
+        useKey: false
+        span: full
+        type: taglist
+    abusecustom:
+        label: 'abuse email address'
+        span: left
+        required: 1
+        type: text
+    abusecountry:
+        label: 'host/registrar country'
+        required: 1
+        type: text
+        span: right
+        comment: 'Use country codes; for example NL for Netherlands'
+    gdpr_approved:
+        label: 'GDPR approved'
+        type: checkbox
+        default: false
+        span: left
+        comment: 'Comment: if not checked then NO NTD will be sent'
+    police_contact:
+        label: 'Police contact'
+        type: checkbox
+        default: false
+        span: right
+        comment: 'Comment: if checked then this abusecontact is a police contact'
+tabs:
+    fields:
+        ntd_type:
+            label: 'Type'
+            options:
+                email: email
+                api: api
+            default: email
+            span: left
+            type: radio
+            cssClass: 'inline-options'
+            tab: NTD
+        ntd_api_addon_id:
+            label: 'API definition'
+            span: left
+            type: dropdown
+            tab: NTD
+            trigger:
+                action: show
+                field: ntd_type
+                condition:
+                    value[api]
+        ntd_template_id:
+            label: Template
+            span: left
+            type: dropdown
+            tab: NTD
+            trigger:
+                action: show
+                field: ntd_type
+                condition:
+                    value[email]
+        ntd_msg_subject:
+            label: 'subject (custom)'
+            type: text
+            span: full
+            tab: NTD
+            trigger:
+                action: show
+                field: ntd_type
+                condition:
+                    value[email]
+        ntd_msg_body:
+            label: 'body (custom)'
+            size: large
+            span: full
+            type: richeditor
+            tab: NTD
+            toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+            trigger:
+                action: show
+                field: ntd_type
+                condition:
+                    value[email]
+        Note:
+            tab: Notes
+            size: small
+            span: full
+            type: richeditor
+            toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+        whoiss:
+            tab: WhoIs
+            span: full
+            path: input_whois
+            context: update
+            type: partial
+        loglist:
+            tab: Logging
+            span: full
+            path: input_logs
+            context: update
+            type: partial

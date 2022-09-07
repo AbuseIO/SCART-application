@@ -1,0 +1,10 @@
+name: Whois_cache
+form: $/abuseio/scart/models/whois_cache/fields.yaml
+modelClass: abuseio\scart\models\Whois_cache
+defaultRedirect: abuseio/scart/whois_cache
+create:
+    redirect: 'abuseio/scart/whois_cache/update/:id'
+    redirectClose: abuseio/scart/whois_cache
+update:
+    redirect: abuseio/scart/whois_cache
+    redirectClose: abuseio/scart/whois_cache

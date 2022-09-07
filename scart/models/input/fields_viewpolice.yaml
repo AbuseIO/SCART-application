@@ -1,0 +1,92 @@
+fields:
+    url:
+        label: url
+        span: left
+        type: text
+        readOnly: true
+    filenumber:
+        label: 'internal reference'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: p-l-lg col-sm-3
+    reference:
+        label: 'external reference'
+        span: storm
+        readOnly: true
+        required: 0
+        type: text
+        cssClass: col-sm-3
+    url_host:
+        label: host
+        span: left
+        type: text
+        readOnly: true
+    url_ip:
+        label: IP
+        span: right
+        type: text
+        readOnly: true
+    status_code:
+        label: status
+        span: left
+        required: true
+        type: dropdown
+        readOnly: true
+    grade_code:
+        label: classification
+        span: right
+        required: true
+        type: dropdown
+        readOnly: true
+    host_abusecontact_id:
+        label: Hoster
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Hoster
+        prompt: Click the %s button to find hoster
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        readOnly: true
+    registrar_abusecontact_id:
+        label: Registrar
+        type: recordfinder
+        span: right
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Registrar
+        prompt: Click the %s button to find registrar
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        readOnly: true
+    police_reason:
+        label: Reason
+        span: full
+        type: text
+        readOnly: true
+tabs:
+    fields:
+        logs:
+            span: full
+            path: input_logs
+            context: preview
+            type: partial
+            tab: Logging
+            readOnly: true
+        history:
+            span: full
+            path: input_history
+            context: preview
+            type: partial
+            tab: History
+            readOnly: true

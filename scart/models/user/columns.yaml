@@ -1,0 +1,36 @@
+columns:
+    first_name:
+        label: 'first name'
+        type: text
+        relation: be_user
+        select: first_name
+        searchable: true
+        sortable: true
+    last_name:
+        label: 'last name'
+        type: text
+        relation: be_user
+        select: last_name
+        searchable: true
+        sortable: true
+    be_role:
+        label: role
+        type: text
+        relation: be_role
+        select: description
+        searchable: true
+    email:
+        label: email
+        type: text
+        relation: be_user
+        select: email
+        searchable: true
+    last_login:
+        label: last login
+        type: datetime
+        relation: be_user
+        select: last_login
+        searchable: true
+    disabled:
+        label: disabled
+        type: switch

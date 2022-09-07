@@ -1,0 +1,45 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        searchable: true
+    abusecontact:
+        label: abusecontact
+        type: text
+        relation: abusecontact
+        select: owner
+        searchable: true
+    abusecontact_type:
+        label: 'type'
+        type: text
+        searchable: true
+    status_code:
+        label: status
+        type: text
+        searchable: true
+    status_time:
+        label: 'status time'
+        searchable: true
+        type: datetime
+    number_urls:
+        label: 'number of urls'
+        type: text
+        relation: ntd_urls
+        useRelationCount: true
+    groupby_start:
+        label: start
+        type: datetime
+        searchable: true
+    groupby_hour_count:
+        label: active (hours)
+        type: text
+        searchable: true
+    groupby_hour_threshold:
+        label: threshold (hours)
+        type: text
+        searchable: true
+    msg_queued:
+        label: NTD sent
+        type: datetime
+        searchable: true
+

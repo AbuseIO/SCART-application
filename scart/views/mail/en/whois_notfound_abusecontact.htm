@@ -1,0 +1,29 @@
+subject = "WhoIs information cannot be found"
+==
+<p>Hi,</p>
+
+<p><strong>
+    SCART cannot find WhoIs (abusecontact) information.
+</strong></p>
+
+<p>
+    {% if not_founds %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for not_found in not_founds %}
+            Record filenumber {{ not_found.filenumber }} <br />
+            - url: {{ not_found.url }} <br />
+            <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Online check and sending NTD for url(s) is stopped.
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

@@ -1,0 +1,18 @@
+<?php
+if (isset($ScartFinderTab) && count($ScartFinderTab) > 0) { $classTab = $classValue = 'active';
+?>
+<div class="control-tabs primary-tabs" data-control="tab">
+    <ul class="nav nav-tabs">
+        <?php foreach($ScartFinderTab as $key => $value) {?>
+        <li class="<?=$classTab;?>"><a href=""><?=$key;?></a></li>
+      <?php $classTab = ''; }?>
+    </ul>
+    <div class="tab-content">
+        <?php foreach($ScartFinderTab as $key => $value) { ?>
+        <div class="tab-pane <?=$classValue;?>">
+            <?=$value;?>
+        </div>
+        <?php $classValue = '';} ?>
+    </div>
+</div>
+<?php }?>

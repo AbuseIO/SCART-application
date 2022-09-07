@@ -1,0 +1,13 @@
+columns:
+    title:
+        label: title
+        type: text
+    subject:
+        label: subject
+        type: text
+    csv_attachment:
+        label: CSV attachment
+        type: switch
+    updated_at:
+        label: updated_at
+        type: datetime

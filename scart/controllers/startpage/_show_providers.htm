@@ -1,0 +1,53 @@
+<div class="col-xs-12" >
+    <h3>
+        <a href="<?= Backend::url('abuseio/scart/Startpage') ?>" >Back to Dashboard</a>
+    </h3>
+</div>
+
+
+<div class="row" style="margin-left: 10px;">
+
+<div class="col-xs-3">
+    <h3>Total Top-10 hosters </h3>
+    <div class="scoreboard-item control-chart centered wrap-legend"
+         data-control="chart-pie"
+         data-size="100"
+    >
+        <ul>
+            <?php foreach ($providers AS $provider) { ?>
+            <li><?= $provider['name'] ?><span><?= $provider['illegal'] ?></span></li>
+            <?php } ?>
+        </ul>
+    </div>
+</div>
+
+<div class="col-xs-9" >
+
+    <div class="row">
+
+        <?php foreach ($years AS $year) { ?>
+
+        <div class="col-xs-3">
+
+            <h3>Top-10 hosters <?= $year ?> </h3>
+            <div class="scoreboard-item control-chart centered wrap-legend"
+                 data-control="chart-pie"
+                 data-size="100"
+            >
+                <ul>
+                    <?php
+                $providersyear = 'providers'.$year;
+                foreach ($$providersyear AS $provider) { ?>
+                    <li><?= $provider['name'] ?><span><?= $provider['illegal'] ?></span></li>
+                    <?php } ?>
+                </ul>
+            </div>
+
+        </div>
+
+        <?php } ?>
+
+    </div>
+
+</div>
+

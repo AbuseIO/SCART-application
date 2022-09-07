@@ -1,0 +1,21 @@
+items:
+  label: items
+  modelClass: abuseio\scart\models\Input
+  readOnly: false
+  view:
+    list: $/abuseio/scart/models/input/columns_items.yaml
+    showCheckboxes: false
+    showSorting: false
+    showSearching: false
+    recordsPerPage: 10
+  toolbar:
+   buttons: list_notifications_toolbar
+   search:
+    prompt: Search
+
+abusecontacts:
+  label: abusecontacts
+  modelClass: abuseio\scart\models\Abusecontact
+  readOnly: true
+  manage:
+    form: $/abuseio/scart/models/abusecontact/fields_select.yaml

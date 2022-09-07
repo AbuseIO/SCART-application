@@ -1,0 +1,44 @@
+columns:
+    title:
+        label: title
+        type: text
+        searchable: true
+        sortable: true
+    status_code:
+        label: 'Status'
+        searchable: true
+        sortable: true
+    status_at:
+        label: 'Status timestamp'
+        type: datetime
+        searchable: true
+        sortable: true
+    number_of_records:
+        label: 'Records found'
+        searchable: true
+        sortable: true
+    filter_grade:
+        label: Classification
+        type: jsontext
+        searchable: true
+        sortable: true
+    filter_status:
+        label: Status
+        type: jsontext
+        searchable: true
+        sortable: true
+    filter_country:
+        label: Country
+        type: text
+        searchable: true
+        sortable: true
+    filter_start:
+        label: Start
+        type: datetime
+        searchable: true
+        sortable: true
+    filter_end:
+        label: End
+        type: datetime
+        searchable: true
+        sortable: true

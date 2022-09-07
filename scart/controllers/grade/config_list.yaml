@@ -1,0 +1,15 @@
+title: Classify
+list: $/abuseio/scart/models/input/columns_grade.yaml
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+modelClass: abuseio\scart\models\Input
+recordUrl: 'abuseio/scart/grade/update/:id'
+noRecordsMessage: 'backend::lang.list.no_records'
+filter: config_filter.yaml
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: true
+defaultSort: received_at asc
+toolbar:
+  buttons: list_toolbar
+  search:
+    prompt: 'backend::lang.list.search_prompt'

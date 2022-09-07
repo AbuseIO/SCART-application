@@ -1,0 +1,10 @@
+name: Police
+form: $/abuseio/scart/models/input/fields_viewpolice.yaml
+modelClass: abuseio\scart\models\Input
+defaultRedirect: abuseio/scart/police
+create:
+    redirect: 'abuseio/scart/police/update/:id'
+    redirectClose: abuseio/scart/police
+update:
+    redirect: abuseio/scart/police
+    redirectClose: abuseio/scart/police

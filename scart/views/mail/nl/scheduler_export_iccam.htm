@@ -1,0 +1,28 @@
+subject = "Scheduler EXPORT ICCAM job report"
+==
+<p>Hi,</p>
+
+<p>
+    <strong>Report export ICCAM</strong><br />
+    <br />
+
+    {% if reports %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for report in reports %}
+            Process reportID: {{ report.reportID }}  <br />
+            {% for logline in report.loglines %}
+            - {{ logline }} <br />
+            {% endfor %}
+        <br />
+        {% endfor %}
+    {% endif %}
+
+    <br />
+    Report(s) processed and export to ERT.<br />
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

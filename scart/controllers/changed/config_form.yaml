@@ -1,0 +1,10 @@
+name: Changed
+form: $/abuseio/scart/models/input/fields_view.yaml
+modelClass: abuseio\scart\models\Input
+defaultRedirect: abuseio/scart/changed
+create:
+    redirect: 'abuseio/scart/changed/update/:id'
+    redirectClose: abuseio/scart/changed
+update:
+    redirect: abuseio/scart/changed
+    redirectClose: abuseio/scart/changed

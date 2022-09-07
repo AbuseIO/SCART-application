@@ -1,0 +1,32 @@
+<?= $this->makePartial('partials/breadcrumb', ['showHeader' => true]) ?>
+
+<form class="form-elements" role="form">
+    <div class="row">
+
+        <div class="col-sm-4">
+            <h4>Input</h4>
+            <?=$MainInfoInput; ?>
+        </div>
+
+        <div class="col-sm-4">
+            <h4>Scrape</h4>
+             <?=$MainInfoScrape; ?>
+            <h4>Classify</h4>
+            <?=$MainInfoClassify; ?>
+        </div>
+
+        <div class="col-sm-4">
+            <h4>CheckOnline</h4>
+            <?=$MainInfoCheckonline;?>
+            <h4>NTD</h4>
+            <?=$MainInfoNTD;?>
+        </div>
+
+    </div>
+</form>
+
+
+<br> <br>
+
+<?= $this->makePartial('partials/tabs', ['showHeader' => true]) ?>
+

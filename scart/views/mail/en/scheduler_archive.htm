@@ -1,0 +1,31 @@
+subject = "Scheduler ARCHIVE job report"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler archive report:<br />
+    <br />
+
+    {% if job_records %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for job_record in job_records %}
+            Table name: {{ job_record.tablename }} <br />
+            {% if job_record.count %}
+            - number of records: {{ job_record.count }} <br />
+            {% endif %}
+            {% if job_record.status %}
+            - status: {{ job_record.status }}<br />
+            {% endif %}
+        <br />
+        {% endfor %}
+
+        <br />
+    {% endif %}
+
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

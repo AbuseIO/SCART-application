@@ -1,0 +1,117 @@
+fields:
+    url:
+        label: input
+        span: left
+        required: 1
+        type: text
+        context: create
+    url@update:
+        label: input
+        span: left
+        type: text
+        readOnly: true
+        context: update
+    filenumber:
+        label: 'internal reference'
+        span: storm
+        type: text
+        readOnly: true
+        cssClass: p-l-lg col-sm-3
+    reference:
+        label: 'external reference'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: col-sm-3
+    url_referer:
+        label: referer
+        span: left
+        required: 0
+        type: text
+    workuser_id:
+        label: Workuser
+        span: right
+        required: true
+        type: dropdown
+    source_code:
+        label: source
+        span: left
+        type: dropdown
+    type_code:
+        label: type
+        span: right
+        required: 1
+        type: dropdown
+    host_abusecontact_id:
+        label: Hoster
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Hoster
+        prompt: Click the %s button to find hoster
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        context: update
+    registrar_abusecontact_id:
+        label: Registrar
+        type: recordfinder
+        span: right
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Registrar
+        prompt: Click the %s button to find registrar
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        context: update
+    status_code:
+        label: status
+        span: left
+        type: dropdown
+        context: update
+        trigger:
+            action: disable
+            field: status_code
+            condition:
+                value[scheduler_checkonline]
+    grade_code:
+        label: classification
+        span: right
+        type: dropdown
+        context: update
+tabs:
+    fields:
+        items:
+            span: full
+            path: input_items
+            context: update
+            type: partial
+            tab: Items
+        Note:
+            tab: Notes
+            size: small
+            span: full
+            type: richeditor
+            toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+        logs:
+            span: full
+            path: input_logs
+            context: update
+            type: partial
+            tab: Logging
+            readOnly: true
+        history:
+            span: full
+            path: input_history
+            context: update
+            type: partial
+            tab: History
+            readOnly: true

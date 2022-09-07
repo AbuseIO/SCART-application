@@ -1,0 +1,34 @@
+columns:
+    filenumber:
+        label: filenumber
+        type: text
+        width: 10%
+        searchable: true
+    received_at:
+        label: received
+        type: text
+        width: 10%
+        searchable: true
+    status_code:
+        label: status
+        type: text
+        relation: inputStatus
+        select: title
+        width: 10%
+        searchable: true
+    grade_code:
+        label: 'classification'
+        type: text
+        width: 8%
+        searchable: true
+        clickable: false
+    url_type:
+        label: type
+        type: text
+        width: 10%
+        searchable: true
+    url:
+        label: url
+        type: text
+        width: 52%
+        searchable: true

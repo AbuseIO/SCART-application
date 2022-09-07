@@ -1,0 +1,19 @@
+columns:
+    domain:
+        label: domain
+        type: text
+        width: 30%
+    type_code:
+        label: type
+        type: text
+        width: 10%
+    ip:
+        label: ip
+        type: text
+        width: 10%
+    enabled:
+        label: enabled
+        type: switch
+    updated_at:
+        label: updated
+        type: text

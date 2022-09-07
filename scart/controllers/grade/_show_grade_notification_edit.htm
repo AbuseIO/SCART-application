@@ -1,0 +1,51 @@
+
+<form class="form-elements" role="form">
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h2 class="modal-title">Edit notification </h2>
+</div>
+<div class="modal-body">
+
+    <div class="row">
+        <div class="col-xs-12" >
+
+            <?php foreach ($fields AS $field) { ?>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="form-group span-full">
+                        <label><?= $field['label'] ?></label>
+                        <input class="form-control" name="<?= $field['name'] ?>" value="<?= $field['value'] ?>" />
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
+
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer">
+
+    <br />
+    <div class="form-buttons">
+        <div class="loading-indicator-container">
+            <button
+                    type="button"
+                    data-request="onNotificationEditSave"
+                    data-request-data="'notification_id': '<?= $notification_id; ?>' "
+                    data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading_input"
+                    data-dismiss="modal"
+                    data-hotkey="ctrl+enter, cmd+enter"
+                    class="btn btn-primary">
+                <?= e(trans('backend::lang.form.save')) ?>
+            </button>
+            <span class="btn-text">
+                <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('backend::lang.form.close')) ?></a>
+            </span>
+        </div>
+    </div>
+</div>
+
+</form>

@@ -1,0 +1,27 @@
+subject = "Warning: ICCAM set action(s) error"
+==
+<p>Hi,</p>
+
+<p>
+    <strong>Error exporting action(s) to ICCAM</strong><br />
+    <br />
+    {% if reports %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for report in reports %}
+            ReportID: {{ report.reportID }}  <br />
+            - url: {{ report.url }} <br />
+            - error set action: {{ report.action }} <br />
+            <br />
+        {% endfor %}
+    {% endif %}
+</p>
+
+<p>
+    May be action(s) is/are already set or the report is closed?<br />
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

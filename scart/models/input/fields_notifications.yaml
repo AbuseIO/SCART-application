@@ -1,0 +1,5 @@
+fields:
+    notifications:
+        span: full
+        path: show_list_notifications
+        type: partial

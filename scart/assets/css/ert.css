@@ -1,0 +1,69 @@
+.bold {
+    font-weight: bold;
+}
+.underline {
+    text-decoration: underline;
+}
+.italic {
+    font-style: italic;
+}
+.grade_button_illegal {
+    background: #790009;
+}
+.grade_button_ignore {
+    background: #c2c160;
+}
+.grade_button_notillegal {
+    background: #2e941d;
+}
+.grade_button_police {
+    background: #8d0f82;
+}
+.grade_button_manual {
+    background: #264fbf;
+}
+.grade_button_notset {
+    background: #656d79;
+}
+.grade_button_notefilled {
+    background: #76bff7;
+}
+.grade-image-header {
+    background-color: #656d79;
+    color: white;
+    border: 0;
+}
+.grade-mainurl-background {
+    background: #f1efca;
+}
+.grade-bg-input-header {
+    background-color: white;
+    color: black;
+}
+.grade-bg-input-area {
+    background-color: lightgray;
+    color: black;
+}
+.grade-bg-notification-area {
+    background-color: white;
+    color: black;
+}
+.grade-image-field-view {
+    background-color: white;
+    color: black;
+    border: 0;
+}
+.grade-bg-light {
+    background-color: #189ad3;
+    color: black;
+}
+.grade-image-field-mark {
+    background-color: white;
+    color: red;
+}
+.list-widget.list-scrollable-container.scart.scroll-after::after {
+    display: none;
+}
+.nbip-shift-up {
+    padding-top: 25px !important;
+}

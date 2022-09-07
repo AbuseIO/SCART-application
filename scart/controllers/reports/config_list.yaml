@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/report/columns.yaml
+modelClass: abuseio\scart\models\Report
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+title: Reports
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/reports/update/:id'

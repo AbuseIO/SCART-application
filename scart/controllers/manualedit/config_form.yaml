@@ -1,0 +1,10 @@
+name: Manualedit
+form: $/abuseio/scart/models/manual/fields.yaml
+modelClass: abuseio\scart\models\Manual
+defaultRedirect: abuseio/scart/manualedit
+create:
+    redirect: 'abuseio/scart/manualedit/update/:id'
+    redirectClose: abuseio/scart/manualedit
+update:
+    redirect: abuseio/scart/manualedit
+    redirectClose: abuseio/scart/manualedit

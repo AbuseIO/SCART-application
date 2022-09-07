@@ -1,0 +1,32 @@
+fields:
+    abusecontact_section:
+        type: section
+        comment: The selected items (images) will be filled with the fields below
+    host_abusecontact_id:
+        label: Hoster
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Hoster
+        prompt: Click the %s button to find hoster
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+    registrar_abusecontact_id:
+        label: Registrar
+        type: recordfinder
+        span: right
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Registrar
+        prompt: Click the %s button to find registrar
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact

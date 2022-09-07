@@ -1,0 +1,10 @@
+name: Exporterrors
+form: $/abuseio/scart/models/importexport_job/fields.yaml
+modelClass: abuseio\scart\models\ImportExport_job
+defaultRedirect: abuseio/scart/exporterrors
+create:
+    redirect: 'abuseio/scart/exporterrors/update/:id'
+    redirectClose: abuseio/scart/exporterrors
+update:
+    redirect: abuseio/scart/exporterrors
+    redirectClose: abuseio/scart/exporterrors

@@ -1,0 +1,33 @@
+subject = "WhoIs CHANGED"
+==
+<p>Hi,</p>
+
+<p><strong>
+    The SCART analyzer has found new/changed WhoIs information(s):
+
+</strong></p>
+
+<p>
+    {% if new_abuses %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for new_abuse in new_abuses %}
+            Url: {{new_abuse.url}}
+            - filenumber: {{new_abuse.url_filenumber}}<br />
+            - WhoIs type: {{new_abuse.whois_type}} <br />
+            - old abuse owner: {{ new_abuse.oldowner }} <br />
+            - new/changed abuse owner: {{ new_abuse.newowner }} <br />
+        <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    The url is placed on the CHANGED (waiting for analist) list.
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

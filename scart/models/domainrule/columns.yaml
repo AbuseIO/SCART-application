@@ -1,0 +1,33 @@
+columns:
+    enabled:
+        label: 'enabled'
+        type: switch
+    type_code:
+        label: 'Type'
+        type: text
+        searchable: true
+    domain:
+        label: domain
+        type: text
+        searchable: true
+    abusecontact:
+        label: 'abuse contact'
+        type: text
+        relation: abusecontact
+        select: owner
+        searchable: true
+        sortable: true
+    ip:
+        label: ip
+        type: text
+    proxy_abusecontact_id:
+        label: 'proxy contact'
+        type: text
+        relation: proxycontact
+        select: owner
+        searchable: true
+        sortable: true
+    updated_at:
+        searchable: true
+        label: updated_at
+        type: datetime

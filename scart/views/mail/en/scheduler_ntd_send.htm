@@ -1,0 +1,25 @@
+subject = "Scheduler SEND NTD job report"
+==
+<p>Hi,</p>
+
+<p>
+    Scheduler NTD send job report:<br />
+    <br />
+
+    {% if ntd_nots %}
+        (number of report records: {{ records_count }}) <br />
+        <br />
+        {% for ntd_not in ntd_nots %}
+            NTD filenumber: {{ ntd_not.filenumber }} <br />
+            - abusecontact: {{ntd_not.abusecontact}}<br />
+            - status: {{ ntd_not.status }}. <br />
+            <br />
+        {% endfor %}
+    <br />
+    {% endif %}
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

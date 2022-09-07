@@ -1,6 +1,10 @@
-# EOKM Reporting Tool (ERT)
+# Sexual Child Abuse Reporting Tool (SCART)
 
-This tool is development by the AbuseIO Foundation. 
+**Release 6.3.2 Build 2**
+
+Sensitive C Abuse Reporting Tool (SCARt)
+
+This tool is development by the AbuseIO Foundation.
 
 AbuseIO is a registered non-profit (ANBI) Foundation in the Netherlands and as such we are required by law to publish information regarding the Foundation and how funds are spend. AbuseIO is known under the dutch RSIN number 855149012 and with the chamber of commerce registration number 63234955.
 
@@ -16,27 +20,16 @@ Our goal is to provide resources that help to combat internet abuse. We will try
 
 See https://abuse.io
 
-## System Installation
+##System installation
 
-* install OctoberCMS (Basic)
-* install Rainlab.Builder plugin
-* put \reportertool\* into plugins subdirectory of OctoberCMS
-* go to Builder -> Version -> and commit last version
-  - ERT menu's 
-* Fill database:
-  - develop\EOKM systemroles with autorization.sql
-  - develop\EOKM email default layout.sql
-  - develop\EOKM email template.sql
-  - develop\EOKM grade questions.sql
+* install WinterCMS (<= v1.1.9) (https://wintercms.com/docs/setup/installation)
+* _up and running wintercms installation with backend_
+* cd <root-project>/plugins
+* git clone <repro> abuseio
+* cd ../
+* composer self-update --1 && composer update
+* php artisan winter:up
+* _scart plugin running_
+* _scart settings for user logins_
+* _scart settings config (!)_
 
-* Fill Administrators (user)
-  - scheduler login in group ERTscheduler
-    - login and password put in .env
-    - NOT in group ERKworkuser
-  - users in group ERTadmin (all) or ERTmanager (analist)
-    - group ERTworkuser 
-  
-* Scheduler; /etc/crontab
-  - "* * * * * root php <source dir>artisan schedule:run --env=dev"
-  
-  

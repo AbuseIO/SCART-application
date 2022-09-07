@@ -1,0 +1,13 @@
+name: Import
+modelClass: abuseio\scart\models\Input_import
+form: $/abuseio/scart/models/input_import/fields.yaml
+defaultRedirect: 'abuseio/scart/Inputs_import/create'
+create:
+    title: Import file
+    redirect: 'abuseio/scart/Inputs_import/update/:id'
+    redirectClose: abuseio/scart/Inputs
+update:
+    title: File imported
+    redirect: abuseio/scart/import/create
+    redirectClose: abuseio/scart/Inputs
+preview: {  }

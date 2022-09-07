@@ -1,0 +1,146 @@
+
+<form class="form-elements" role="form">
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <?php if ($single) { ?>
+    <h4 class="modal-title"><?= e(trans('abuseio.scart::lang.head.classify')) ?> <?= $gradeitems ?> as <?= $gradeheader ?></h4>
+    <?php } else { ?>
+    <h4 class="modal-title"><?= e(trans('abuseio.scart::lang.head.classify_selected')) ?> <?= $gradeitems ?> as <?= $gradeheader ?></h4>
+    <?php } ?>
+</div>
+<div class="modal-body">
+
+    <div class="row">
+
+        <?php if ($src!=''): ?>
+        <div class="col-lg-4">
+            <div class="table-bordered align-center" style="display: table-cell; width: 300px; height: 300px; text-align: center; vertical-align: middle">
+                <img src="<?= $src ?>" style="display: inline; border: 2px solid black;" <?= $imgsize ?> />
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+
+        <?php else: ?>
+
+        <div class="col-lg-12">
+
+        <?php endif ?>
+
+            <div class="row">
+
+                <div class="col-xs-12">
+
+                    <?php foreach ($questions AS $question) { ?>
+
+                    <?php if ($question->type == 'select') { ?>
+
+                    <div class="form-group dropdown-field span-<?= $question->leftright ?> is-required">
+                        <label><?= $question->label ?></label>
+                        <select name="<?= $question->name ?>[]" class="fld-required form-control custom-select" multiple>
+                            <?php foreach ($question->options AS $option) { ?>
+                            <option <?= (($option->selected) ? 'selected' : '') ?> value="<?= $option->value ?>"><?= $option->label ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
+
+                    <?php } elseif ($question->type == 'checkbox') { ?>
+
+                    <div class="form-group checkboxlist-field span-<?= $question->leftright ?> ">
+                        <label><?= $question->label ?></label>
+                        <?php foreach ($question->options AS $option) { ?>
+                        <div class="checkbox custom-checkbox">
+                            <input  <?= (($option->selected) ? 'checked' : '') ?> id="<?= $question->name ?>_<?= $option->sortnr ?>" name="<?= $question->name ?>[]" value="<?= $option->value ?>" type="checkbox">
+                            <label class="choice" for="<?= $question->name ?>_<?= $option->sortnr ?>"><?= $option->label ?></label>
+                        </div>
+                        <?php } ?>
+                    </div>
+
+                    <?php } elseif ($question->type == 'radio') { ?>
+
+                    <div class="form-group radiolist-field span-<?= $question->leftright ?> is-required">
+                        <label><?= $question->label ?></label>
+                        <?php foreach ($question->options AS $option) { ?>
+                        <div class="radio custom-radio">
+                            <input <?= (($option->selected) ? 'checked' : '') ?> id="<?= $question->name ?>_<?= $option->sortnr ?>" name="<?= $question->name ?>[]" value="<?= $option->value ?>" type="radio">
+                            <label class="choice" for="<?= $question->name ?>_<?= $option->sortnr ?>"><?= $option->label ?></label>
+                        </div>
+                        <?php } ?>
+                    </div>
+
+                    <?php } elseif ($question->type == 'section') { ?>
+
+                    <div class="form-group section-field span-<?= $question->leftright ?> " data-field-name="<?= $question->name ?>">
+                        <div class="field-section">
+                            <strong><?= $question->label ?></strong>
+                        </div>
+                    </div>
+
+                    <?php } else { ?>
+
+                    <div class="form-group text-field span-left is-required w-full">
+                        <label><?= $question->label ?></label>
+                        <input type="text" name="<?= $question->name ?>" value="<?= $question->value ?>" class="fld-required form-control" />
+                    </div>
+
+                    <?php } ?>
+
+                    <?php } // foreach ?>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="modal-footer">
+
+    <br />
+    <div class="form-buttons">
+        <div class="loading-indicator-container">
+
+            <button
+                    type="button"
+                    data-request="onQuestionsSave"
+                    data-request-data="'single': '<?= $single; ?>', 'record_id': '<?= $record_id; ?>', recordtype: '<?= $recordtype ?>', workuser_id: '<?= $workuser_id; ?>', questiongroup: '<?= $questiongroup; ?>' "
+                    data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading_input"
+                    data-hotkey="ctrl+enter, cmd+enter"
+                    class="onsave btn btn-primary">
+                <?= e(trans('backend::lang.form.save')) ?>
+            </button>
+            <span class="btn-text">
+                    <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('backend::lang.form.close')) ?></a>
+            </span>
+        </div>
+    </div>
+</div>
+
+    <script type="text/javascript">
+        var valid=false;
+       $('.onsave').click(function(event) {
+            valid=true;
+            $('.fld-required').each(function() {
+                if ($(this).val()=='') {
+                    valid=false;
+                }
+            });
+            if (valid) {
+                $('.modal').trigger('close.oc.popup');
+            } else {
+                $.oc.flashMsg({
+                    'text': 'Not all required fields are filled',
+                    'class': 'error',
+                    'interval': 3
+                });
+                event.stopPropagation();
+                return false;
+            }
+        });
+    </script>
+
+</form>

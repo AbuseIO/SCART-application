@@ -1,0 +1,33 @@
+columns:
+    filenumber:
+        label: 'filenumber'
+        type: text
+        searchable: true
+        clickable: false
+        width: 10%
+    status_code:
+        label: Status
+        type: text
+        searchable: true
+        clickable: false
+        width: 10%
+    contact:
+        label: e-mail
+        relation: abusecontact
+        select: abusecustom
+        type: text
+        readOnly: true
+        width: 10%
+        clickable: false
+    msg_subject:
+        label: subject
+        readOnly: 1
+        type: text
+        clickable: false
+        searchable: true
+    msg_body:
+        label: body
+        readOnly: 1
+        type: html
+        clickable: false
+        searchable: true

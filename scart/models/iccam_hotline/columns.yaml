@@ -1,0 +1,10 @@
+columns:
+    hotlineid:
+        label: hotlineid
+        type: number
+    country:
+        label: country
+        type: text
+    country_code:
+        label: country_code
+        type: text

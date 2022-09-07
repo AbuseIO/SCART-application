@@ -1,0 +1,6 @@
+scopes:
+    type_code:
+        label: 'type'
+        type: group
+        conditions: 'type_code in (:filtered)'
+

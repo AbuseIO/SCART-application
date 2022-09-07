@@ -1,0 +1,16 @@
+<span id="sts_open" >
+
+    <button
+            type="button"
+            data-request="onShowImage"
+            data-request-data="id: '<?= $formModel->id ?>'"
+            data-request-update="show_result: '#show_image'"
+            data-load-indicator="loading..."
+            class="btn btn-default">
+        <?= e(trans('abuseio.scart::lang.button.Show_image')) ?>
+    </button>
+
+    <!-- Result container -->
+    <div id="show_image" style="padding: 2px; "></div>
+
+</span>

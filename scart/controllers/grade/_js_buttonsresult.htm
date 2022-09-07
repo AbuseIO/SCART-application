@@ -1,0 +1,16 @@
+<script type="text/javascript">
+    <?php foreach ($setbuts AS $setbut) { ?>
+        <?php foreach ($setbut['buttonsets'] AS $button => $set) { ?>
+            <?php if ($button=='SELECT') { ?>
+            setButtonSelect<?= $setbut['hash']; ?>('<?= $button; ?>',<?= $set; ?>);
+            <?php } elseif ($button=='POLICE') { ?>
+            setButtonPolice<?= $setbut['hash']; ?>(<?= $set; ?>);
+            <?php } elseif ($button=='MANUAL') { ?>
+            setButtonManual<?= $setbut['hash']; ?>(<?= $set; ?>);
+            <?php } else { ?>
+            setButtonPrimary<?= $setbut['hash']; ?>('<?= $button; ?>',<?= $set; ?>,'<?= $setbut['class']; ?>');
+            <?php } ?>
+        <?php } ?>
+    <?php } ?>
+    $('#idButtonSELECTall').prop('checked',<?= ($resetall) ? 'false' : 'true'; ?>);
+</script>

@@ -1,0 +1,50 @@
+1.0.1:
+    - 'First concept version'
+2.0.1:
+    - 'First release EOKM'
+3.0.1:
+    - 'Production release'
+4.0.1:
+    - 'Domain rules & addons'
+5.0.1:
+    - 'Upgrade EOKM version'
+    - v6_drop_if_exists.php
+6.0.0:
+    - 'Multi hotline release - create tables'
+    - builder_create_v6_tables.php
+6.0.1:
+    - 'Multi hotline release - seeder stam tables'
+    - seeder_stam_tables.php
+6.0.2:
+    - 'Updated table abuseio_scart_abusecontact'
+    - builder_table_update_abuseio_scart_abusecontact.php
+6.0.3:
+    - 'Created table abuseio_scart_iccam_hotline'
+    - builder_table_create_abuseio_scart_iccam_hotline.php
+6.0.4:
+    - seeder_abuseio_scart_iccam_hotline
+    - seeder604.php
+6.0.5:
+    - 'Updated table abuseio_scart_grade_question'
+    - builder_table_update_abuseio_scart_grade_question.php
+6.0.6:
+    - 'Created table abuseio_scart_input_history'
+    - builder_table_create_abuseio_scart_input_history.php
+6.0.7:
+    - 'Updated table abuseio_scart_config'
+    - builder_table_update_abuseio_scart_config.php
+6.0.8:
+    - 'Created table abuseio_scart_whitelist'
+    - builder_table_create_abuseio_scart_whitelist.php
+6.0.9:
+    - 'Updated table abuseio_scart_ntd'
+    - builder_table_update_abuseio_scart_ntd.php
+6.0.10:
+    - 'Updated table abuseio_scart_ntd_url'
+    - builder_table_update_abuseio_scart_ntd_url.php
+6.0.11:
+    - 'Updated table abuseio_scart_report'
+    - builder_table_update_abuseio_scart_report.php
+6.0.12:
+    - 'Updated table abuseio_scart_input'
+    - builder_table_update_abuseio_scart_input.php

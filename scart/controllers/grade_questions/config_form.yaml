@@ -1,0 +1,10 @@
+name: GradeQuestions
+form: $/abuseio/scart/models/grade_question/fields.yaml
+modelClass: abuseio\scart\models\Grade_question
+defaultRedirect: abuseio/scart/grade_questions
+create:
+    redirect: 'abuseio/scart/grade_questions/update/:id'
+    redirectClose: abuseio/scart/grade_questions
+update:
+    redirect: 'abuseio/scart/grade_questions/update/:id'
+    redirectClose: abuseio/scart/grade_questions

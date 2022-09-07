@@ -1,0 +1,20 @@
+subject = "ADMIN REPORT"
+==
+<p>Hi,</p>
+
+<p>
+    Admin report '{{ reportname }}'.<br />
+    <br />
+    {% if report_lines %}
+        {% for report_line in report_lines %}
+        - {{ report_line }} <br />
+        {% endfor %}
+        <br />
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Regards<br />
+    SCART Scheduler
+</p>

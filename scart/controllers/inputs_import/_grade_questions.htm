@@ -1,0 +1,75 @@
+
+
+<div class="row">
+
+    <div class="col-xs-12">
+
+        <div class="form-group section-field span-full">
+            <div class="field-section">
+                <h4>4. Set ILLEGAL grade answers </h4>
+            </div>
+        </div>
+
+        <?php
+            $questions = $this->getImportGradeQuestions();
+        ?>
+
+        <?php foreach ($questions AS $question) { ?>
+
+        <?php if ($question->type == 'select') { ?>
+
+        <div class="form-group dropdown-field span-<?= $question->leftright ?> is-required">
+            <label><?= $question->label ?></label>
+            <select name="ImportOptions[<?= $question->name ?>][]" class="fld-required form-control custom-select" multiple>
+                <?php foreach ($question->options AS $option) { ?>
+                <option <?= (($option->selected) ? 'selected' : '') ?> value="<?= $option->value ?>"><?= $option->label ?></option>
+                <?php } ?>
+            </select>
+        </div>
+
+        <?php } elseif ($question->type == 'checkbox') { ?>
+
+        <div class="form-group checkboxlist-field span-<?= $question->leftright ?> ">
+            <label><?= $question->label ?></label>
+            <?php foreach ($question->options AS $option) { ?>
+            <div class="checkbox custom-checkbox">
+                <input  <?= (($option->selected) ? 'checked' : '') ?> id="<?= $question->name ?>_<?= $option->sortnr ?>" name="ImportOptions[<?= $question->name ?>][]" value="<?= $option->value ?>" type="checkbox">
+                <label class="choice" for="<?= $question->name ?>_<?= $option->sortnr ?>"><?= $option->label ?></label>
+            </div>
+            <?php } ?>
+        </div>
+
+        <?php } elseif ($question->type == 'radio') { ?>
+
+        <div class="form-group radiolist-field span-<?= $question->leftright ?> ">
+            <label><?= $question->label ?></label>
+            <?php foreach ($question->options AS $option) { ?>
+            <div class="radio custom-radio">
+                <input  <?= (($option->selected) ? 'checked' : '') ?> id="<?= $question->name ?>_<?= $option->sortnr ?>" name="ImportOptions[<?= $question->name ?>][]" value="<?= $option->value ?>" type="radio">
+                <label class="choice" for="<?= $question->name ?>_<?= $option->sortnr ?>"><?= $option->label ?></label>
+            </div>
+            <?php } ?>
+        </div>
+
+        <?php } elseif ($question->type == 'section') { ?>
+
+        <div class="form-group section-field span-<?= $question->leftright ?> " data-field-name="<?= $question->name ?>">
+            <div class="field-section">
+                <strong><?= $question->label ?></strong>
+            </div>
+        </div>
+
+        <?php } else { ?>
+
+        <div class="form-group text-field span-left is-required w-full">
+            <label><?= $question->label ?></label>
+            <input type="text" name="ImportOptions[<?= $question->name ?>]" value="<?= $question->value ?>" class="fld-required form-control" />
+        </div>
+
+        <?php } ?>
+
+        <?php } ?>
+
+    </div>
+
+</div>

@@ -1,0 +1,8 @@
+fields:
+    created_at:
+        span: left
+        label: 'Date Finished'
+        relation: input_history
+        select: created_at
+        type: text
+        readOnly: true

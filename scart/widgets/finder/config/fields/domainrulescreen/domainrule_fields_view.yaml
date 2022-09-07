@@ -1,0 +1,26 @@
+fields:
+    domain:
+        label: 'domain'
+        span: left
+        type: text
+        readOnly: true
+    type_code:
+        label: 'Type code'
+        span: right
+        type: text
+        readOnly: true
+    ip:
+        label: 'Ip'
+        span: left
+        readOnly: true
+        required: false
+    enabled:
+        label: 'Enabled'
+        span: right
+        type: text
+        readOnly: true
+    created_at:
+        label: 'Created at'
+        span: left
+        readOnly: true
+

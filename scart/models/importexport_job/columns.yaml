@@ -1,0 +1,22 @@
+columns:
+    interface:
+        label: interface
+        type: text
+    filenumber:
+        label: filenumber
+        type: text
+    reference:
+        label: reference
+        type: text
+    action:
+        label: action
+        type: text
+    deleted_at:
+        label: 'status time'
+        type: datetime
+    status:
+        label: status
+        type: text
+    status_text:
+        label: status_text
+        type: text

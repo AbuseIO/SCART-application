@@ -1,0 +1,38 @@
+fields:
+    target:
+        label: target
+        span: auto
+        type: text
+    target_type:
+        label: type
+        options:
+            IP: IP
+            DOMAIN: DOMAIN
+            PROXY: PROXY
+        showSearch: true
+        span: auto
+        type: dropdown
+    abusecontact_id:
+        label: Abusecontact
+        type: recordfinder
+        span: left
+        list: $/abuseio/scart/models/abusecontact/columns.yaml
+        recordsPerPage: 6
+        title: Find Hoster
+        prompt: Click the %s button to find hoster
+        keyFrom: id
+        nameFrom: owner
+        descriptionFrom: owner
+        searchMode: all
+        useRelation: false
+        modelClass: abuseio\scart\models\Abusecontact
+        context: update
+    max_age:
+        label: 'max age'
+        mode: datetime
+        span: auto
+        type: datepicker
+    real_ip:
+        label: 'real IP'
+        span: auto
+        type: text

@@ -1,0 +1,18 @@
+columns:
+    url:
+        label: url
+        type: text
+        searchable: true
+    filenumber:
+        label: filenumber
+        searchable: false
+    note:
+        label: 'NTD note'
+        searchable: true
+    firstseen_at:
+        label: firstseen
+        searchable: false
+    lastseen_at:
+        label: lastseen
+        searchable: false
+

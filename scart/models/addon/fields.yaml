@@ -1,0 +1,46 @@
+fields:
+    type:
+        label: type
+        showSearch: true
+        span: left
+        type: dropdown
+    codename:
+        label: 'technical reference'
+        span: auto
+        type: text
+        comment: 'Provided by addon suppler'
+    title:
+        label: title
+        span: full
+        type: text
+    enabled:
+        label: enabled
+        span: storm
+        type: checkbox
+        cssClass: col-sm-2
+        trigger:
+            action: disable
+            field: classexists
+            condition: unchecked
+        content: update
+    classexists:
+        label: classexists
+        span: storm
+        cssClass: col-sm-2
+        type: checkbox
+        readOnly: true
+        content: update
+    valid:
+        label: valid
+        span: storm
+        cssClass: col-sm-2
+        type: checkbox
+        readOnly: true
+        content: update
+    description:
+        label: description
+        size: small
+        span: full
+        type: richeditor
+        toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+

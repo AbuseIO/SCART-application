@@ -1,0 +1,23 @@
+<span id="browse_link" >
+
+    <button
+            type="button"
+            data-request="onBrowseImages"
+            data-request-loading="#loadingDiv"
+            data-request-data="link: '<?= $formModel->url; ?>', id: '<?= $formModel->id; ?>'"
+            data-request-update="show_images: '#online_result'"
+            class="btn btn-default">
+       <?= e(trans('abuseio.scart::lang.button.browse_image')) ?>
+    </button>
+
+    <span class="loading-indicator-container" style="margin-left: 20px;">
+        <div id="loadingDiv" style="display: none;" class="loading-indicator size-small"">
+            <span></span>
+            <div><?= e(trans('abuseio.scart::lang.text.loading')) ?></div>
+        </div>
+    </span>
+
+    <!-- Result container -->
+    <div id="online_result" style="margin-top: 5px;"></div>
+
+</span>

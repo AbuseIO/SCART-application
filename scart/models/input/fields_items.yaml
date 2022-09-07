@@ -1,0 +1,34 @@
+fields:
+    url:
+        label: url
+        span: full
+        type: text
+        required: true
+    status_code:
+        label: status
+        type: dropdown
+        relation: inputStatus
+        select: title
+        required: true
+    filenumber:
+        label: filenumber
+        type: text
+        readonly: 1
+        span: left
+        context: update
+    grade_code:
+        label: classification
+        type: dropdown
+        span: right
+        relation: inputGrade
+        select: title
+        required: true
+        context: update
+    Note:
+        label: Note
+        size: small
+        span: full
+        type: richeditor
+        toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+
+

@@ -1,0 +1,9 @@
+<script type="text/javascript">
+    lastLoading = '<?= $lastLoading ?>';
+    <?php foreach ($images AS $image) {
+        $data = $image['data']; $imgsize = $image['imgsize']; $hash = $image['hash'];
+    ?>
+        $('#notImgSrc<?= $hash; ?>').attr('src','<?= $data; ?>');
+        $('#notImgBigSrc<?= $hash; ?>').attr('src','<?= $data; ?>');
+    <?php } ?>
+</script>

@@ -1,0 +1,95 @@
+fields:
+    title:
+        label: 'Report title'
+        span: left
+        type: text
+        required: true
+    status_code:
+        label: 'Report status'
+        span: storm
+        type: dropdown
+        cssClass: 'p-l-lg col-sm-2'
+    status_at:
+        label: 'Report status timestamp'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: col-sm-2
+    number_of_records:
+        label: 'Records found'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: col-sm-1
+    downloadfile:
+        label: ''
+        type: partial
+        path: show_options
+        trigger:
+            action: show
+            field: status_code
+            condition: 'value[DONE]'
+
+tabs:
+    fields:
+        filter_start:
+            label: From
+            mode: date
+            span: left
+            type: datepicker
+            required: true
+            comment: '(received in SCART)'
+            tab: filters
+        filter_end:
+            label: End
+            mode: date
+            span: auto
+            type: datepicker
+            required: true
+            comment: '(received in SCART)'
+            tab: filters
+        filter_grade:
+            label: Classifications
+            prompt: 'Add new classification filter'
+            span: left
+            type: repeater
+            form:
+                fields:
+                    filter_grade:
+                       label: ''
+                       span: auto
+                       showSearch: false
+                       type: dropdown
+            tab: filters
+        filter_status:
+            label: Statussen
+            prompt: 'Add new status filter'
+            span: auto
+            type: repeater
+            form:
+                fields:
+                    filter_status:
+                        label: ''
+                        showSearch: false
+                        span: auto
+                        type: dropdown
+            tab: filters
+        filter_country:
+            label: Country
+            showSearch: true
+            span: auto
+            type: dropdown
+            tab: filters
+        export_columns:
+            label: 'Export columns'
+            prompt: 'Add/remove column'
+            span: left
+            type: repeater
+            form:
+                fields:
+                    column:
+                        label: ''
+                        showSearch: false
+                        span: auto
+                        type: dropdown
+            tab: columns

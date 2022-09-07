@@ -1,0 +1,67 @@
+
+<form class="form-elements" role="form">
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h2 class="modal-title"><?= e(trans('abuseio.scart::lang.menu.rules')) ?></h2>
+</div>
+
+<div class="modal-body">
+    <div class="row">
+        <div class="col-xs-12" >
+            <div class="row">
+                <div class="col-xs-12" >
+                    <span id="spanListView"><?= $inputWidget->render() ?></span>
+                    <div id="loading" style="display: none;" class="popup-backdrop fade in loading">
+                        <div class="modal-content popup-loading-indicator indicator-center">
+                            <span> </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+
+    <br />
+    <div class="form-buttons">
+        <div class="loading-indicator-container">
+            <div class="row">
+                <div class="col-xs-8 text-left" >
+                    <button
+                        type="button"
+                        data-request="onDomainruleInsert"
+                        data-request-data=""
+                        data-request-update="show_result: '#show_result2'"
+                        data-request-loading="#loading"
+                        data-hotkey="ctrl+enter, cmd+enter"
+                        class="btn btn-primary">
+                        <?= e(trans('abuseio.scart::lang.button.insert_rule')) ?>
+                    </button>
+                    <span class="btn-text">
+                        <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('backend::lang.form.close')) ?></a>
+                    </span>
+                </div>
+                <div class="col-xs-4 text-right" >
+                    <button
+                        type="button"
+                        data-request="onDomainruleRun"
+                        data-request-data=""
+                        data-request-update="show_result: '#show_result'"
+                        data-request-loading="#loading"
+                        data-hotkey="ctrl+enter, cmd+enter"
+                        class="btn btn-primary">
+                        <?= e(trans('abuseio.scart::lang.button.process_rule')) ?>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</form>
+
+<div style="margin-top: -40px;" id="show_result2"></div>

@@ -1,0 +1,28 @@
+columns:
+    updated_at:
+        label: timestamp
+        type: datetime
+    user:
+        label: user
+        type: text
+        relation: user
+        select: login
+        searchable: true
+    tag:
+        label: tag
+        type: text
+        searchable: true
+    old:
+        label: old
+        type: partial
+        path: ~/plugins/abuseio/scart/models/input_history/_content_old.htm
+        searchable: true
+    new:
+        label: new
+        type: partial
+        path: ~/plugins/abuseio/scart/models/input_history/_content_new.htm
+        searchable: true
+    comment:
+        label: comment
+        type: text
+        searchable: true

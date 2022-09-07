@@ -1,0 +1,10 @@
+name: NTDtemplates
+form: $/abuseio/scart/models/ntdtemplate/fields.yaml
+modelClass: abuseio\scart\models\NTDtemplate
+defaultRedirect: abuseio/scart/ntdtemplates
+create:
+    redirect: 'abuseio/scart/ntdtemplates/update/:id'
+    redirectClose: abuseio/scart/ntdtemplates
+update:
+    redirect: abuseio/scart/ntdtemplates
+    redirectClose: abuseio/scart/ntdtemplates

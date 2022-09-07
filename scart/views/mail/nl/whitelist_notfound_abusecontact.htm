@@ -1,0 +1,24 @@
+subject = "Deze verzenders (e-mails) zijn niet in de whitelist opgenomen."
+
+==
+<p>Hi,</p>
+
+<p><strong>
+    Deze verzenders (e-mails) zijn niet in de whitelist opgenomen.
+</strong></p>
+
+<p>
+    {% if not_founds %}
+        (Aantal e-mail adressen gevonden die niet in de whitelist zijn genomen : {{ records_count }}) <br />
+        <br />
+        {% for not_found in not_founds %}
+             - Bericht '{{ not_found.subject }}' van '{{ not_found.from }}'ontvangen '{{ not_found.date }}' met {{ not_found.bodylines }} regels <br /> <br />
+        {% endfor %}
+    {% endif %}
+    <br />
+</p>
+
+<p>
+    Met vriendelijke groet<br />
+    SCART Scheduler
+</p>

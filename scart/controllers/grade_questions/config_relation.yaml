@@ -1,0 +1,12 @@
+options:
+  label: Options
+  modelClass: abuseio\scart\models\Grade_question_option
+  view:
+    list: $/abuseio/scart/models/grade_question_option/columns.yaml
+    toolbarPartial: relation_options_toolbar
+    toolbarButtons: create|delete
+    recordsPerPage: 5
+    defaultSort: sortnr ASC
+    showCheckboxes: true
+  manage:
+    form: $/abuseio/scart/models/grade_question_option/fields.yaml
