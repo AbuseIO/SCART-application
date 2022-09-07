@@ -2,11 +2,16 @@
 
 **Release 6.3.2 Build 2**
 
-Sensitive C Abuse Reporting Tool (SCARt)
+This tool is development by the AbuseIO Foundation and the dutch Child Abuse hotline (EOKM).
 
-This tool is development by the AbuseIO Foundation.
+AbuseIO is a registered non-profit (ANBI) Foundation in the Netherlands
+and as such we are required by law to publish information regarding the
+Foundation and how funds are spend. AbuseIO is known under the dutch
+RSIN number 855149012 and with the chamber of commerce registration
+number 63234955.
 
-AbuseIO is a registered non-profit (ANBI) Foundation in the Netherlands and as such we are required by law to publish information regarding the Foundation and how funds are spend. AbuseIO is known under the dutch RSIN number 855149012 and with the chamber of commerce registration number 63234955.
+EOKM is registered non-profit Foundation in the Netherlands specialized
+in assessing and dealing with online child abuse.
 
 **The EOKM Reporting Tool (ERT) is specific version from the AbuseIO Reporting Tool (ART) made for EOKM.**
 
