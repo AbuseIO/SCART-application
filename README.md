@@ -33,6 +33,7 @@ See https://abuse.io
 * git clone <repro> abuseio
 * cd ../
 * composer self-update --1 && composer update
+* cd ../../
 * php artisan winter:up
 * _scart plugin running_
 * _scart settings for user logins_
