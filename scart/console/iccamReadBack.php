@@ -4,19 +4,16 @@ namespace abuseio\scart\console;
 /**
  * Temporary job for reading ICCAM repors back in time (2020)
  *
- * Run in seperated cronjob:
- * - /usr/bin/docker exec octobercms php artisan abuseio:iccamReadBack
- *
- *
  */
+
+use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
+use abuseio\scart\classes\iccam\api2\scartImportICCAM;
 
 use Illuminate\Console\Command;
 use League\Flysystem\Exception;
 use abuseio\scart\classes\helpers\scartExportICCAM;
 use abuseio\scart\classes\mail\scartAlerts;
-use abuseio\scart\classes\iccam\scartICCAM;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
-use abuseio\scart\classes\iccam\scartImportICCAM;
+use abuseio\scart\classes\iccam\scartIccam;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Input;

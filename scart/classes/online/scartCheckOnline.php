@@ -4,8 +4,7 @@ namespace abuseio\scart\classes\online;
 use Db;
 use abuseio\scart\classes\helpers\scartUsers;
 use Config;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
-use abuseio\scart\classes\iccam\scartExportICCAM;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Abusecontact;
 use abuseio\scart\models\Addon;
 use abuseio\scart\models\Ntd;
@@ -17,6 +16,7 @@ use abuseio\scart\classes\rules\scartRules;
 use abuseio\scart\classes\browse\scartBrowser;
 use abuseio\scart\classes\classify\scartGrade;
 use abuseio\scart\classes\mail\scartAlerts;
+use abuseio\scart\models\Input_verify;
 
 class scartCheckOnline {
 
@@ -43,37 +43,16 @@ class scartCheckOnline {
 
         try {
 
-            // set lock -> direct update ->
+            // init config and state vars
             self::setLock($record->id,true);
-
-            // registrar_active config
             $registrar_active = Systemconfig::get('abuseio.scart::ntd.registrar_active',true);        // if NTD to registrar
             $siteowner_interval = Systemconfig::get('abuseio.scart::ntd.siteowner_interval',3);       // 3x times hoster
             $registrar_interval = Systemconfig::get('abuseio.scart::ntd.registrar_interval',6);       // 6x times hoster
-
             $status_timestamp = '[time: '.date('Y-m-d H:i:s')."; record: {$current}/{$countrecs}] ";
 
-            if (scartICCAMmapping::isActive()) {
-
-                if ($record->reference == '') {
-                    // always inform ICCAM about illegal record
-                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
-                        'record_type' => class_basename($record),
-                        'record_id' => $record->id,
-                    ]);
-                } elseif ($record->online_counter==0) {
-                    // first time here -> update ICCAM
-                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
-                        'record_type' => class_basename($record),
-                        'record_id' => $record->id,
-                    ]);
-                }
-
-            }
-
-            // CHECK IF FIRST_POLICE -> seperated flow (eg no verifyWhoIs)
-
             if ($record->status_code==SCART_STATUS_FIRST_POLICE) {
+
+                // seperated flow (eg no verifyWhoIs)
 
                 if ($record->online_counter==0) {
 
@@ -91,12 +70,12 @@ class scartCheckOnline {
 
                         $status = "Added to message for informing POLICE " ;
 
-                        if (scartICCAMmapping::isActive()) {
+                        if (scartICCAMinterface::isActive()) {
 
                             // Note: reference can be empty because record is not yet reported to ICCAM
 
                             // ICCAM set SCART_ICCAM_ACTION_LEA
-                            scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION, [
+                            scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION, [
                                 'record_type' => class_basename($record),
                                 'record_id' => $record->id,
                                 'object_id' => $record->reference,          // can be empty
@@ -135,9 +114,21 @@ class scartCheckOnline {
 
             } else {
 
-                // CHECKONLINE
-
                 scartLog::logLine("D-scartCheckOnline; check (whois/rules/online) id=$record->id, lastseen=$record->lastseen_at, received_at=$record->received_at ");
+
+                if ($record->online_counter==0) {
+                    $verify_active = Systemconfig::get('abuseio.scart::verify.active',false);
+                    if ($verify_active) {
+                        // First time and verify active so import for multiple verification
+                        Input_verify::import($record);
+                    }
+                }
+
+                // start positive
+                $update_record = true;
+
+                // calculate lead time
+                $startTime = microtime(true);
 
                 /**
                  * 1: VERIFYWHOIS
@@ -151,12 +142,6 @@ class scartCheckOnline {
                  *
                  */
 
-                $update_record = true;
-
-                // calculate lead time
-                $startTime = microtime(true);
-
-                // verify WhoIs
                 $whois = scartWhois::verifyWhoIs($record);
 
                 $whoisleadtime = microtime(true);
@@ -182,7 +167,7 @@ class scartCheckOnline {
                         $status .= ($status) ? ', ' : '';
                         $status .= ($whois[SCART_HOSTER.'_changed_logtext']) ? $whois[SCART_HOSTER.'_changed_logtext'] : '';
                         $status = "Stop checkonline - wait for analist (CHANGED) - $status";
-                        scartLog::logLine("D-$status");
+                        scartLog::logLine("D-[$record->filenumber] $status");
 
                         $job_records[] = [
                             'filenumber' => $record->filenumber,
@@ -277,19 +262,20 @@ class scartCheckOnline {
                                 // check if fatal crash browser (dataDragon), then skip this record -> continue when browser up again
                                 if ($browsererror = scartBrowser::getLasterror()) {
 
-                                    scartLog::logLine("W-scartCheckOnline; [$record->filenumber] browser unavailable; error=$browsererror - stop processing for now");
+                                    scartLog::logLine("W-scartCheckOnline; [$record->filenumber, $record->url] browser error=$browsererror - stop processing for now");
 
                                     $browserretry = scartUsers::getGeneralOption('BROWSER_ERROR');
                                     if (empty($browserretry)) $browserretry = 0;
                                     $browserretry = intval($browserretry) + 1;
 
-                                    if ($browserretry == 1 || $browserretry % 12 == 0) {
+                                    if ($browserretry == 3 || $browserretry % 12 == 0) {
 
                                         $params = [
                                             'reportname' => "BROWSER ERROR report ",
                                             'report_lines' => [
                                                 'report time: ' . date('Y-m-d H:i:s'),
                                                 "browser error: " . $browsererror,
+                                                'filenumber:' . $record->filenumber,
                                                 'retry count: ' . $browserretry,
                                             ]
                                         ];
@@ -309,7 +295,7 @@ class scartCheckOnline {
 
                                     $browserretry = scartUsers::getGeneralOption('BROWSER_ERROR');
                                     if (empty($browserretry)) $browserretry = 0;
-                                    if ($browserretry > 0) {
+                                    if ($browserretry > 2) {
 
                                         scartLog::logLine("D-scartCheckOnline; browser available again; sendalert=$browserretry");
 
@@ -417,7 +403,7 @@ class scartCheckOnline {
                                 } else {
 
                                     if (!$nocheckonline) {
-                                        scartLog::logLine("D-scartCheckOnline; [$record->filenumber]; FIRST TIME in checkonline ");
+                                        scartLog::logLine("D-scartCheckOnline; [$record->filenumber] first time in checkonline ");
                                     }
 
                                 }
@@ -468,7 +454,7 @@ class scartCheckOnline {
                                 $record->browse_error_retry = 0;
                             }
 
-                            // 2020/7/28/Gs: if $record->online_counter==0 then SCART_NTD_STATUS_QUEUE_DIRECTLY
+                            // if $record->online_counter==0 then SCART_NTD_STATUS_QUEUE_DIRECTLY
 
                             if ($record->online_counter == 0) {
                                 // skip if already done for direct_classify
@@ -481,21 +467,24 @@ class scartCheckOnline {
                                 $record = SELF::doGroupingNTD($record,$status_timestamp,$siteowner_interval,$registrar_active,$registrar_interval);
                             }
 
-                            // found online
-                            $record->online_counter += 1;
-                            $record->checkonline_leadtime = microtime(true) - $startTime;
-                            scartLog::logLine("D-scartCheckOnline; [$record->filenumber] total checkonline lead time: $record->checkonline_leadtime");
-                            $record->lastseen_at = date('Y-m-d H:i:s');
+                            // IF SCART_STATUS_ABUSECONTACT_CHANGED then no NTD is sent and we will be back here, when abusecontact is approved
+
+                            if ($record->status_code != SCART_STATUS_ABUSECONTACT_CHANGED) {
+                                $record->online_counter += 1;
+                                $record->checkonline_leadtime = microtime(true) - $startTime;
+                                scartLog::logLine("D-scartCheckOnline; [$record->filenumber] total checkonline lead time: $record->checkonline_leadtime");
+                                $record->lastseen_at = date('Y-m-d H:i:s');
+                            }
 
                         } else {
 
                             // check SCART_BROWSE_ERROR_MAX to be sure it's not a network problem
 
-                            // not valid
-                            $record->checkonline_leadtime = 0;
+                            // save the leadtime
+                            $record->checkonline_leadtime = microtime(true) - $startTime;
                             // retry + 1
                             $record->browse_error_retry += 1;
-                            scartLog::logLine("D-scartCheckOnline; [$record->filenumber] OFFLINE (retry=$record->browse_error_retry) ");
+                            scartLog::logLine("D-scartCheckOnline; [$record->filenumber] OFFLINE (retry=$record->browse_error_retry); offline lead time: " . $record->checkonline_leadtime);
 
                             if ($record->browse_error_retry >= SCART_BROWSE_ERROR_MAX) {
 
@@ -513,12 +502,12 @@ class scartCheckOnline {
                                 }
 
                                 // log old/new for history
-                                $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE_OFFLINE,"Checkonline; found url offline");
-
-                                $record->status_code = SCART_STATUS_CLOSE_OFFLINE;
+                                $new = ($record->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
+                                $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,"Checkonline; found url offline");
+                                $record->status_code = $new;
                                 $record->logText("Set status_code on: " . $record->status_code);
 
-                                $status = "STOP checkonline - OFFLINE or HASH changed";
+                                $status = "Stop checkonline - OFFLINE or HASH changed";
                                 scartLog::logLine("D-$status");
 
                                 $job_records[] = [
@@ -527,12 +516,12 @@ class scartCheckOnline {
                                     'status' => $status_timestamp . $status,
                                 ];
 
-                                if (scartICCAMmapping::isActive()) {
+                                if (scartICCAMinterface::isActive()) {
 
                                     // Note: reference can be empty because record is not yet reported to ICCAM
 
                                     // ICCAM content removed
-                                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                                         'record_type' => class_basename($record),
                                         'record_id' => $record->id,
                                         'object_id' => $record->reference,
@@ -614,18 +603,18 @@ class scartCheckOnline {
     static function doDirectNTD($record,$status_timestamp,$siteowner_interval,$registrar_active,$registrar_interval,&$job_records) {
 
         $ntdstat = SCART_NTD_STATUS_QUEUE_DIRECTLY;
-        scartLog::logLine("D-scartCheckOnline; create $ntdstat for hoster");
+        scartLog::logLine("D-scartCheckOnline; [$record->filenumber] create $ntdstat for hoster");
         $ntd = Ntd::createNTDurl($record->host_abusecontact_id,$record,$ntdstat, 1, SCART_NTD_ABUSECONTACT_TYPE_HOSTER);
         if ($ntd) {
 
             // if NTD created, then valid
 
-            if (scartICCAMmapping::isActive()) {
+            if (scartICCAMinterface::isActive()) {
 
                 // Note: reference can be empty because record is not yet reported to ICCAM
 
                 // ICCAM set SCART_ICCAM_ACTION_ISP
-                scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                     'record_type' => class_basename($record),
                     'record_id' => $record->id,
                     'object_id' => $record->reference,
@@ -711,7 +700,7 @@ class scartCheckOnline {
 
                 // ICCAM
 
-                if (scartICCAMmapping::isActive()) {
+                if (scartICCAMinterface::isActive()) {
 
                     // get hoster counter
                     $reason = 'SCART content moved to country: '.$abusecountry;
@@ -720,7 +709,7 @@ class scartCheckOnline {
                     // CLOSE with MOVED action
 
                     // ICCAM content moved (outside NL)
-                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                         'record_type' => class_basename($record),
                         'record_id' => $record->id,
                         'object_id' => $record->reference,
@@ -796,7 +785,7 @@ class scartCheckOnline {
             $abusecontact = Abusecontact::find($record->host_abusecontact_id);
             $abuseowner = ($abusecontact) ? $abusecontact->owner . " ($abusecontact->filenumber)" : SCART_ABUSECONTACT_OWNER_EMPTY;
             $status = "Stop checkonline - wait for analist (CHANGED) - Abusecontact not in local country and/or GDPR approved; hoster is: $abuseowner";
-            scartLog::logLine("D-scartCheckOnline; $status");
+            scartLog::logLine("D-scartCheckOnline; [$record->filenumber] $status");
 
             $job_records[] = [
                 'filenumber' => $record->filenumber,
@@ -832,8 +821,18 @@ class scartCheckOnline {
     }
 
     public static function checkLocks($before) {
-        scartLog::logLine("D-scartCheckOnline; check if checkonline-locks not older then '$before'");
+        scartLog::logLine("D-scartCheckOnline; check if checkonline-locks older then '$before'");
         return (Db::table(SCART_INPUT_TABLE)->whereNotNull('checkonline_lock')->where('checkonline_lock','<=',$before)->count());
+    }
+
+    public static function getOldLocks($before) {
+        scartLog::logLine("D-scartCheckOnline; get records with lock older then '$before'");
+        return (Db::table(SCART_INPUT_TABLE)->whereNotNull('checkonline_lock')->where('checkonline_lock','<=',$before)->get());
+    }
+
+    public static function resetOldLocks($before) {
+        scartLog::logLine("D-scartCheckOnline; check if checkonline-locks not older then '$before'");
+        Db::table(SCART_INPUT_TABLE)->whereNotNull('checkonline_lock')->where('checkonline_lock','<=',$before)->update(['checkonline_lock' => null]);
     }
 
 }

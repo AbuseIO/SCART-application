@@ -1,0 +1,62 @@
+fields:
+tabs:
+  stretch: true
+  defaultTab: User
+  lazy:
+    - Groups
+  paneCssClass:
+    1: first-tab
+    2: second-tab
+  icons:
+    Grade item: icon-search
+    Information: icon-info-circle
+  fields:
+    content:
+      type: partial
+      path: $/abuseio/scart/models/input_verify/_grade_fields.htm
+      span: left
+      readOnly: true
+      tab: Grade item
+    input[url]:
+      type: text
+      label: Url
+      span: auto
+      size: tiny
+      tab: Information
+      disabled: true
+    input[url_referer]:
+      type: text
+      label: Referer
+      span: auto
+      tab: Information
+      disabled: true
+    input[filenumber]:
+      type: text
+      label: Filenumber
+      span: auto
+      tab: Information
+      disabled: true
+    input[type_code]:
+      type: text
+      label: Input
+      span: auto
+      tab: Information
+      disabled: true
+    input[source_code]:
+      type: text
+      label: Source
+      span: auto
+      tab: Information
+      disabled: true
+    input[url_type]:
+      type: text
+      label: Type
+      span: auto
+      tab: Information
+      disabled: true
+    input[note]:
+      type: textarea
+      label: Note
+      span: auto
+      tab: Information
+      disabled: true

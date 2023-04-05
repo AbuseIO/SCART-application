@@ -1,5 +1,26 @@
 fields:
-    code:
+    sortnr:
+        label: sortnr
+        type: number
+        span: left
+        comment: Sort order when selecting
+    code@update:
         label: code
-        span: auto
+        span: right
         type: text
+        readOnly: true
+        comment: Technical reference code
+    code@create:
+        label: code
+        span: right
+        type: text
+        comment: Technical reference code
+    title:
+        label: title
+        type: text
+        span: full
+        comment: Display title
+    description:
+        label: description
+        span: full
+        type: textarea

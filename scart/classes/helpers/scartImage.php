@@ -29,7 +29,7 @@ class scartImage {
      * @param int $imgsize
      * @return string
      */
-    public static function getImageSizeAttr($record,$imgsize=250,$resizebig=false,$values=false) {
+    public static function getImageSizeAttr($record,$imgsize=250,$resizebig=true,$values=false) {
 
         // 2px padding
         $imgreal = $imgsize - 4;
@@ -42,9 +42,9 @@ class scartImage {
         } elseif ($record->url_image_width <= $imgsize && $record->url_image_height > $imgsize) {
             $size = 'height="'.$imgreal.'" ';
             $height = $imgreal;
-        } elseif ($record->url_image_width > $imgsize && $record->url_image_height > $imgsize) {
-            $size = 'height="'.$imgreal.'" width="'.$imgreal.'" ';
-            $width = $height = $imgreal;
+//        } elseif ($record->url_image_width > $imgsize && $record->url_image_height > $imgsize) {
+//            $size = 'height="'.$imgreal.'" width="'.$imgreal.'" ';
+//            $width = $height = $imgreal;
         } else {
             if ($resizebig) {
                 // resize (zoom) on bigest dimension

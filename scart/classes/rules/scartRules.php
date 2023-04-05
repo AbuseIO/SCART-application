@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\rules;
 
+use abuseio\scart\classes\whois\scartUpdateWhois;
 use Illuminate\Foundation\Console\PackageDiscoverCommand;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\models\Abusecontact;
@@ -18,7 +19,7 @@ class scartRules {
         SELF::$_cached = [];
     }
 
-    static function getRule($domain,$rule_type,$extension_also=false) {
+    static function getRule($domain,$rule_type,$extension_also=false,$onlyEnabled=true) {
 
         $domainspec = [];
         // strip www. always
@@ -32,18 +33,16 @@ class scartRules {
 
         // search rule -> more specific first
         if (is_array($rule_type)) {
-            $rule = Domainrule::whereIn('type_code',$rule_type)
-                ->where('enabled',true)
-                ->whereIn('domain',$domainspec)
-                ->orderBy(Db::raw('LENGTH(domain)'),'desc')
-                ->first();
+            $rule = Domainrule::whereIn('type_code',$rule_type);
         } else {
-            $rule = Domainrule::where('type_code', $rule_type)
-                ->where('enabled',true)
-                ->whereIn('domain', $domainspec)
-                ->orderBy(Db::raw('LENGTH(domain)'),'desc')
-                ->first();
+            $rule = Domainrule::where('type_code', $rule_type);
         }
+        if ($onlyEnabled) {
+            $rule = $rule->where('enabled',true);
+        }
+        $rule = $rule->whereIn('domain',$domainspec)
+            ->orderBy(Db::raw('LENGTH(domain)'),'desc')
+            ->first();
 
         if ($rule) {
             scartLog::logLine("D-scartRules.getRule: found rule domain '$rule->domain' (type=$rule->type_code) for domain '$domain' ");
@@ -172,32 +171,44 @@ class scartRules {
                 } else {
 
                     // prio 1 = proxy_service else host_whois
-                    $rule = self::getRule($host,SCART_RULE_TYPE_PROXY_SERVICE);
+                    $rule = self::getRule($host,SCART_RULE_TYPE_PROXY_SERVICE,false,false);
                     if ($rule) {
 
-                        // find -> get abusecontact and whois (rawtext)
+                        // check if disabled and not usable again
+                        if (self::checkProxyServiceDisabled($rule)) {
 
-                        $ipurl = $rule->ip;
-                        $abusecontact = Abusecontact::find($rule->abusecontact_id);
+                            // check if disabled, enable again
+                            if (!$rule->enabled) {
+                                scartLog::logLine("D-scartRules.getRulesWhois: ENABLE proxyService rule again for domain '$rule->domain'");
+                                $rule->enabled = true;
+                                $rule->save();
+                            }
 
-                        if ($abusecontact) {
+                            // find -> get abusecontact and whois (rawtext)
 
-                            $info = "Whois HOSTER overruled by proxy_service rule for '$host'";
-                            scartLog::logLine("D-scartRules.getRulesWhois: $info");
-                            $whois = Whois::findAC($rule->abusecontact_id,SCART_HOSTER);
-                            $rulewhois = array_merge($rulewhois,[
-                                'domain_ip' => $ipurl,
-                                SCART_HOSTER.'_lookup' => $ipurl,
-                                SCART_HOSTER.'_owner' => $abusecontact->owner,
-                                SCART_HOSTER.'_abusecontact' => $abusecontact->abusecustom,
-                                SCART_HOSTER.'_country' => $abusecontact->abusecountry,
-                                SCART_HOSTER.'_rawtext' => ($whois) ? $whois->rawtext : $info,
-                                SCART_HOSTER.'_abusecontact_id' => $rule->abusecontact_id,
-                            ]);
-                            $rulewhois[SCART_RULE_TYPE_PROXY_SERVICE] = true;
+                            $ipurl = $rule->ip;
+                            $abusecontact = Abusecontact::find($rule->abusecontact_id);
 
-                        } else {
-                            scartLog::logLine("W-Rule host_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
+                            if ($abusecontact) {
+
+                                $info = "Whois HOSTER overruled by proxy_service rule for '$host'";
+                                scartLog::logLine("D-scartRules.getRulesWhois: $info");
+                                $whois = Whois::findAC($rule->abusecontact_id,SCART_HOSTER);
+                                $rulewhois = array_merge($rulewhois,[
+                                    'domain_ip' => $ipurl,
+                                    SCART_HOSTER.'_lookup' => $ipurl,
+                                    SCART_HOSTER.'_owner' => $abusecontact->owner,
+                                    SCART_HOSTER.'_abusecontact' => $abusecontact->abusecustom,
+                                    SCART_HOSTER.'_country' => $abusecontact->abusecountry,
+                                    SCART_HOSTER.'_rawtext' => ($whois) ? $whois->rawtext : $info,
+                                    SCART_HOSTER.'_abusecontact_id' => $rule->abusecontact_id,
+                                ]);
+                                $rulewhois[SCART_RULE_TYPE_PROXY_SERVICE] = true;
+
+                            } else {
+                                scartLog::logLine("W-scartRules.getRulesWhois: rule host_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
+                            }
+
                         }
 
                     } else {
@@ -228,7 +239,7 @@ class scartRules {
                                 $rulewhois[SCART_RULE_TYPE_HOST_WHOIS] = true;
 
                             } else {
-                                scartLog::logLine("W-Rule host_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
+                                scartLog::logLine("W-scartRules.getRulesWhois:: rule host_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
                             }
 
                         }
@@ -259,7 +270,7 @@ class scartRules {
                             $rulewhois[SCART_RULE_TYPE_REGISTRAR_WHOIS] = true;
 
                         } else {
-                            scartLog::logLine("W-Rule registrar_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
+                            scartLog::logLine("W-scartRules.getRulesWhois: rule registrar_whois set, but abusecontact (id=$rule->abusecontact_id) not found!?");
                         }
 
                     }
@@ -464,5 +475,61 @@ class scartRules {
 
         return $addon_id;
     }
+
+    /**
+     * Check if disabled if not a proxy service API; then enable again
+     *
+     * scartUpdateWhois checks proxy service (API) domains if still used
+     * if not, then this job disables these domains
+     *
+     * In this function we check if
+     *
+     * @param $rule
+     * @return bool
+     */
+
+    public static function checkProxyServiceDisabled(&$proxyrule) {
+
+        $enabled = true;
+        if (!$proxyrule->enabled) {
+
+            // check if proxy abusecontact set and addon active
+
+            $enabled = ($proxyrule->proxy_abusecontact_id && ($addon_id = scartRules::proxyServiceAPI($proxyrule->proxy_abusecontact_id)));
+            if ($enabled) {
+
+                $proxycontact = Abusecontact::find($proxyrule->proxy_abusecontact_id);
+                $proxycontact = ($proxycontact) ? $proxycontact->owner : '???';
+
+                scartLog::logLine("D-checkProxyServiceDisabled; proxy service API rule for domain '$proxyrule->domain' with proxy contact '$proxycontact' is active - check if real IP not changed");
+
+                $addon = Addon::find($addon_id);
+                if ($addon) {
+
+                    $record = new \stdClass();
+                    $record->url = "https://$proxyrule->domain/";
+                    $record->filenumber = 'A' . sprintf('%010d', $addon_id);
+
+                    $real_ip = Addon::run($addon, $record);
+                    if ($real_ip) {
+                        if ($proxyrule->ip != $real_ip) {
+                            scartLog::logLine("D-checkProxyServiceDisabled; real IP for domain '$proxyrule->domain' is changed, was '$proxyrule->ip', update with new REAL ip=$real_ip ");
+                        } else {
+                            scartLog::logLine("D-checkProxyServiceDisabled; real IP for domain '$proxyrule->domain' is NOT changed; REAL ip=$real_ip ");
+                        }
+                        // update proxy real IP
+                        $proxyrule = scartUpdateWhois::updateProxyIP($proxyrule,$real_ip);
+
+                    }
+                } else {
+                    scartLog::logLine("W-checkProxyServiceDisabled; addon for proxy service API rule for domain '$proxyrule->domain' not active!?");
+                    $enabled = false;
+                }
+
+            }
+        }
+        return $enabled;
+    }
+
 
 }

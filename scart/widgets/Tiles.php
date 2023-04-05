@@ -121,12 +121,13 @@ class Tiles extends WidgetBase
             $infodatas = $item->getInfoDataAttribute();
             $info = [];
             foreach ($infodatas as $key => $infodata) {
-                if ($key!='whoisraw' && $key!='extra' ) {
+                if ($key!='whoisraw' && $key!='extra' && $key!='extradata') {
                     $info = array_merge($info,$infodata);
                 }
             } // end foreach
 
             $extra = (isset($infodatas['extra'])?$infodatas['extra']:[]);
+            $extradata = (isset($infodatas['extradata'])?$infodatas['extradata']:"{}");
             $whoisraw = $infodatas['whoisraw'];
 
 
@@ -168,7 +169,7 @@ class Tiles extends WidgetBase
 
             $imgsize     = scartImage::getImageSizeAttr($item,$this->colimgsize);
             $imgbigsize  = scartImage::getImageSizeAttr($item,$this->colimgsize,true);
-            $extrasizes  = scartImage::getImageSizeAttr($item,$this->colimgsize,false,true);
+            $extrasizes  = scartImage::getImageSizeAttr($item,$this->colimgsize,true,true);
             $extraheight = ($extrasizes[1] > 0)? $extrasizes[1] : $extrasizes[0];
 
             $tabhead = (($item->url_type==SCART_URL_TYPE_MAINURL) ? 'MAIN' : (($item->url_type==SCART_URL_TYPE_IMAGEURL) ? 'IMAGE' : 'VIDEO') );
@@ -198,6 +199,7 @@ class Tiles extends WidgetBase
                     'cssnote' => $cssnote,
                     'info' => $info,
                     'extra' => $extra,
+                    'extradata' => $extradata,
                     'extraheight' => $extraheight,
                     'imagewhoisraw' => scartWhois::htmlOutputRaw($whoisraw),
                     'js_result' => $showresult,

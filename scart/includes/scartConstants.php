@@ -31,6 +31,7 @@ define ('SCART_ROLE_SCHEDULER' , 'SCARTscheduler');
 define ('SCART_GROUP_WORKUSER' , 'SCARTworkuser');
 
 define ('SCART_INPUT_TYPE' , 'input');
+define ('SCART_INPUT_TYPE_VERIFY' , 'input_verify');
 define ('SCART_NOTIFICATION_TYPE' , 'notification');
 
 define ('SCART_STATUS_OPEN', 'open');
@@ -45,6 +46,7 @@ define ('SCART_STATUS_ABUSECONTACT_CHANGED', 'abusecontact_changed');
 define ('SCART_STATUS_SCHEDULER_CHECKONLINE', 'scheduler_checkonline');
 define ('SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL', 'scheduler_checkonline_manual');
 define ('SCART_STATUS_CLOSE_OFFLINE', 'close_offline');
+define ('SCART_STATUS_CLOSE_OFFLINE_MANUAL', 'close_offline_manual');
 define ('SCART_STATUS_CLOSE', 'close');
 define ('SCART_STATUS_CLOSE_DOUBLE', 'close_double');
 
@@ -58,6 +60,9 @@ define ( 'SCART_STATUS_REPORT_CREATED', 'CREATED');
 define ( 'SCART_STATUS_REPORT_WORKING', 'WORKING');
 define ( 'SCART_STATUS_REPORT_DONE', 'DONE');
 define ( 'SCART_STATUS_REPORT_FAILED', 'FAILED');
+
+define ( 'SCART_REPORT_TYPE_URL', 'exporturl');
+define ( 'SCART_REPORT_TYPE_ATTRIBUTE', 'exportatt');
 
 define ('SCART_URL_TYPE_MAINURL' , 'mainurl');
 define ('SCART_URL_TYPE_IMAGEURL' , 'imageurl');
@@ -184,6 +189,8 @@ define('SCART_ICCAM_ACTION_CU',4);    // content unavailable
 define('SCART_ICCAM_ACTION_MO',5);    // content moved
 define('SCART_ICCAM_ACTION_NI',7);    // content not illegal
 
+define('SCART_ICCAM_ACTION_SETHOTLINE',11);    // own actions
+
 define('SCART_ICCAM_REPORTSTATUS_OPEN',0);
 define('SCART_ICCAM_REPORTSTATUS_CLOSED',1);
 define('SCART_ICCAM_REPORTSTATUS_EITHER',2);
@@ -192,9 +199,15 @@ define('SCART_ICCAM_REPORTORIGIN_USERREPORTED',0);    // Reported by user’s ho
 define('SCART_ICCAM_REPORTORIGIN_USERCOUNTRY',1);     // Hosted in user’s country
 define('SCART_ICCAM_REPORTORIGIN_USEREITHER',2);      // Either
 
-define('SCART_ICCAM_REPORTSTAGE_CLASSIFICATON',1);
-define('SCART_ICCAM_REPORTSTAGE_MONITOR',2);
-define('SCART_ICCAM_REPORTSTAGE_COMPLETED',3);
+define('SCART_ICCAM_REPORTSTAGE_CLASSIFICATON',1);      // v2
+define('SCART_ICCAM_REPORTSTAGE_MONITOR',2);            // v2
+define('SCART_ICCAM_REPORTSTAGE_COMPLETED',3);          // v2
+
+define('SCART_ICCAM_REPORTSTAGE_UNACTIONED','Unactioned');   // v3
+define('SCART_ICCAM_REPORTSTAGE_UNASSESSED','Unassessed');   // v3
+
+define('SCART_ICCAM_CONTENTTYPE_MEDIA',1);              // v3
+define('SCART_ICCAM_CONTENTTYPE_WEBSITE',2);            // v3
 
 define('SCART_ADDON_TYPE_LINK_CHECKER','link_checker');
 define('SCART_ADDON_TYPE_PROXY_SERVICE_API','proxy_service_api');
@@ -232,3 +245,11 @@ define('SCART_SENT_FAILED','sent_failed');
 define('SCART_SENT_SUCCES','sent_succes');
 define('SCART_SENT_API_FAILED','sent_api_failed');
 define('SCART_SENT_API_SUCCES','sent_api_succes');
+
+define('SCART_VERIFICATION_VERIFY','verify');
+define('SCART_VERIFICATION_COMPLETE','verified_succes');
+define('SCART_VERIFICATION_ORIGINAL','original');
+define('SCART_VERIFICATION_DONE','done');
+define('SCART_VERIFICATION_VALIDATE','validate');
+define('SCART_VERIFICATION_FAILED','verified_failed');
+

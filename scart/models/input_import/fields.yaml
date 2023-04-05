@@ -4,6 +4,7 @@ fields:
         span: left
         type: dropdown
         context: create
+        comment: 'Will be set as workuser for the imported urls'
     import_file:
         label: 'import file'
         span: left
@@ -17,6 +18,7 @@ fields:
             mode: crop
             extension: auto
         type: fileupload
+        comment: 'Text file with on each line (url is required, other fields are optional): <url>;<referer>;<workuser-email>;<reference>;<source>;<type>'
         context: create
     import_result:
         label: 'Import results'

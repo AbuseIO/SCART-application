@@ -1,5 +1,7 @@
 <?php namespace abuseio\scart\Controllers;
 
+use abuseio\scart\classes\aianalyze\scartAIanalyze;
+use abuseio\scart\models\Addon;
 use Redirect;
 use Response;
 use Backend;
@@ -24,62 +26,13 @@ class Reports extends scartController
         BackendMenu::setContext('abuseio.scart', 'Reports');
     }
 
-    public function update($recordId, $context=null) {
+    public function formExtendFields($form, $fields) {
 
-        // fill download file
-
-        $this->vars['recordId'] = $recordId;
-        $report = Report::find($recordId);
-        if ($report && $report->status_code==SCART_STATUS_REPORT_DONE) {
-            $this->vars['downloadname'] = $report->downloadfile->file_name;
-            $this->vars['downloadfile'] = $report->downloadfile->getPath();
-        } else {
-            $this->vars['downloadname'] = $this->vars['downloadfile'] = '';
+        if (!scartAIanalyze::isActive()) {
+            // disable AI attribute export
+            $form->removeField('filter_type');
+            $form->removeField('filter_section');
         }
-
-        // convert (old) filter parameter(s)
-
-        if ($report) {
-
-            if (!is_array($report->filter_grade)) {
-                scartLog::logLine("D-filter_grade=" . print_r($report->filter_grade,true) );
-                if ($report->filter_grade != '*') {
-                    $report->filter_grade = [
-                        ['filter_grade' => $report->filter_grade],
-                    ];
-                } else {
-                    $report->filter_grade = [];
-                }
-                $report->save();
-                scartLog::logLine("D-AFTER filter_grade=" . print_r($report->filter_grade,true) );
-            }
-
-            if (!is_array($report->filter_status)) {
-                scartLog::logLine("D-filter_status=" . print_r($report->filter_status,true) );
-                if ($report->filter_status != '*') {
-                    $report->filter_status = [
-                        ['filter_status' => $report->filter_status],
-                    ];
-                } else {
-                    $report->filter_status = [];
-                }
-                $report->save();
-                scartLog::logLine("D-AFTER filter_status=" . print_r($report->filter_status,true) );
-            }
-
-        }
-
-        return $this->asExtension('FormController')->update($recordId, $context=null);
-    }
-
-    public function create($context=null) {
-
-        $this->vars['recordId'] = $this->vars['downloadname'] = $this->vars['downloadfile'] = '';
-
-        return $this->asExtension('FormController')->create($context=null);
-    }
-
-    public function formExtendFields($host, $fields) {
 
         foreach ($fields AS $field) {
             if ($field->fieldName == 'export_columns') {
@@ -96,6 +49,64 @@ class Reports extends scartController
             }
         }
 
+    }
+
+
+
+    public function update($recordId, $context=null) {
+
+        // fill download file
+
+        $this->vars['recordId'] = $recordId;
+        $report = Report::find($recordId);
+        if ($report && $report->status_code==SCART_STATUS_REPORT_DONE) {
+            $this->vars['downloadname'] = $report->downloadfile->file_name;
+            $this->vars['downloadfile'] = $report->downloadfile->getPath();
+        } else {
+            $this->vars['downloadname'] = $this->vars['downloadfile'] = '';
+        }
+
+        if ($report) {
+
+            // convert filter parameter(s)
+
+            if (!is_array($report->filter_grade)) {
+                //scartLog::logLine("D-filter_grade=" . print_r($report->filter_grade,true) );
+                if ($report->filter_grade != '*') {
+                    $report->filter_grade = [
+                        ['filter_grade' => $report->filter_grade],
+                    ];
+                } else {
+                    $report->filter_grade = [];
+                }
+                $report->save();
+                //scartLog::logLine("D-AFTER filter_grade=" . print_r($report->filter_grade,true) );
+            }
+
+            //scartLog::logLine("D-BEFORE filter_status=" . print_r($report->filter_status,true) );
+            if (!is_array($report->filter_status)) {
+                //scartLog::logLine("D-filter_status=" . print_r($report->filter_status,true) );
+                if ($report->filter_status != '*') {
+                    $report->filter_status = [
+                        ['filter_status' => $report->filter_status],
+                    ];
+                } else {
+                    $report->filter_status = [];
+                }
+                $report->save();
+                //scartLog::logLine("D-AFTER filter_status=" . print_r($report->filter_status,true) );
+            }
+
+        }
+
+        return $this->asExtension('FormController')->update($recordId, $context=null);
+    }
+
+    public function create($context=null) {
+
+        $this->vars['recordId'] = $this->vars['downloadname'] = $this->vars['downloadfile'] = '';
+
+        return $this->asExtension('FormController')->create($context=null);
     }
 
     public function onRecreate() {

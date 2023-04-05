@@ -20,7 +20,7 @@ class scartRuntime {
     private $task = null;
     private $name = '';
     private $running = 0;
-    private $maxChannel = 1000;   // max number of buffered messages in channel
+    public  $maxChannel = 10000;   // max number of buffered messages in channel
 
     public function __construct($name) {
 

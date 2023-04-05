@@ -1,7 +1,7 @@
 <?= Block::put('body') ?>
 <div style="margin-left: 10px;">
 
-    <h1>Dashboard Sexual Child Abuse Reporter Tool (SCART)</h1>
+    <h1>Dashboard <?= $title ?></h1>
     <span class="small bold"><?= $release; ?> - dashboard data timestamp: <?= $cacheReload ?> </span>
 
     <div id="dashboard_area" class="row">
@@ -32,16 +32,42 @@
                    data-request-update="dashboard_area: '#dashboard_area'"
                    data-request-data=""
             >Checkonline</a></h3>
-            <div class="control-status-list">
-                <ul>
-                    <?php foreach ($checkonlinests AS $sts) { ?>
-                    <li>
-                        <span class="status-icon <?= $sts['icon'] ?>"><i class="<?= ($sts['icon'] ? 'icon-check' : 'icon-info') ?>"></i></span>
-                        <span class="status-text"><?= $sts['status'] ?></span>
-                        <span class="status-label link"><?= $sts['count'] ?></span>
-                    </li>
-                    <?php } ?>
+
+            <div class="control-tabs primary-tabs" data-control="tab">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#primaryTabOne">General</a></li>
+                    <?php if (count($realtimests) > 0) { ?><li><a href="#primaryTabTwo">Realtime workers</a></li><?php } ?>
                 </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active">
+                        <div class="control-status-list">
+                            <ul>
+                                <?php foreach ($checkonlinests AS $sts) { ?>
+                                <li>
+                                    <span class="status-icon <?= $sts['icon'] ?>"><i class="<?= ($sts['icon'] ? 'icon-check' : 'icon-info') ?>"></i></span>
+                                    <span class="status-text"><?= $sts['status'] ?></span>
+                                    <span class="status-label link"><?= $sts['count'] ?></span>
+                                </li>
+                                <?php } ?>
+                            </ul>
+                        </div>
+                    </div>
+                    <?php if (count($realtimests) > 0) { ?>
+                    <div class="tab-pane">
+                        <div class="control-status-list">
+                            <ul>
+                                <?php foreach ($realtimests AS $sts) { ?>
+                                <li>
+                                    <span class="status-icon <?= $sts['icon'] ?>"><i class="<?= ($sts['icon'] ? 'icon-check' : 'icon-info') ?>"></i></span>
+                                    <span class="status-text"><?= $sts['status'] ?></span>
+                                    <span class="status-label link"><?= $sts['count'] ?></span>
+                                </li>
+                                <?php } ?>
+                            </ul>
+                        </div>
+                    </div>
+                    <?php } ?>
+                </div>
             </div>
 
             <?php } ?>

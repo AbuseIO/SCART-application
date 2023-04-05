@@ -47,7 +47,7 @@
                                 <div class="tab-pane active" >
                                     <div class="row " style="">
                                         <div class="col-xs-12 align-center" style="display: table-cell; width: 100%; text-align: center; vertical-align: middle">
-                                            <a style="cursor: zoom-in" data-toggle="modal" data-size="large" href="#notificationImage<?= $hash; ?>"><img id="notImgSrc<?= $hash; ?>" src="<?= $src ?>" style="display: inline; border: 2px solid black; " <?= $imgsize ?> /></a>
+                                            <img id="notImgSrc<?= $hash; ?>" src="<?= $src ?>" onclick="showImage($(this),<?= $record_id ?>,extra_fields_<?= $hash ?>);" style="cursor: zoom-in; display: inline; border: 2px solid black; " <?= $imgsize ?> />
                                             <?php if ($hashcheck_return): ?>
                                             <span class="icon-exclamation-triangle" title="<?= e(trans('abuseio.scart::lang.text.found_hash')) ?>" data-toggle="tooltip" data-placement="right" data-delay="150" style="color: red;">&nbsp;</span>
                                             <?php endif ?>
@@ -83,6 +83,9 @@
                                     <?php } ?>
                                 </div>
                                 <?php endif ?>
+                                <script type="text/javascript">
+                                    var extra_fields_<?= $hash ?>=<?= $extradata; ?>;
+                                </script>
                             </div>
                         </div>
                     </div>
@@ -91,7 +94,6 @@
                 <div class="row">
 
                     <div class="col-xs-12 p-a-0 text-center">
-
 
                         <button
                             id="idButtonPOLICE<?= $hash; ?>"

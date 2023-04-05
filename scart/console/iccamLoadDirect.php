@@ -2,18 +2,20 @@
 
 namespace abuseio\scart\console;
 
-use abuseio\scart\classes\iccam\scartICCAMfields;
+use abuseio\scart\classes\iccam\api2\scartIccam;
+use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
+use abuseio\scart\classes\iccam\api2\scartICCAMfields;
+use abuseio\scart\classes\iccam\api2\scartExportICCAM;
+
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Systemconfig;
 use Illuminate\Console\Command;
 use League\Flysystem\Exception;
-use abuseio\scart\classes\iccam\scartICCAM;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Input;
 use Config;
 use Symfony\Component\Console\Input\InputOption;
-use abuseio\scart\classes\iccam\scartExportICCAM;
 
 class iccamLoadDirect extends Command
 {
@@ -93,7 +95,7 @@ class iccamLoadDirect extends Command
 
                         if ($input) {
 
-                            if ($this->getICCAMreportID($input->reference) == $ICCAMreportID) {
+                            if (scartICCAMinterface::getICCAMreportID($input->reference) == $ICCAMreportID) {
 
                                 /**
                                  * Note
@@ -117,7 +119,7 @@ class iccamLoadDirect extends Command
                                 sleep(0.5);
 
                                 /*
-                                scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                                     'record_type' => class_basename($input),
                                     'record_id' => $input->id,
                                     'object_id' => $input->reference,
@@ -176,7 +178,7 @@ class iccamLoadDirect extends Command
 
             try {
 
-                if (scartICCAM::login()) {
+                if (scartIccam::login()) {
 
                     scartLog::logLine("D-insertERTaction2ICCAM; export actionID=$actionID for reportID=$reportID ");
 
@@ -191,14 +193,14 @@ class iccamLoadDirect extends Command
                     $hotlinecountry = Systemconfig::get('abuseio.scart::classify.hotline_country', '');
                     $iccamdata['Country'] = ($country) ? $country : $hotlinecountry;
                     $iccamdata['Reason'] = ($reason) ? $reason : 'SCART API action';
-                    $result = scartICCAM::insertActionICCAM($reportID, $actionID, $iccamdata);
+                    $result = scartIccam::insertActionICCAM($reportID, $actionID, $iccamdata);
                     if ($result===false) {
                         $result = 'Error inserting action into ICCAM';
                     } else {
                         $result = '';
                     }
 
-                    scartICCAM::close();
+                    scartIccam::close();
 
                 } else {
                     $result = 'Error login into ICCAM';

@@ -11,77 +11,99 @@ navigation:
         icon: icon-dashboard
         permissions:
             - abuseio.scart.startpage
-        order: '1'
+        order: 1
     Inputs:
         label: 'abuseio.scart::lang.menu.inputs'
         url: /abuseio/scart/Inputs
         icon: icon-file-photo-o
         permissions:
             - abuseio.scart.input_manage
-        order: '2'
+        order: 2
     Grade:
         label: 'abuseio.scart::lang.menu.classify'
         url: /abuseio/scart/Grade
         icon: icon-check-circle
         permissions:
             - abuseio.scart.grade_notifications
-        order: '3'
+        order: 3
+    Verify:
+        label: Verify
+        url: /abuseio/scart/Input_verify/verifyitem
+        icon: icon-check-square-o
+        permissions:
+            - abuseio.scart.grade_notifications
+        order: 3
+        sideMenu:
+            verifyitem:
+                label: 'Verify item'
+                url: /abuseio/scart/Input_verify/verifyitem
+                icon: icon-pencil-square-o
+                permissions:
+                    - abuseio.scart.grade_notifications
+                order: 1
+            index:
+                label: 'Verified items'
+                url: /abuseio/scart/Input_verify
+                icon: icon-list-ul
+                permissions:
+                    - abuseio.scart.grade_notifications
+                order: 2
     Police:
         label: 'abuseio.scart::lang.menu.police'
         url: /abuseio/scart/Police
         icon: icon-warning
         permissions:
             - abuseio.scart.police
-        order: '4'
+        order: 4
     NTD:
         label: 'abuseio.scart::lang.menu.ntd'
         url: /abuseio/scart/ntds
         icon: icon-external-link
         permissions:
             - abuseio.scart.ntds
-        order: '5'
+        order: 5
     Changed:
         label: 'abuseio.scart::lang.menu.changed'
         url: /abuseio/scart/Changed
         icon: icon-user-circle
         permissions:
             - abuseio.scart.changed
-        order: '6'
+        order: 6
     Abusecontacts:
         label: 'abuseio.scart::lang.menu.abusecontacts'
         url: /abuseio/scart/Abusecontacts
         icon: icon-group
         permissions:
             - abuseio.scart.abusecontact_manage
-        order: '7'
+        order: 7
     Reports:
         label: 'abuseio.scart::lang.menu.reports'
         url: /abuseio/scart/reports
         icon: icon-image
         permissions:
             - abuseio.scart.reporting
-        order: '8'
+        order: 8
     Domainrules:
         label: 'abuseio.scart::lang.menu.rules'
         url: /abuseio/scart/domainrule
         icon: icon-list-ul
         permissions:
             - abuseio.scart.rules
-        order: '9'
+        order: 9
     Checkonline:
         label: 'abuseio.scart::lang.menu.checkonline'
         url: /abuseio/scart/Checkonline
         icon: icon-television
         permissions:
             - abuseio.scart.checkonline
-        order: '10'
+        order: 10
     utility:
         label: 'abuseio.scart::lang.menu.settings'
-        url: /abuseio/scart/Users
+        url: /abuseio/scart/Blockeddays
         icon: icon-gears
         permissions:
             - abuseio.scart.utility
-        order: '20'
+        order: 11
         sideMenu:
             config:
                 label: 'abuseio.scart::lang.menu.config'
@@ -117,6 +139,13 @@ navigation:
                 icon: icon-list-ul
                 permissions:
                     - abuseio.scart.system_whitelist
+                order: '5'
+            Sources:
+                label: 'Input sources'
+                url: /abuseio/scart/Input_source
+                icon: icon-list-ul
+                permissions:
+                    - abuseio.scart.sources
                 order: '5'
             NTDtemplates:
                 label: 'abuseio.scart::lang.menu.ntdtemplates'
@@ -159,6 +188,13 @@ navigation:
                 order: '12'
                 permissions:
                     - abuseio.scart.iccam_hotline
+            Iccam_api_field:
+                label: 'ICCAM API fields'
+                url: /abuseio/scart/iccam_api_field
+                icon: icon-table
+                order: '13'
+                permissions:
+                    - abuseio.scart.iccam_iccam_api_field
             Exporterrors:
                 label: 'abuseio.scart::lang.menu.exporterrors'
                 url: /abuseio/scart/Exporterrors

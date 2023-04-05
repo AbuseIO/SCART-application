@@ -1,9 +1,7 @@
 <?php namespace abuseio\scart\Controllers;
 
 use abuseio\scart\classes\classify\scartGrade;
-use abuseio\scart\classes\iccam\scartExportICCAM;
-use abuseio\scart\classes\iccam\scartICCAMfields;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Abusecontact;
 use Flash;
 use BackendMenu;
@@ -80,8 +78,8 @@ class Police extends scartController
 
                     // check if ICCAM active (for this record)
 
-                    if (scartICCAMmapping::isActive()) {
-                        if (scartICCAMfields::getICCAMreportID($record->reference)) {
+                    if (scartICCAMinterface::isActive()) {
+                        if (scartICCAMinterface::getICCAMreportID($record->reference)) {
                             // get hoster
                             $abusecontact = Abusecontact::find($record->host_abusecontact_id);
                             if ($abusecontact) {
@@ -90,14 +88,14 @@ class Police extends scartController
                                 if (scartGrade::isLocal($country)) {
                                     // local -> then content removed (CR)
                                     $action = SCART_ICCAM_ACTION_CR;
-                                    $reason = 'SCART content removed';
+                                    $reason = 'ContentNotFound';
                                 } else {
                                     // not local -> content moved (MO)
                                     $action = SCART_ICCAM_ACTION_MO;
                                     $reason = 'SCART content moved to '.$country;
                                 }
                                 $record->logText("POLICE function set CLOSE; inform ICCAM about '$reason'");
-                                scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                                     'record_type' => class_basename($record),
                                     'record_id' => $record->id,
                                     'object_id' => $record->reference,

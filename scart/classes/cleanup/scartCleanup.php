@@ -1,4 +1,5 @@
 <?php namespace abuseio\scart\classes\cleanup;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Whois_cache;
 use Db;
 use Config;
@@ -17,7 +18,10 @@ class scartCleanup {
 
         $timeout = date('Y-m-d H:i:s', strtotime("-$cleanup_grade_timeout hours"));
 
-        // no limit -> each night one time
+        // check ICCAM V3 -> no cleanup, keep assessment from ICCAM
+        $iccamversion = (scartICCAMinterface::isActive()) ? scartICCAMinterface::getVersion() : '';
+
+            // no limit -> each night one time
 
         // last time updated good indication of last-time worked at
         $inputs = Input::where('status_code',SCART_STATUS_GRADE)
@@ -37,6 +41,11 @@ class scartCleanup {
 
                     $lock = scartGrade::getLockFullnames(0, [$input->id]);
                     $status .= "; SKIP - input locked by=$lock";
+                    $notcnt = 0;
+
+                } elseif ($iccamversion == 'v3' && $input->reference != '') {
+
+                    $status .= "; SKIP - imported from ICCAM (API v3) with reference=$input->reference ";
                     $notcnt = 0;
 
                 } else {

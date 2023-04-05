@@ -21,7 +21,7 @@ class Input_import extends scartModel
      */
     public $rules = [
         'workuser_id' => 'required',
-        'import_file' => 'required',
+//        'import_file' => 'required',
     ];
 
     public $attachOne = [

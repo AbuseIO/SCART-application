@@ -3,6 +3,7 @@ namespace abuseio\scart;
 
 use abuseio\scart\classes\rules\AlreadyHasFilter;
 use abuseio\scart\classes\rules\URLnew;
+use abuseio\scart\models\Input;
 use App;
 use Event;
 use Lang;
@@ -89,8 +90,11 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.testPooling', 'abuseio\scart\console\testPooling');
         $this->registerConsoleCommand('abuseio.scartRealtimeCheckonline', 'abuseio\scart\console\scartRealtimeCheckonline');
         $this->registerConsoleCommand('abuseio.monitorMemory', 'abuseio\scart\console\monitorMemory');
+        $this->registerConsoleCommand('abuseio.monitorRealtime', 'abuseio\scart\console\monitorRealtime');
         $this->registerConsoleCommand('abuseio.analyzeTUDELFT', 'abuseio\scart\console\analyzeTUDELFT');
         $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
+
+        $this->registerConsoleCommand('abuseio.iccamApi3', 'abuseio\scart\console\iccamApi3');
 
     }
 
@@ -209,8 +213,12 @@ class Plugin extends PluginBase {
             'abuseio.scart.system_whitelist' => [
                 'label' => 'System whitelist records',
                 'tab' => 'SCARt reporting',
-                'order' => 293
-                ,
+                'order' => 293,
+            ],
+            'abuseio.scart.sources' => [
+                'label' => 'Input sources',
+                'tab' => 'SCARt reporting',
+                'order' => 294,
             ],
         ];
     }
@@ -296,8 +304,6 @@ class Plugin extends PluginBase {
 
     public function registerNavigation() {
 
-        // TO-DO; get/put in Session::get('SCART_saved_menuitems','');
-
         $ertmenu = parent::registerNavigation();
 
         // if not setup yet, then exit
@@ -374,24 +380,18 @@ class Plugin extends PluginBase {
             $reterror = 'APPLICATION SystemException ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
             return $reterror;
         });
-
-        // 2021/2/15/Gs: added FatalThrowableError
         App::error(function(FatalThrowableError $exeception) {
-            // php fatals
             $errmsg = "E-FatalThrowableError exception on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
             scartLog::logLine($errmsg);
             scartLog::errorMail($errmsg, $exeception, "FatalThrowableError exception");
             return 'FATAL ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
         });
         App::fatal(function($exeception) {
-            // php fatals
             $errmsg = "E-Fatal exception on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
             scartLog::logLine($errmsg);
             scartLog::errorMail($errmsg, $exeception, "Fatal exception");
             return 'FATAL ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
         });
-
-        Validator::extend('URLvEOKM', URLnew::class);
 
         // Check if we are currently in backend module.
         if (!App::runningInBackend()) {
@@ -458,15 +458,13 @@ class Plugin extends PluginBase {
         // Listen for menu extendItems
         Event::listen('backend.menu.extendItems', function($manager) {
 
-            // remove menu items when not admin
+            // DYNAMIC; remove menu items
             $user = BackendAuth::getUser();
-            if ($user->is_superuser!=1) {
-                // DYNAMIC; remove NO ABUSEIO.SCART menu items
-               $menus = $manager->listMainMenuItems();
-               foreach ($menus AS $menukey => $menu) {
-                    if ($menu->owner!='abuseio.scart') {
-                        $manager->removeMainMenuItem($menu->owner, $menu->code);
-                    }
+            $verifyactive = Systemconfig::get('abuseio.scart::verify.active',false);
+            $menus = $manager->listMainMenuItems();
+            foreach ($menus AS $menukey => $menu) {
+                if (($user->is_superuser!=1 && $menu->owner!='abuseio.scart') || (strtolower($menu->code)=='verify' && !$verifyactive)) {
+                    $manager->removeMainMenuItem($menu->owner, $menu->code);
                 }
             }
 
@@ -550,6 +548,8 @@ class Plugin extends PluginBase {
     public function registerListColumnTypes()
     {
         return [
+            'gradeinformationcolumn' => [new \abuseio\scart\Widgets\GradeInformationColumn, 'renderValue'],
+            'gradecolumn' => [new \abuseio\scart\Widgets\GradeColumn, 'renderValue'],
             'jsontext' => [$this, 'ListConvertJson2Text'],
             'html' => function($value) {return $value;}
         ];

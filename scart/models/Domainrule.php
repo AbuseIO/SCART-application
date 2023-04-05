@@ -63,8 +63,7 @@ class Domainrule extends scartModel
     {
         //  only Ajax request, skip jobs and crons
         if (Request::ajax()) {
-            //https://docs.octobercms.com/2.x/services/validation.html#globally-registered-rules
-            $this->rules['domain'] = [$this->rules['domain'], new scartDomainOnlyOne];
+            //$this->rules['domain'] = [$this->rules['domain'], new scartDomainOnlyOne];
         }
 
     }
@@ -213,6 +212,11 @@ class Domainrule extends scartModel
         //trace_log($values);
         $this->rulesetdata = serialize($values);
 
+        // check & convert
+        if (empty($this->abusecontact_id)) $this->abusecontact_id = 0;
+        if (empty($this->proxy_abusecontact_id)) $this->proxy_abusecontact_id = 0;
+        if (empty($this->addon_id)) $this->addon_id = 0;
+
     }
 
 
@@ -316,5 +320,9 @@ class Domainrule extends scartModel
         return $resultproxy;
     }
 
+    public function listExtendQuery($query)
+    {
+        $test = 234;
+    }
 
 }

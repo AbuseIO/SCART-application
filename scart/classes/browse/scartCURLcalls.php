@@ -62,7 +62,8 @@ class scartCURLcalls {
             CURLOPT_FOLLOWLOCATION => true,   // follow redirects
             CURLOPT_MAXREDIRS => 10,     // stop after 10 redirects
             CURLOPT_ENCODING => "",     // handle compressed
-            CURLOPT_USERAGENT => self::$_useragent, // name of client
+            // No longer supported
+            //CURLOPT_USERAGENT => self::$_useragent, // name of client
             CURLOPT_AUTOREFERER => true,   // set referrer on redirect
             CURLOPT_CONNECTTIMEOUT => self::$_curltimeout,    // time-out on connect
             CURLOPT_TIMEOUT => self::$_curltimeout,    // time-out on response

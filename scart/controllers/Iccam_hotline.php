@@ -16,6 +16,6 @@ class Iccam_hotline extends scartController
     public function __construct()
     {
         parent::__construct();
-        BackendMenu::setContext('abuseio.scart', 'utility', 'ICCAM Hotlines');
+        BackendMenu::setContext('abuseio.scart', 'utility', 'Iccam_hotline');
     }
 }

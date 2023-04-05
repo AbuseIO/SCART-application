@@ -4,6 +4,8 @@ use abuseio\scart\classes\base\scartController;
 use abuseio\scart\classes\classify\scartGrade;
 use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\classes\online\scartCheckOnline;
+use abuseio\scart\classes\parallel\scartRealtimeCheckonline;
+use abuseio\scart\classes\parallel\scartRealtimeMonitor;
 use abuseio\scart\classes\scheduler\scartSchedulerCheckOnline;
 use Backend\Facades\BackendAuth;
 use Backend\Models\UserRole;
@@ -45,6 +47,7 @@ class Startpage extends scartController
         $this->bodyClass = 'compact-container ';
 
         $this->vars['release'] = Systemconfig::get('abuseio.scart::release.version', '0.0a') . ' - ' . Systemconfig::get('abuseio.scart::release.build', 'UNKNOWN');
+        $this->vars['title'] = Systemconfig::get('abuseio.scart::release.title', 'Classify & Reporting Tool');
 
         // Note: In the cleanup job each night the dashboard data is reloaded into cache
         //trace_sql();
@@ -62,6 +65,7 @@ class Startpage extends scartController
         // CHECKONLINE
         $status = $this->getStatusCheckonline();
         $this->vars['checkonlinests'] = $status['checkonlinests'];
+        $this->vars['realtimests'] = (isset($status['realtimests'])?$status['realtimests'] : []);
         $this->vars['checkonlineadm'] = (scartUsers::isScartAdmin() || scartUsers::isAdmin());
 
         // IMAGES
@@ -173,7 +177,7 @@ class Startpage extends scartController
         $status = $this->getCache('statusCheckonline');
         if ($status=='') {
 
-            $statussts = [];
+            $statussts = $realtimests = [];
 
             $mode = Systemconfig::get('abuseio.scart::scheduler.checkntd.mode',SCART_CHECKNTD_MODE_CRON);
             $moderealtime = ($mode == SCART_CHECKNTD_MODE_REALTIME);
@@ -183,14 +187,12 @@ class Startpage extends scartController
                 'icon' => '',
             ];
 
-            $lastseen = scartSchedulerCheckOnline::Normal(0)
-                ->orderBy('lastseen_at','ASC')
-                ->select('lastseen_at')
-                ->first();
-            $lastseen = ($lastseen) ? $lastseen->lastseen_at : '';
-            $lastseenago = ($lastseen) ? (time() - strtotime($lastseen)) : 0;
             // note: CRON then more then 8 hours as warning
             $lookagain = ($moderealtime) ? Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_look_again',120) : 480;
+
+            $lastseen = scartSchedulerCheckOnline::lastseen();
+            $lastseen = ($lastseen) ? $lastseen->lastseen_at : '';
+            $lastseenago = ($lastseen) ? (time() - strtotime($lastseen)) : 0;
             $warning = ($lastseenago >= ($lookagain * 60));
             $statussts[] = [
                 'status' => 'oldest lastseen of checkonline reports',
@@ -202,14 +204,17 @@ class Startpage extends scartController
                 'count' => round($lastseenago / 60,0).' minutes',
                 'icon' => (!$warning) ? 'success' : 'warning',
             ];
+            if ($warning) {
+                $lookagaintime = date('Y-m-d H:i:s', strtotime("-$lookagain minutes"));
+                $lastseencnt = scartSchedulerCheckOnline::lastseenCount($lookagaintime);
+                $statussts[] = [
+                    'status' => 'number of old lastseen records',
+                    'count' => $lastseencnt,
+                    'icon' => 'warning',
+                ];
+            }
 
             if ($moderealtime) {
-
-                $statussts[] = [
-                    'status' => 'check each report (url) not sooner then',
-                    'count' => Systemconfig::get('abuseio.scart::scheduler.checkntd.check_online_every',15).' minutes',
-                    'icon' => '',
-                ];
 
                 $statussts[] = [
                     'status' => 'check each report (url) within',
@@ -217,57 +222,22 @@ class Startpage extends scartController
                     'icon' => '',
                 ];
 
-                $count = scartSchedulerCheckOnline::Firsttime()->count();
+                $avg = scartSchedulerCheckOnline::checkAvgTime();
                 $statussts[] = [
-                    'status' => 'number of records for first time',
-                    'count' => $count,
+                    'status' => 'avg checkonline time (WhoIs & browser)',
+                    'count' => round($avg,2).' sec',
+                    'icon' => '',
+                ];
+                $max = scartSchedulerCheckOnline::checkMaxTime();
+                $min = scartSchedulerCheckOnline::checkMinTime();
+                $statussts[] = [
+                    'status' => 'max/min checkonline time (WhoIs & browser)',
+                    'count' => round($max,2).'/'.round($min,2).' sec',
                     'icon' => '',
                 ];
 
-                $count = scartSchedulerCheckOnline::Retry()->count();
-                $statussts[] = [
-                    'status' => 'number of records for retry',
-                    'count' => $count,
-                    'icon' => '',
-                ];
+                $realtimests = scartRealtimeMonitor::realtimeStatus();
 
-                $countnormal = scartSchedulerCheckOnline::Normal(0)->count();
-                $statussts[] = [
-                    'status' => 'number of checkonline records',
-                    'count' => $countnormal,
-                    'icon' => '',
-                ];
-
-                $count = scartCheckOnline::checkLocks(date('Y-m-d 23:59:59'));
-                $statussts[] = [
-                    'status' => 'number of locked checkonline records',
-                    'count' => $count,
-                    'icon' => '',
-                ];
-
-                $inputsmax = Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_inputs_max',10);
-                $statussts[] = [
-                    'status' => 'max number of records for worker/minute',
-                    'count' => $inputsmax,
-                    'icon' => '',
-                ];
-
-                $statussts[] = [
-                    'status' => 'minutes before worker spinning down again',
-                    'count' => Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_min_diff_spindown',15),
-                    'icon' => '',
-                ];
-
-                $threat_todo = $lookagain * $inputsmax;  // number of records of each threat if look within (look_again) mins again
-                //$taskneeded = intval($countnormal / $threat_todo) + 1;
-                $actuelnumber = scartUsers::getGeneralOption('scartcheckonline_realtime_tasklastmax',0);
-                $statussts[] = [
-                    'status' => "actual number of workers = (intval($countnormal/$threat_todo) + 1)",
-                    'count' => $actuelnumber,
-                    'icon' => ($actuelnumber < 1) ? 'warning' : 'success',
-                ];
-
-                // Do some checking on lastseen
 
             } else {
 
@@ -295,25 +265,9 @@ class Startpage extends scartController
 
             }
 
-            /* REPORTING
-            $params = [
-                'reportname' => "RealtimeController report ",
-                'report_lines' => [
-                    'report time: ' . date('Y-m-d H:i:s',$reportime),
-                    "number of records for Firsttime: " . $firsttimecnt,
-                    "number of records for Retry: " . $retrycnt,
-                    "number of normal records: " . $count,
-                    "oldest lastseen of normal records: $lastseen  ($lastseenago ago)",
-                    "look again time (minutes): ".self::$look_again,
-                    "actual number of normal workers: " . scartUsers::getGeneralOption('scartcheckonline_realtime_tasklastmax',0),
-                ]
-            ];
-            scartLog::logLine("D-{$logname}; report: " . print_r($params,true) );
-            scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-            */
-
             $status = [
                 'checkonlinests' => $statussts,
+                'realtimests' => $realtimests,
             ];
             $this->setCache('statusCheckonline',$status);
         }
@@ -356,6 +310,7 @@ class Startpage extends scartController
                 'Check if online' => SCART_STATUS_SCHEDULER_CHECKONLINE,
                 'Manual checkonline' => SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,
                 'Gone offline' => SCART_STATUS_CLOSE_OFFLINE,
+                'Manual set offline' => SCART_STATUS_CLOSE_OFFLINE_MANUAL,
                 'Closed' => SCART_STATUS_CLOSE,
             ];
             $imagests = [];
@@ -396,7 +351,8 @@ class Startpage extends scartController
                          SCART_STATUS_SCHEDULER_CHECKONLINE,
                          SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,
                          SCART_STATUS_CLOSE,
-                         SCART_STATUS_CLOSE_OFFLINE])
+                         SCART_STATUS_CLOSE_OFFLINE,
+                         SCART_STATUS_CLOSE_OFFLINE_MANUAL])
                     ->count();
                 $classificationcnt += $cnt;
                 $classificationsts[] = [

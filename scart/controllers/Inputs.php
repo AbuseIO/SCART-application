@@ -1,5 +1,6 @@
 <?php namespace abuseio\scart\Controllers;
 
+use abuseio\scart\models\Systemconfig;
 use abuseio\scart\widgets\Dropdown;
 use BackendMenu;
 use BackendAuth;
@@ -41,14 +42,6 @@ class Inputs extends scartController {
     public function __construct() {
         parent::__construct();
         BackendMenu::setContext('abuseio.scart', 'Inputs');
-
-
-
-        // widgets   - first for the period
-//        $this->dropdownWidget = new Dropdown($this);
-//        $this->dropdownWidget->alias = 'periods';
-//        $this->dropdownWidget->setListItems( ['week', 'month']);
-//        $this->dropdownWidget->bindToController();
     }
 
     /**
@@ -63,11 +56,9 @@ class Inputs extends scartController {
         /**
          * NB: add only dynamic fields/options
          *
-         * setup is primary done inputs/config_filter.yaml
-         *   Extra infor
-         * https://docs.octobercms.com/2.x/backend/lists.html#date-range
          */
 
+        $own_work_default = Systemconfig::get('abuseio.scart::options.own_work_default',true);
         $input_status= new Input_status();
         $workuser_id = scartUsers::getId();
         $filter->addScopes([
@@ -80,7 +71,7 @@ class Inputs extends scartController {
             'workuser_id' => [
                 'label' => trans('abuseio.scart::lang.head.my_work'),
                 'type' =>'checkbox',
-                'default' => true,
+                'default' => $own_work_default,
                 'conditions' => "workuser_id=$workuser_id",
             ],
             'grade_code' => [
@@ -111,9 +102,6 @@ class Inputs extends scartController {
             ],
         ]);
 
-
-
-//        $filter->onFilterUpdate();
     }
 
 
@@ -253,10 +241,9 @@ class Inputs extends scartController {
                     $record->removeNtdIccam(true);
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE_OFFLINE,'Inputs; set by analist');
-
-                    // set status
-                    $record->status_code = SCART_STATUS_CLOSE_OFFLINE;
+                    $new = ($record->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Inputs; set by analist');
+                    $record->status_code = $new;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
                     $record->save();
                     scartLog::logLine("D-Filenumber=$record->filenumber, url=$record->url, set on $record->status_code");

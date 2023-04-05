@@ -1,0 +1,15 @@
+scopes:
+  status:
+    label: 'status'
+    type: group
+    conditions: 'status in (:filtered)'
+    modelClass: abuseio\scart\models\Input_verify
+    options: getStatusOptions
+  created_at:
+    label: Date
+    type: daterange
+    minDate: '2001-01-23'
+    maxDate: '2030-10-13'
+    yearRange: 10
+    conditions: created_at >= ':after' AND created_at <= ':before'
+

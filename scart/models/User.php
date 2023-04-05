@@ -1,6 +1,7 @@
 <?php namespace abuseio\scart\models;
 
 use abuseio\scart\classes\base\scartModel;
+use Backend\Models\UserGroup;
 use Hash;
 use BackendAuth;
 use Validator;
@@ -48,6 +49,16 @@ class User extends scartModel {
         ],
     ];
 
+//    public $belongsToMany = [
+//        'groups' => [
+//            'Backend\Models\UserGroup',
+//            'table' => 'backend_users_groups',
+//            'key' => 'user_id',
+//            'otherKey' => 'user_group_id',
+//        ],
+//
+//    ];
+
     public function getBeRoleIdOptions($value,$formData) {
         $recs = scartUsers::getBackendRoles();
         $ret = array();
@@ -56,6 +67,16 @@ class User extends scartModel {
         }
         return $ret;
     }
+
+//    public function getGroupsOptions()
+//    {
+//        $result = [];
+//        foreach (UserGroup::all() as $group) {
+//            $result[$group->id] = [$group->name, $group->description];
+//        }
+//        return $result;
+//    }
+
 
     public function afterFetch() {
 

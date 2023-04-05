@@ -48,3 +48,24 @@
 6.0.12:
     - 'Updated table abuseio_scart_input'
     - builder_table_update_abuseio_scart_input.php
+6.0.13:
+    - 'Updated table abuseio_scart_report'
+    - builder_table_update_abuseio_scart_report_2.php
+6.0.14:
+    - 'Insert and update input_status'
+    - seeder_6014.php
+6.0.15:
+    - 'Created table abuseio_scart_input_verify'
+    - builder_table_create_abuseio_scart_input_verify.php
+6.0.16:
+    - 'Updated table abuseio_scart_input_extrafield'
+    - builder_table_update_abuseio_scart_input_extrafield.php
+6.0.17:
+    - 'Created table abuseio_scart_iccam_api_field'
+    - builder_table_create_abuseio_scart_iccam_api_field.php
+6.0.18:
+    - 'seeder iccam_api_fields'
+    - seeder6018.php
+6.0.19:
+    - 'Updated table abuseio_scart_importexport_job'
+    - builder_table_update_abuseio_scart_importexport_job.php

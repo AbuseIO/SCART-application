@@ -212,12 +212,6 @@ fields:
         type: number
         cssClass: w-200
         span: left
-    iccam-last_date:
-        label: 'ICCAM current import date'
-        type: datepicker
-        mode: datetime
-        format: 'Y-m-d'
-        span: right
 
     end_section:
         type: section

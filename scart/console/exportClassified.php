@@ -42,35 +42,48 @@ class exportClassified extends Command
         if (empty($from)) $from = '2000-01-01';
         if (empty($to)) $to = '2999-01-01';
 
-        // convert always to midnight
-        $from = date('Y-m-d 23:59:59', strtotime($from));
-        $to = date('Y-m-d 00:00:00', strtotime($to));
 
         // log console options
-        $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, from=$from, to=$to, outputfile=$outputfile");
 
         scartLog::setEcho(true);
 
         $memory_min =  scartScheduler::setMinMemory('8G');
 
         if ($type=='classified') {
+            // convert always to midnight
+            $from = date('Y-m-d 23:59:59', strtotime($from));
+            $to = date('Y-m-d 00:00:00', strtotime($to));
+            $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, from=$from, to=$to, outputfile=$outputfile");
             $lines = scartExport::exportClassified($class,$from,$to);
             file_put_contents($outputfile, implode("\n", $lines) );
             $this->info("exportClassified; $type output in file '$outputfile' ");
         } elseif ($type == 'whois') {
+            // convert always to midnight
+            $from = date('Y-m-d 23:59:59', strtotime($from));
+            $to = date('Y-m-d 00:00:00', strtotime($to));
+            $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, from=$from, to=$to, outputfile=$outputfile");
             $lines = scartExport::exportWhois($class,$from,$to);
             file_put_contents($outputfile, implode("\n", $lines) );
             $this->info("exportClassified; $type output in file '$outputfile' ");
         } elseif ($type == 'all') {
+            // convert always to midnight
+            $from = date('Y-m-d 23:59:59', strtotime($from));
+            $to = date('Y-m-d 00:00:00', strtotime($to));
+            $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, from=$from, to=$to, outputfile=$outputfile");
             $lines = scartExport::exportAll($from,$to,$outputfile);
             $this->info("exportClassified; $type output in file '$outputfile' ");
         } elseif ($type == 'ntd') {
+            // convert always to midnight
+            $from = date('Y-m-d 23:59:59', strtotime($from));
+            $to = date('Y-m-d 00:00:00', strtotime($to));
+            $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, from=$from, to=$to, outputfile=$outputfile");
             $lines = scartExport::exportNTD($from,$to);
             file_put_contents($outputfile, implode("\n", $lines) );
             $this->info("exportClassified; $type output in file '$outputfile' ");
         } elseif ($type == 'ntdclosed') {
-            // export closed urls from NTD
-            $lines = scartExport::exportNTDclosed($from);
+            // export closed urls from NTD in period between to-1 day till to
+            $this->info("exportClassified; version=".scartExport::$version.", type=$type, class=$class, to=$to, outputfile=$outputfile");
+            $lines = scartExport::exportNTDclosed($to);
             file_put_contents($outputfile, implode("\n", $lines) );
             $this->info("exportClassified; $type output in file '$outputfile' ");
         }

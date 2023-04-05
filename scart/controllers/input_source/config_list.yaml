@@ -1,0 +1,13 @@
+list: $/abuseio/scart/models/input_source/columns.yaml
+modelClass: abuseio\scart\models\Input_source
+title: Sources
+noRecordsMessage: 'backend::lang.list.no_records'
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/Input_source/update/:id'

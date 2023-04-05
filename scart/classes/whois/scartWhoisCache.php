@@ -49,8 +49,10 @@ class scartWhoisCache {
                 $cache = Whois_cache::where('target',$target)
                     ->where('target_type',$target_type)
                     ->first();
-                $abusecontact_id = $cache->abusecontact_id;
-                scartLog::logLine("D-getWhoisCache; load from WHOIS CACHE; target=$target ($target_type); max_age=$cache->max_age; abusecontact_id=$abusecontact_id ");
+                if ($cache) {
+                    $abusecontact_id = $cache->abusecontact_id;
+                    scartLog::logLine("D-getWhoisCache; load from WHOIS CACHE; target=$target ($target_type); max_age=$cache->max_age; abusecontact_id=$abusecontact_id ");
+                }
             } else {
                 scartLog::logLine("D-getWhoisCache; target=$target ($target_type); CACHE is to old or empty");
             }

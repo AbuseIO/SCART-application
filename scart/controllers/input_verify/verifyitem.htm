@@ -1,0 +1,67 @@
+<?php
+ $height = abuseio\scart\classes\helpers\scartImage::getImageSizeAttr($form->model->input,500);
+ $img = abuseio\scart\classes\browse\scartBrowser::getImageBase64($form->model->input->url, $form->model->input->url_hash);
+// echo $toolbar->render();
+?>
+
+<style>
+    #verifySection .control-tabs.primary-tabs >ul.nav-tabs, .control-tabs.primary-tabs >div >ul.nav-tabs, .control-tabs.primary-tabs >div >div >ul.nav-tabs {
+         margin-left: 5px;
+        margin-right: 5px;
+    }
+</style>
+
+ <div class="col-lg-5" >
+    <div class="row">
+      <div class="col-xs-12 grade-image-header" style="text-align: center;">
+        <?=$form->model->input->url; ?>
+      </div>
+    </div>
+
+    <div class="row">
+        <div class="align-center table-bordered" style=" text-align: center;">
+            <img src="<?=$img;?>" <?=$height ?> />
+         </div>
+    </div>
+
+
+<!--    <div class="row">-->
+<!--         <div class="col-xs-12 p-a-0 text-center">-->
+<!--            <button id="idButtonPOLICEI0000000019" type="button" data-control="popup" data-handler="onImagePolice" data-extra-data="record_id: '19' " data-size="giant" data-toggle="tooltip" title="" class="btn btn-sm btn-default icon-user-secret icon-2x ert-analyze-disable" data-original-title="Police"></button>-->
+<!--            <button id="idButtonMANUALI0000000019" type="button" data-request-update="show_result: '#show_result'" data-request="onManualCheck" data-request-data="record_id: '19' " data-request-loading="#loading_input" data-toggle="tooltip" title="" class="btn btn-default btn-sm icon-television icon-2x ert-analyze-disable" data-original-title="Manual"></button>-->
+<!--            <button id="idButtonYESI0000000019" type="button" data-control="popup" data-handler="onImageIllegal" data-type="questions" data-extra-data="record_id: '19' " data-size="giant" data-recordid="19" class="btn btn-sm btn-default icon-ban icon-2x ert-analyze-disable popoverbutton btn_19 grade_button_notset"></button>-->
+<!--            <button id="idButtonIGNOREI0000000019" type="button" data-request-update="show_result: '#show_result'" data-request="onImageIgnore" data-request-data="record_id: '19' " data-request-loading="#loading_input" data-toggle="tooltip" title="" class="btn btn-sm btn-default icon-eye-slash icon-2x ert-analyze-disable grade_button_notset" data-original-title="Ignore"></button>-->
+<!--            <button id="idButtonNOI0000000019" type="button" data-control="popup" data-handler="onImageNotIllegal" data-extra-data="record_id: '19' " data-size="giant" data-toggle="tooltip" title="" class="btn btn-sm btn-default icon-check icon-2x ert-analyze-disable grade_button_notset" data-original-title="Not illegal"></button>-->
+<!--            <button type="button" data-control="popup" data-handler="onInputEdit" data-extra-data="record_id: '19' " data-type="input" data-size="giant" data-toggle="tooltip" id="idButtonNoteI0000000019" data-recordid="19" title="" class="btn btn-default btn-sm  icon-edit icon-2x  ert-analyze-disable popoverbutton btn_19" data-original-title="Edit"></button>-->
+<!--         </div>-->
+<!--    </div>-->
+<!--      end row -->
+ </div>
+
+
+ <div id="verifySection" class="col-lg-7 p-t p-r">
+   <div class="col-xs-12 ">
+        <div class="row">
+             <div class="row " style="">
+                  <div class="col-xs-12 align-left" style="">
+                   <?= $form->render() ?>
+                  </div>
+             </div>
+        </div>
+   </div>
+ </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

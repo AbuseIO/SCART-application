@@ -493,20 +493,20 @@ class scartSendNTD {
                         $bcc_email = Systemconfig::get('abuseio.scart::scheduler.sendntd.bcc_email','');
                         if ($bcc_email) scartLog::logLine("D-schedulerSendNTD; send BCC to '$bcc_email'");
 
+                        // when message-ID is supported, then check else no check is possible
                         $message = scartMail::sendNTD($abuseemail,$ntdmsg->msg_subject,$msg_body,$bcc_email,$tmpfile);
-                        if (!$message) {
-                            scartLog::logLine("W-schedulerSendNTD; cannot deliver to queue; got NO message_id; cannot verify delivery!?");
-                        }
 
                         foreach ($ntdmsg->ntd_ids AS $ind => $ntd_id) {
 
                             $ntd = Ntd::find($ntd_id);
                             $ntd->msg_subject = $ntdmsg->msg_subject;
                             $ntd->msg_body = $msg_body;
-                            $ntd->msg_ident = ($message) ? $message['id'] : '?';
+                            $ntd->msg_ident = ($message) ? $message['id'] : '';
                             $ntd->msg_queued = date('Y-m-d H:i:s');
 
                             if (!$message) {
+
+                                scartLog::logLine("W-schedulerSendNTD; cannot deliver to queue; got NO message state");
 
                                 $ntd->status_code = SCART_NTD_STATUS_SENT_FAILED;
                                 $ntd->status_time = date('Y-m-d H:i:s');
@@ -643,9 +643,24 @@ class scartSendNTD {
         if ($ntdscnt > 0) {
             scartLog::logLine("D-schedulerSendNTD; determine EXIM status; found $ntdscnt NTD messages (before $min2before) waiting for mailservice response " );
             foreach ($ntds AS $ntd) {
-                // check status -> scartEXIM logt
+
                 $status_timestamp = '['.date('Y-m-d H:i:s').'] ';
-                $status = scartEXIM::getMTAstatus($ntd->msg_ident);
+
+                /**
+                 * EXIM is a mailing system with mailsecurity checks (tls, dkim, eg) build in
+                 * This can be used to be sure the email is sent secure
+                 * When SCHEDULER_NTDSEND_MAILLOGFILE is left empty, this check is skipped
+                 */
+
+                // note: message-id is not always supported
+                if ($ntd->msg_ident!='') {
+                    // check status -> scartEXIM logt
+                    $status = scartEXIM::getMTAstatus($ntd->msg_ident);
+                } else {
+                    scartLog::logLine("D-getMTAstatus: message_id not supported - skip check MTA status");
+                    $status = SCART_NTD_STATUS_SENT_SUCCES;
+                }
+
                 if ($status != SCART_NTD_STATUS_NOT_YET) {
                     $ntd->status_code = $status;
                     $ntd->status_time = date('Y-m-d H:i:s');
@@ -687,6 +702,7 @@ class scartSendNTD {
                 } else {
                     // @TO-DO check if ntd->status_time is not to long ago... (days)
                 }
+
             }
         }
 

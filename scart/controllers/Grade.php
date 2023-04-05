@@ -16,9 +16,11 @@ namespace abuseio\scart\Controllers;
  *
  */
 
+use abuseio\scart\classes\aianalyze\scartAIanalyze;
 use abuseio\scart\classes\helpers\scartImage;
 use abuseio\scart\classes\mail\scartAlerts;
-use abuseio\scart\classes\iccam\scartICCAMfields;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
+use abuseio\scart\models\Input_extrafield;
 use abuseio\scart\widgets\Tiles;
 use Backend\Models\User;
 use Backend\Widgets\Form;
@@ -36,8 +38,6 @@ use BackendMenu;
 use BackendAuth;
 use Illuminate\Support\Facades\Redirect;
 use abuseio\scart\classes\browse\scartBrowser;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
-use abuseio\scart\classes\iccam\scartExportICCAM;
 use abuseio\scart\models\Abusecontact;
 use function GuzzleHttp\Promise\all;
 use Illuminate\Support\Facades\Session;
@@ -290,8 +290,8 @@ class Grade extends scartController
                     $item->logText('closed with classification ignore');
 
                     // if ICCAM reportID set then export action NI
-                    if (scartICCAMfields::getICCAMreportID($item->reference) && scartICCAMmapping::isActive()) {
-                        scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                    if (scartICCAMinterface::getICCAMreportID($item->reference) && scartICCAMinterface::isActive()) {
+                        scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                             'record_type' => class_basename($item),
                             'record_id' => $item->id,
                             'object_id' => $item->reference,
@@ -311,8 +311,8 @@ class Grade extends scartController
                 $input->logText('closed with classification ignore');
 
                 // if ICCAM reportID set then export action NI
-                if (scartICCAMfields::getICCAMreportID($input->reference) && scartICCAMmapping::isActive()) {
-                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                if (scartICCAMinterface::getICCAMreportID($input->reference) && scartICCAMinterface::isActive()) {
+                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                         'record_type' => class_basename($input),
                         'record_id' => $input->id,
                         'object_id' => $input->reference,
@@ -412,15 +412,37 @@ class Grade extends scartController
          *
          */
 
+        $own_work_default = Systemconfig::get('abuseio.scart::options.own_work_default',true);
         $workuser_id = scartUsers::getId();
         $filter->addScopes([
             'workuser_id' => [
                 'label' => trans('abuseio.scart::lang.head.my_work'),                               // @TO-DO; lang translation
                 'type' =>'checkbox',
-                'default' => 1,
+                'default' => ($own_work_default),
                 'conditions' => "workuser_id=$workuser_id",
             ],
         ]);
+
+        if (scartAIanalyze::isActive()) {
+
+            // hardcoded AI attributes
+            $filter_attributes = [
+                'Naaktheid_in_foto' => 'Naaktheid_in_foto',
+                'Bevat_gezicht_in_leeftijdscategorie_0-15' => 'Bevat_gezicht_in_leeftijdscategorie_0-15',
+                'Bevat_gezicht_in_leeftijdscategorie_15-20' => 'Bevat_gezicht_in_leeftijdscategorie_15-20'
+            ];
+            $filter->addScopes([
+                'attributes' => [
+                    'label' => 'attributes',
+                    'type' =>'group',
+                    'options' => $filter_attributes,
+                    'default' => '',
+                    'scope' => 'attribute',
+                    'conditions' => "",
+                ],
+            ]);
+
+        }
 
     }
 
@@ -429,9 +451,14 @@ class Grade extends scartController
      *
      * @param $query
      */
-    public function listExtendQuery($query) {
-        //scartLog::logLine("D-listExtendQuery call"); trace_sql();
+    public function listExtendQuery($query ) {
+        scartLog::logLine("D-listExtendQuery call");
         $query->where('url_type',SCART_URL_TYPE_MAINURL)->where('status_code',SCART_STATUS_GRADE);
+    }
+
+    public function listFilterExtendQuery($query,$scope) {
+        scartLog::logLine("D-listFilterExtendQuery call");
+        //scartLog::logLine("D-scope=" . print_r($scope,true));
     }
 
 
@@ -629,9 +656,8 @@ class Grade extends scartController
 
         if ($viewtype == SCART_CLASSIFY_VIEWTYPE_LIST) {
 
-
             // ** LIST VIEW **
-//            https://octobercms.com/support/article/ob-20
+
             // Load the conflig file for the list
             $config = $this->makeConfig('$/abuseio/scart/models/input/columns_viewlist.yaml');
             $config->model = new Input();
@@ -657,20 +683,17 @@ class Grade extends scartController
 
             // ** GRID VIEW **
             $tilesWidget = new Tiles($this);
+
             // set variables
             $tilesWidget->setColumnsize($columnsize);
             $tilesWidget->setScreensize($screensize);
             $tilesWidget->setInputItems($this->getQueryRecords('',''));
             $tilesWidget->bindToController();
 
-
-           $imagestxt = $tilesWidget->render();
-
-
+            $imagestxt          = $tilesWidget->render();
             $imagelastloaded    = $tilesWidget->imagelastloaded;
             $screensize         = $tilesWidget->screensize;
             $columnsize         = $tilesWidget->columnsize;
-
 
         } // einde tiles
 
@@ -848,23 +871,15 @@ class Grade extends scartController
                                     $item->logText("Classification done; FIRST POLICE; status set on '$item->status_code' ");
                                 }
 
+                                if (scartICCAMinterface::isActive()) {
+                                    scartICCAMinterface::exportReport($item);
+                                }
+
                             } else {
                                 scartLog::logLine("D-onDone; item $item->filenumber already started for checkonline; online_counter=$item->online_counter " );
                             }
 
                         } elseif ($item->grade_code==SCART_GRADE_NOT_ILLEGAL || $item->grade_code==SCART_GRADE_IGNORE) {
-
-                            // if ICCAM reportID set then export action NI
-                            if (scartICCAMfields::getICCAMreportID($item->reference) && scartICCAMmapping::isActive()) {
-                                scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                                    'record_type' => class_basename($item),
-                                    'record_id' => $item->id,
-                                    'object_id' => $item->reference,
-                                    'action_id' => SCART_ICCAM_ACTION_NI,     // NOT_ILLEGAL
-                                    'country' => '',                          // hotline default
-                                    'reason' => 'SCART reported NI',
-                                ]);
-                            }
 
                             // log old/new for history
                             $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_CLOSE,'Classify done; not illegal or ignore');
@@ -875,6 +890,10 @@ class Grade extends scartController
 
                         }
                         $item->save();
+
+                        if (scartICCAMinterface::isActive()) {
+                            scartICCAMinterface::exportReport($item);
+                        }
 
                     }
 
@@ -1225,13 +1244,17 @@ class Grade extends scartController
             SCART_RULE_TYPE_LINK_CHECKER,
             SCART_RULE_TYPE_PROXY_SERVICE_API]);
 
+
+        // 2022/12/9: ToDo; solve bug; if paging is needed for the domainrules list, the paging is controlling the main list, not the domainrule list
+        // workarround; set recordsPerPage on a large number
+
         // config LIST widget
         $config = $this->makeConfig('$/abuseio/scart/models/domainrule/columns.yaml');
         $config->model = $domainrule;
         $config->showSorting = false;
         $config->showSearching = false;
         $config->showSetup = false;
-        $config->recordsPerPage = 5;
+        $config->recordsPerPage = 50;
         $config->showPageNumbers = true;
         $config->showCheckboxes = false;
         $config->customViewPath = '$/abuseio/scart/controllers/grade/domainlist';
@@ -1551,7 +1574,7 @@ class Grade extends scartController
                 $item->classify_status_code = SCART_STATUS_CLOSE;
                 $item->grade_code = SCART_GRADE_IGNORE;
                 $item->logText("Set status_code on: " . $item->classify_status_code);
-//                $item->save();
+                $item->save();
 
                 $setbutton = $this->setButtons($item,$workuser_id,false);
                 $setbutton['hash'] = $item->filenumber;
@@ -2345,6 +2368,61 @@ class Grade extends scartController
         // redirect to updateS with this sessions
         return Redirect::to('/backend/abuseio/scart/Grade/updates');
 
+    }
+
+
+    public function onSaveAIattributes()
+    {
+
+        //scartLog::logLine("D-onSaveAIattributes; POST=" . print_r(input(), true));
+        scartLog::logLine("D-onSaveAIattributes");
+
+        $record_id = input('record_id');
+        $showresult = '';
+
+        if ($record_id) {
+
+            $extrafields = Input_extrafield::where('input_id', $record_id)->get();
+
+            $extradata = '{';
+
+            $update = false;
+            foreach ($extrafields as $extrafield) {
+                if ($extrafield->type == SCART_INPUT_EXTRAFIELD_PWCAI) {
+                    $fieldname = $extrafield->type . '_' . $extrafield->label;
+                    if ($fieldname != 'PWCAI_Naam_afbeelding') {
+                        $correction = input($fieldname);
+                        if ($extradata != '{') {
+                            $extradata .= ',';
+                        }
+                        if ($correction != $extrafield->secondvalue) {
+                            $extrafield->secondvalue = $correction;
+                            $extrafield->save();
+                            $update = true;
+                        }
+                        $extradata .= "'$fieldname': ['$extrafield->value','$extrafield->secondvalue']";
+                    }
+                }
+            }
+
+            $extradata .= '}';
+
+            if ($update) {
+
+                $record = Input::find($record_id);
+                $showresult = $this->makePartial('js_extrafieldsupdate',
+                    ['extradata' => $extradata, 'hash' => $record->filenumber ]
+                );
+
+            }
+
+            if ($update) Flash::info('AI attribute field(s) updated');
+
+        } else {
+            Flash::error('No record id is given to update!?');
+        }
+
+        return ['show_result' => $showresult];
     }
 
 

@@ -96,12 +96,12 @@ class scartAnalyzeInput {
 
             scartLog::logLine("D-doAnalyze; mark removed items; count=$itemscount " );
 
-            // remove connection
+            // remove connection(s)
             Input_parent::where('parent_id',$input->id)->delete();
 
         }
 
-        // 2020/5/28/Gs: check double url
+        // Check double url
 
         $oldies = Input::where('url',$input->url)
             ->where('url_type',SCART_URL_TYPE_MAINURL)
@@ -187,7 +187,7 @@ class scartAnalyzeInput {
 
                 if ($settings['rule_type_code'] == SCART_RULE_TYPE_DIRECT_CLASSIFY_ILLEGAL) {
 
-                    // 2021/1/29/Gs: alleen DIRECT_CLASSIFY wanneer NIET ignore
+                    // only DIRECT_CLASSIFY when not ignore
 
                     if ($input->grade_code != SCART_GRADE_IGNORE) {
 
@@ -735,7 +735,7 @@ class scartAnalyzeInput {
 
                                     if ($hashcheck_return) {
 
-                                        $input->logText("Found url '$src' in HASH database - direct classify");
+                                        $item->logText("Found url '$src' in HASH database - direct classify");
 
                                         // ILLEGAL
 

@@ -13,17 +13,15 @@ use Request;
 class scartDomainOnlyOne implements Rule
 {
 
-
     public function passes($attribute, $value)
     {
         // init variable
         $return  = true;
-
-
         if (Request::is(['*/grade/update/*', '*/create'])) {
             if ($inputpost = Input::post('Domainrule', input::all())) {
                 $return = !Domainrule::where('domain', $inputpost['domain'])
-                                            ->whereIn('type_code', [SCART_RULE_TYPE_HOST_WHOIS,SCART_RULE_TYPE_REGISTRAR_WHOIS, SCART_RULE_TYPE_PROXY_SERVICE])->exists();
+                    ->whereIn('type_code', [SCART_RULE_TYPE_HOST_WHOIS,SCART_RULE_TYPE_REGISTRAR_WHOIS, SCART_RULE_TYPE_PROXY_SERVICE])
+                    ->exists();
             }
         }
 

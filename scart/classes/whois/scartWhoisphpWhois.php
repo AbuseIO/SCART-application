@@ -79,8 +79,8 @@ class scartWhoisphpWhois {
                 } else {
                     scartLog::logLine("D-scartWhoisphpWhois.WhoIs free version; NO sleep; extension=$extdomain ");
                 }
-                //scartLog::logLine("D-whois->Lookup($maindomain)");
 
+                //scartLog::logLine("D-whois->Lookup($maindomain)");
                 $whois = new \Whois();
                 $dresult = $whois->Lookup($maindomain);
 

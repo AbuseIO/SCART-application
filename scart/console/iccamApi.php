@@ -1,12 +1,13 @@
 <?php
-
 namespace abuseio\scart\console;
 
-use abuseio\scart\classes\iccam\scartICCAMfields;
+use abuseio\scart\classes\iccam\api2\scartICCAM;
+use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
+use abuseio\scart\classes\iccam\api2\scartICCAMfields;
+
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Systemconfig;
 use Illuminate\Console\Command;
-use abuseio\scart\classes\iccam\scartICCAM;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Input;
@@ -103,7 +104,7 @@ class iccamApi extends Command
                         break;
 
                     case 'update':
-                        $reference = scartICCAMfields::setICCAMreportID($reportID);
+                        $reference = scartICCAMinterface::setICCAMreportID($reportID);
                         $record = Input::where('reference',$reference)->first();
                         if ($record) {
                             scartLog::logLine("D-iccamapi insertUpdateICCAM with reportID=$reportID ");

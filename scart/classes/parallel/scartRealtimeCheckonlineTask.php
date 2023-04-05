@@ -13,11 +13,13 @@
 
 use parallel\{Future, Runtime, Channel};
 
+use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Input;
 use abuseio\scart\classes\online\scartCheckOnline;
 use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\models\Systemconfig;
+use abuseio\scart\classes\parallel\scartRealtimeCheckonline;
 use abuseio\scart\classes\parallel\scartRuntime;
 use abuseio\scart\classes\parallel\scartTask;
 use abuseio\scart\classes\rules\scartRules;
@@ -37,7 +39,6 @@ return function ($taskname,$basepath) {
     if ($taskname) {
 
         $taskerror = 0;
-        $record = '';
 
         try {
 
@@ -46,20 +47,29 @@ return function ($taskname,$basepath) {
                 $runtime = new scartRuntime($taskname);
                 $runtime->initChannel();
 
+                $monitorruntime = new scartRuntime('Monitor');
+                $monitorruntime->initChannel();
+
                 $run = true;
+
+                $minhelpcount = 25;
 
                 while ($taskerror < 3 && $run) {
 
                     try {
 
                         $cnt = 0;
+                        $record = '';
+
                         // start looping
                         while ($run) {
 
-                            scartLog::logLine("D-" . scartTask::$logname . "; wait for messages on channel '$taskname'");
+                            $count = scartRealtimeCheckonline::getNamedCount($taskname);
+                            scartLog::logLine("D-" . scartTask::$logname . "; reading messages (count=$count) on channel '$taskname'");
                             $filenumber = $runtime->readChannel();
 
                             scartLog::logLine("D-" . scartTask::$logname . "; received message '$filenumber'");
+                            $record = '';
                             if ($filenumber) {
                                 if (trim($filenumber) == 'stop') {
                                     scartLog::logLine("D-" . scartTask::$logname . "; got STOP message");
@@ -67,21 +77,41 @@ return function ($taskname,$basepath) {
                                 } else {
                                     $record = Input::where('filenumber', $filenumber)->first();
                                     if ($record) {
-                                        // check always if still valid CHECKONLINE status -> push can be quicker then processing
-                                        if (in_array($record->status_code,[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])) {
-                                            scartLog::logLine("D-" . scartTask::$logname . "; doCheckIllegalOnline filenumber '$filenumber' with lastseen of '$record->lastseen_at'");
-                                            $result = scartCheckOnline::doCheckIllegalOnline($record, 1, 1);
-                                            if (count($result) > 0) {
-                                                $params = [
-                                                    'job_inputs' => $result,
-                                                ];
-                                                scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_check_ntd', $params);
+
+                                        $startTime = microtime(true);
+
+                                        try {
+
+                                            // check always if still valid CHECKONLINE status -> push can be quicker then processing
+                                            if (in_array($record->status_code,[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])) {
+                                                scartLog::logLine("D-" . scartTask::$logname . "; doCheckIllegalOnline filenumber '$filenumber' with lastseen of '$record->lastseen_at'");
+                                                $result = scartCheckOnline::doCheckIllegalOnline($record, 1, 1);
+                                                if (count($result) > 0) {
+                                                    $params = [
+                                                        'job_inputs' => $result,
+                                                    ];
+                                                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_check_ntd', $params);
+                                                }
+                                            } else {
+                                                scartLog::logLine("D-" . scartTask::$logname . "; filenumber '$filenumber' not valid for CHECKONLINE (anymore); status=$record->status_code ");
                                             }
-                                        } else {
-                                            scartLog::logLine("D-" . scartTask::$logname . "; filenumber '$filenumber' not valid for CHECKONLINE (anymore); status=$record->status_code ");
-                                            // don't forget to reset lock set by the dispatcher
-                                            scartCheckOnline::setLock($record->id,false);
+
+                                        } catch (\Exception $err) {
+
+                                            scartLog::logLine("E-" . scartTask::$logname . ";checkonline exception '" . $err->getMessage() . "', at line " . $err->getLine());
+
                                         }
+
+                                        $processtime = (microtime(true) - $startTime);
+                                        scartLog::logLine("D-" . scartTask::$logname . "; filenumber '$filenumber' (base=$record->url_base) process time (sec): ".round($processtime,3));
+
+                                        // report job done
+                                        $monitorruntime->sendChannel([
+                                            'sender' => scartTask::$logname,
+                                            'record_id' => $record->id,
+                                            'set' => false,
+                                            'taskname' => $taskname,
+                                        ]);
 
                                     } else {
                                         scartLog::logLine("W-" . scartTask::$logname . "; input with filenumber '$filenumber' not found");
@@ -132,10 +162,6 @@ return function ($taskname,$basepath) {
                         scartLog::errorMail(scartTask::$logname . "; error(s) found");
                         scartLog::resetLog();
 
-                        if ($record) {
-                            // don't forget to reset lock set by the dispatcher
-                            scartCheckOnline::setLock($record->id,false);
-                        }
                         $taskerror += 1;
 
                     }
@@ -145,6 +171,9 @@ return function ($taskname,$basepath) {
                 }
 
             }
+
+            // reset TASK count (can be more then 1 stop signal)
+            scartRealtimeCheckonline::resetNamedLock($taskname);
 
             scartTask::endTask();
 
@@ -166,6 +195,9 @@ return function ($taskname,$basepath) {
             scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN, 'abuseio.scart::mail.admin_report', $params);
 
         }
+
+        // to-do; empty channel, reset locks if filenumber(s)?
+
 
     } else {
         scartLog::logLine('W-scartRealtimeCheckonlineTask; empty taskname!?');

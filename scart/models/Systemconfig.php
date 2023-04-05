@@ -1,6 +1,5 @@
 <?php namespace abuseio\scart\models;
 
-use abuseio\scart\classes\iccam\scartImportICCAM;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\base\scartModel;
 use Config;
@@ -152,38 +151,6 @@ class Systemconfig extends scartModel
         }
 
     }
-
-    /**
-     * Special dynamic import ICCAM last date
-     *
-     * add to display field and handle special saving
-     *
-     */
-
-    public function afterFetch() {
-
-        $field = 'iccam-last_date';
-        $value = scartImportICCAM::getImportlast(SCART_INTERFACE_ICCAM_ACTION_IMPORTLASTDATE);
-        if (empty($value)) $value = date('Y-m-d H:i:s');
-        // set tmp field
-        $this->$field = $value;
-    }
-
-    public function beforeSave() {
-
-        $field = 'iccam-last_date';
-        if (isset($this->$field)) {
-            $value = $this->$field;
-            if (($dvalue = strtotime($value)) !== false) {
-                $value = date('Y-m-d H:i:s',$dvalue);
-                scartImportICCAM::saveImportLast(SCART_INTERFACE_ICCAM_ACTION_IMPORTLASTDATE,$value);
-            }
-            // unset so save() is not knowing this tmp field
-            unset($this->$field);
-        }
-
-    }
-
 
     public function getAlertLanguageOptions ($value='',$formData='') {
 

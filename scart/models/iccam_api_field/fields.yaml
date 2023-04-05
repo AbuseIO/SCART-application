@@ -1,0 +1,21 @@
+fields:
+    iccam_field:
+        label: iccam_field
+        span: auto
+        type: text
+    iccam_id:
+        label: 'iccam_id'
+        span: auto
+        type: text
+    iccam_name:
+        label: 'iccam_name'
+        span: auto
+        type: text
+    scart_field:
+        label: 'scart_field'
+        span: left
+        type: text
+    scart_code:
+        label: 'scart_code'
+        span: auto
+        type: text

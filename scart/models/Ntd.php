@@ -115,10 +115,7 @@ class Ntd extends scartModel {
             if (scartGrade::isLocal($abusecontact->abusecountry) && $abusecontact->gdpr_approved ) {
 
                 /**
-                 * 2-1-2020;
-                 * - converted SCART_NTD_STATUS_QUEUE_DIRECTLY/SCART_NTD_STATUS_QUEUE_DIRECTLY_POLICE to SCART_NTD_STATUS_GROUPING with 1 hour
-                 *
-                 * 26-6-2020
+                 * Note
                  * - keep SCART_NTD_STATUS_QUEUE_DIRECTLY && SCART_NTD_STATUS_QUEUE_DIRECTLY_POLICE -> trigger 1 hour is done in SendNTD
                  *
                  */

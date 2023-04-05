@@ -48,6 +48,21 @@ tabs:
             required: true
             comment: '(received in SCART)'
             tab: filters
+
+        filter_type:
+            label: Type
+            type: balloon-selector
+            default: exporturl
+            comment: 'When exporting attributes, automatically all records are selected with a status "classify done" or later'
+            options:
+                exporturl: 'export url data'
+                exportatt: 'export attribuut values'
+            tab: filters
+        filter_section:
+            type: section
+            span: full
+            tab: filters
+
         filter_grade:
             label: Classifications
             prompt: 'Add new classification filter'
@@ -61,6 +76,10 @@ tabs:
                        showSearch: false
                        type: dropdown
             tab: filters
+            trigger:
+                action: hide
+                field: filter_type
+                condition: 'value[exportatt]'
         filter_status:
             label: Statussen
             prompt: 'Add new status filter'
@@ -74,6 +93,10 @@ tabs:
                         span: auto
                         type: dropdown
             tab: filters
+            trigger:
+                action: hide
+                field: filter_type
+                condition: 'value[exportatt]'
         filter_country:
             label: Country
             showSearch: true
@@ -93,3 +116,7 @@ tabs:
                         span: auto
                         type: dropdown
             tab: columns
+            trigger:
+                action: hide
+                field: filter_type
+                condition: 'value[exportatt]'

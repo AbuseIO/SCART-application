@@ -115,10 +115,37 @@ class Report extends scartModel {
 
     public function beforeCreate() {
 
+        parent::beforeCreate();
+
         scartLog::logLine("D-beforeCreate");
         $this->status_code = SCART_STATUS_REPORT_CREATED;
         $this->status_at = date('Y-m-d H:i:s');
         $this->number_of_records = 0;
+    }
+
+    public function beforeSave() {
+
+        parent::beforeSave();
+
+        if ($this->filter_type == SCART_REPORT_TYPE_ATTRIBUTE) {
+
+            // force correct filters grade and status
+
+            $this->filter_grade = [];
+            $this->filter_status = [
+                ['filter_status' => SCART_STATUS_FIRST_POLICE],
+                ['filter_status' => SCART_STATUS_ABUSECONTACT_CHANGED],
+                ['filter_status' => SCART_STATUS_SCHEDULER_CHECKONLINE],
+                ['filter_status' => SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL],
+                ['filter_status' => SCART_STATUS_CLOSE_OFFLINE],
+                ['filter_status' => SCART_STATUS_CLOSE_OFFLINE_MANUAL],
+                ['filter_status' => SCART_STATUS_CLOSE],
+                ['filter_status' => SCART_STATUS_CLOSE_DOUBLE],
+            ];
+
+        }
+        //scartLog::logLine("filter_grade=" . print_r($this->filter_status,true));
+
     }
 
 }

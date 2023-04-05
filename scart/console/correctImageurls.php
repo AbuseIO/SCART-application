@@ -8,9 +8,10 @@ namespace abuseio\scart\console;
  *
  */
 
-use abuseio\scart\classes\iccam\scartExportICCAM;
-use abuseio\scart\classes\iccam\scartICCAMfields;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
+use abuseio\scart\classes\iccam\api2\scartExportICCAM;
+use abuseio\scart\classes\iccam\api2\scartICCAMfields;
+use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Input_parent;
 use Illuminate\Console\Command;
 use abuseio\scart\classes\online\scartAnalyzeInput;
@@ -69,7 +70,7 @@ class correctImageurls extends Command
 
                     if ($input) {
 
-                        if (($reportid = scartICCAMfields::getICCAMreportID($input->reference))) {
+                        if (($reportid = scartICCAMinterface::getICCAMreportID($input->reference))) {
 
                             $this->info("[cnt=$cnt] Sent ICCAM action=CU for: filenumber=$filenumber, grade_code=$input->grade_code, status_code=$input->status_code, iccam reportID=$reportid");
 

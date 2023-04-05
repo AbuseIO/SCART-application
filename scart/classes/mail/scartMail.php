@@ -9,73 +9,56 @@ use Lang;
 use Mail;
 use Event;
 use Config;
-use \Swift_Mailer;
-use \Swift_SmtpTransport;
 use abuseio\scart\models\Systemconfig;
 
 class scartMail {
 
     /**
-     * Central class for send formated mail
+     * get message id depending on the supported methode
      *
-     * Note: Set OWN SMTP handler so we don't need to fill the System setting with our user and password (!)
+     * Laravel <= 8.x; swiftMessage
+     * Larvael >= 9.x; symfonyMessage
+     *
+     * @param $message
+     * @return mixed|string
+     */
+
+    static function getMessageID($message) {
+
+        $message_id = '';
+        if (method_exists($message,'getSymfonyMessage')) {
+            $symfonymessage = $message->getSymfonyMessage();
+            if (method_exists($symfonymessage,'generateMessageId')) {
+                $message_id = $symfonymessage->generateMessageId();
+                scartLog::logLine("D-symfonymessage->generateMessageId=" . $message_id);
+            } else {
+                scartLog::logLine("D-No symfonymessage->generateMessageId supported");
+            }
+        } elseif (method_exists($message,'getSwiftMessage')) {
+            $swiftmessage = $message->getSwiftMessage();
+            if (method_exists($swiftmessage,'getId')) {
+                $message_id = $swiftmessage->getId();
+                scartLog::logLine("D-swiftmessage->getId=" . $message_id);
+            } else {
+                scartLog::logLine("D-No swiftmessage->getId supported");
+            }
+        } else {
+            scartLog::logLine("D-No transport methode");
+        }
+        return $message_id;
+    }
+
+    /**
+     * Central class for send formated mail
      *
      * @param $to
      * @param $mailview
      * @param $params
      */
 
-    private static $_backupsmtp = '';
-
-    private static function _getSettings() {
-        return [
-            'host' => Systemconfig::get('abuseio.scart::mail.host',''),
-            'port' => Systemconfig::get('abuseio.scart::mail.port','25'),
-            'encryption' => Systemconfig::get('abuseio.scart::mail.encryption', null),
-            'username' => Systemconfig::get('abuseio.scart::mail.username',''),
-            'password' => Systemconfig::get('abuseio.scart::mail.password',''),
-        ];
-    }
-
-    public static function openSmptmailer() {
-
-        // Backup default mailer
-        self::$_backupsmtp = Mail::getSwiftMailer();
-
-        $setting = self::_getSettings();
-        //Log::info("D-openSmptmailer.settings; host=" . $setting['host'] . ", port=" . $setting['port'] . ", encryption=" . $setting['encryption'] );
-
-        // Setup own smtp mailer
-        $transport = new Swift_SmtpTransport(
-            $setting['host'],
-            $setting['port'],
-            $setting['encryption']);
-        $transport->setUsername($setting['username']);
-        $transport->setPassword($setting['password']);
-        // can use self signed certs
-        $transport->setStreamOptions([
-            'ssl' => [
-                'verify_peer' => false,
-                'allow_self_signed' => true,
-            ]
-        ]);
-        $smtpmail = new Swift_Mailer($transport);
-
-        // Set the mailer
-        Mail::setSwiftMailer($smtpmail);
-    }
-
-    public static function closeSmptmailer() {
-
-        // Restore your original mailer
-        Mail::setSwiftMailer(self::$_backupsmtp);
-    }
-
     public static function sendMail($to,$mailview,$params, $bcc='' ) {
 
-        $from = 'noreply@' . Systemconfig::get('abuseio.scart::errors.domain','svsnet.nl');
-
-        self::openSmptmailer();
+        $from = 'noreply@' . Systemconfig::get('abuseio.scart::errors.domain','local.domain');
 
         try {
 
@@ -100,18 +83,13 @@ class scartMail {
 
         }
 
-        self::closeSmptmailer();
-
     }
 
     public static function sendMailRaw($to,$subject,$body,$from='',$attachment='') {
 
-        if ($from=='') $from = 'noreply@' . Systemconfig::get('abuseio.scart::errors.domain','svsnet.nl');
+        if ($from=='') $from = 'noreply@' . Systemconfig::get('abuseio.scart::errors.domain','local.domain');
 
         $message_id = false;
-
-        // use own smtp mailer
-        self::openSmptmailer();
 
         try {
 
@@ -125,33 +103,32 @@ class scartMail {
                 // add attachment
                 if ($attachment) $message->attach($attachment);
 
-                $message_id = $message->getId();
+                // get message-iD (if supported)
+                $message_id = self::getMessageID($message);
 
             });
 
-            Log::info("D-sendMailRaw succes");
+            scartLog::logLine("D-sendMailRaw done");
 
         } catch(\Exception $err) {
 
             // WARNING; do not try to send mail at this point, else we get a loop - sendMailRaw is used in scartLog::errorMail
 
             // NB: \Expection is important, else not in this catch when error in Mail
-            Log::error("Error sendMailRaw(to=$to,from=$from,subject=$subject): error=" . $err->getMessage() );
+            Log::error("Error sendMailRaw(to=$to,from=$from,subject=$subject): error=" . $err->getMessage() . " on line ". $err->getLine());
 
             $message_id = false;
 
         }
-
-        self::closeSmptmailer();
 
         return $message_id;
     }
 
     public static function sendNTD($to,$subject,$body,$bcc='',$attachment='') {
 
-        $from = Systemconfig::get('abuseio.scart::scheduler.sendntd.from','from@svsnet.nl');
+        $from = Systemconfig::get('abuseio.scart::scheduler.sendntd.from','from@local.domain');
         $envelope_from  = Systemconfig::get('abuseio.scart::scheduler.sendntd.envelope_from',$from);
-        $reply_to  = Systemconfig::get('abuseio.scart::scheduler.sendntd.reply_to','reply_to@svsnet.nl');
+        $reply_to  = Systemconfig::get('abuseio.scart::scheduler.sendntd.reply_to','reply_to@local.domain');
 
         $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
         if ($alt_email) {
@@ -160,28 +137,11 @@ class scartMail {
             $to = $alt_email;
         }
 
-        $message_id = $message_body = '';
-
-        self::openSmptmailer();
+        $message = '';
 
         try {
 
-            /*
-
-            // @To-Do; conversie swift mailer to symfony mailer
-            Event::listen('mailer.send', function ($mailerInstance, $view, $message) use (&$message_id) {
-
-                $message_id = $mailerInstance->sent->getMessageId();
-                scartLog::logLine("D-sendMailRaw; mailer.send.1 message_id=$message_id");
-                $headers = $message->getHeaders();
-                scartLog::logLine("D-sendMailRaw; mailer.send.2 headers:\n".$headers->toString());
-                $message_id = $headers->get('Message-ID');
-                scartLog::logLine("D-sendMailRaw; mailer.send.3 message_id=$message_id");
-            });
-            */
-
-            // Send your message
-            //Mail::send(['raw' => $body], $params, function($message) use ($to,$subject,$bcc,$from,$reply_to,$envelope_from,&$message_id,&$message_body) {
+            // Send message
             Mail::raw( $body, function($message) use ($to,$subject,$bcc,$from,$reply_to,$envelope_from,&$message_id,$attachment) {
 
                 $message->to($to);
@@ -190,8 +150,6 @@ class scartMail {
                 if ($bcc) $message->bcc($bcc);
 
                 // set special headers
-                //$swift = $message->getSwiftMessage();
-                //$headers = $swift->getHeaders();
                 $headers = $message->getHeaders();
                 if ($from) $message->from($from);
                 if ($reply_to) $message->replyTo($reply_to);
@@ -202,11 +160,17 @@ class scartMail {
                 // add attachment
                 if ($attachment) $message->attach($attachment);
 
-                $message_id = $message->getId();
+                // get message-iD (if supported)
+                $message_id = self::getMessageID($message);
 
             });
 
-            //Log::info("SendNTD done (message_id=$message_id)");
+            scartLog::logLine("D-SendNTD done");
+
+            // Note: message_id can also be empty
+            $message = [
+                'id' => $message_id,
+            ];
 
         } catch(\Exception $err) {
 
@@ -215,11 +179,7 @@ class scartMail {
 
         }
 
-        self::closeSmptmailer();
-
-        return [
-            'id' => $message_id,
-        ];
+        return $message;
     }
 
 

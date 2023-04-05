@@ -1,0 +1,10 @@
+name: Iccam_api_field
+form: $/abuseio/scart/models/iccam_api_field/fields.yaml
+modelClass: abuseio\scart\models\Iccam_api_field
+defaultRedirect: abuseio/scart/iccam_api_field
+create:
+    redirect: 'abuseio/scart/iccam_api_field/update/:id'
+    redirectClose: abuseio/scart/iccam_api_field
+update:
+    redirect: abuseio/scart/iccam_api_field
+    redirectClose: abuseio/scart/iccam_api_field

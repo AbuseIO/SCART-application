@@ -1,0 +1,18 @@
+columns:
+    input[url]:
+        label: Content
+        type: partial
+        path: ~/plugins/abuseio/scart/controllers/input_verify/done_column.htm
+        clickable: false
+        width: 200px
+    id:
+        type: gradeColumn
+        label: Grade
+        width: 250px
+    input_id:
+        type: gradeinformationcolumn
+        label: Information
+    status:
+        label: status
+        type: text
+        clickable: false

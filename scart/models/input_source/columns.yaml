@@ -1,0 +1,16 @@
+columns:
+    sortnr:
+        label: sortnr
+        type: text
+    code:
+        label: code
+        type: text
+        searchable: true
+    title:
+        label: title
+        type: text
+        searchable: true
+    description:
+        label: description
+        type: text
+        searchable: true

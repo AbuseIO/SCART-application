@@ -1,0 +1,10 @@
+name: Inputs
+form: $/abuseio/scart/models/input_verify/fields.yaml
+modelClass: abuseio\scart\models\Input_verify
+defaultRedirect: abuseio/scart/Input_verify/verifyitem
+create:
+    redirect: abuseio/scart/inputs/Input_verify/verifyitem
+    redirectClose: abuseio/scart/Input_verify/verifyitem
+update:
+    redirect: abuseio/scart/Input_verify/verifyitem
+    redirectClose: abuseio/scart/Input_verify/verifyitem

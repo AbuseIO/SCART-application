@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\scheduler;
 
+use abuseio\scart\classes\parallel\scartRealtimeMonitor;
 use Config;
 
 use Db;
@@ -15,11 +16,12 @@ use abuseio\scart\classes\cleanup\scartCleanup;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\classes\iccam\scartImportICCAM;
+use Illuminate\Support\Facades\Artisan;
 
 class scartSchedulerCleanup extends scartScheduler {
 
     /**
-     * Schedule CheckNTD
+     * Schedule Cleanup
      *
      * once=false: default check ALL inputs
      * Login scheduler account
@@ -85,6 +87,31 @@ class scartSchedulerCleanup extends scartScheduler {
                             $report_lines[] = "ICCAM report cleanup already running with lastday set on: " . $lastdate;
                         }
                     }
+
+                }
+
+                // -7- if realtime then log realtime workers state
+                $mode = Systemconfig::get('abuseio.scart::scheduler.checkntd.mode',SCART_CHECKNTD_MODE_CRON);
+                $moderealtime = ($mode == SCART_CHECKNTD_MODE_REALTIME);
+                if ($moderealtime) {
+
+                    $realtimests = scartRealtimeMonitor::realtimeStatus();
+
+                    $report_lines = [];
+                    foreach ($realtimests AS $sts) {
+                        $warning = ($sts['icon'] ? ' ('.$sts['icon'].')' : '');
+                        $report_lines[] = $sts['status'].': '.$sts['count']." $warning";
+                    }
+
+                    //Artisan::call('abuseio:monitorRealtime');
+                    //$output = Artisan::output();
+                    //$outputarr = explode("\n",$output);
+
+                    $params = [
+                        'reportname' => 'Realtime worker status',
+                        'report_lines' => $report_lines
+                    ];
+                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
 
                 }
 

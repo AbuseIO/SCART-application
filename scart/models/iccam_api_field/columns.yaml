@@ -1,0 +1,24 @@
+columns:
+    iccam_field:
+        label: iccam_field
+        type: text
+        searchable: true
+    iccam_id:
+        label: iccam_id
+        type: text
+        searchable: true
+    iccam_name:
+        label: iccam_name
+        type: text
+        searchable: true
+    scart_field:
+        label: scart_field
+        type: text
+        searchable: true
+    scart_code:
+        label: scart_code
+        type: text
+        searchable: true
+    updated_at:
+        label: updated_at
+        type: datetime

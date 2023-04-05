@@ -1,0 +1,10 @@
+name: Sources
+form: $/abuseio/scart/models/input_source/fields.yaml
+modelClass: abuseio\scart\models\Input_source
+defaultRedirect: abuseio/scart/Input_source
+create:
+    redirect: 'abuseio/scart/Input_source/update/:id'
+    redirectClose: abuseio/scart/Input_source
+update:
+    redirect: abuseio/scart/Input_source
+    redirectClose: abuseio/scart/Input_source

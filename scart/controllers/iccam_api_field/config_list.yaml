@@ -1,0 +1,12 @@
+list: $/abuseio/scart/models/iccam_api_field/columns.yaml
+modelClass: abuseio\scart\models\Iccam_api_field
+title: Iccam_api_field
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'abuseio/scart/iccam_api_field/update/:id'

@@ -12,8 +12,9 @@
 return [
 
     'release' => [
-        'version' => '6.3.2',
-        'build' => 'Build 2',
+        'version' => '6.5',
+        'build' => 'Build 5',
+        'title' => env('APP_TITLE', 'Sexual Child Abuse Reporter Tool (SCART)'),
     ],
 
     'maintenance' => [
@@ -35,6 +36,12 @@ return [
         'provider_api' => env('BROWSER_PROVIDER_API', ''),                      // DataDragin api
     ],
 
+    'AIanalyze' => [
+        'active' => env('AIANALYZE_ACTIVE', false),
+        'show_correction' => env('AIANALYZE_SHOW_CORRECTION', true),            // show correction fields in Clasify image viewer
+        'report_correction' => env('AIANALYZE_REPORT_CORRECTION', true),          // show report option for export AI attributes (correction)
+    ],
+
     // force env settings for own mailer
     'mail' => [
         'host' => env('MAIL_HOST', 'mail.domain.com'),
@@ -45,7 +52,7 @@ return [
     ],
 
     'errors' => [
-        'domain' => env('ERROR_DOMAIN', 'local.com'),
+        'domain' => env('ERROR_DOMAIN', 'local.domain'),
         'email' => env('ERROR_EMAIL', 'support@svsnet.nl'),
         'error_display_user' => 'found: please contact support',
         'max_error_pm' => 10,       // max error (mails) within 1 minute to operator
@@ -58,6 +65,10 @@ return [
         'detect_country' => env('CLASSIFY_DETECT_COUNTRY', 'nl,netherlands'),        // lowercase strings for detecting local country
     ],
 
+    'verify' => [
+        'active' => env('VERIFY_OPTION_ACTIVE', false),
+    ],
+
     'alerts' => [
         'recipient' => env('ALERT_RECIPIENT', 'support@svsnet.nl'),                // recipient
         'bcc_recipient' => env('ALERT_BCC_RECIPIENT', ''),                         // if filled then BCC
@@ -66,7 +77,11 @@ return [
         'language' => env('ALERT_LANGUAGE', 'en'),                                 // default language
     ],
 
-    // 2020/8/31 default audittrail_mode=false (off)
+    // SCART general options
+    'options' => [
+        'import_mail_direct_Scrape' => env('OPTION_IMPORT_MAIL_DIRECT_SCRAPE', false),  // if true then direct scrape, else status=open (manual action required)
+        'own_work_default' => env('OPTION_OWN_WORK_DEFAULT', true),                // if true then UI own_work option default OFF
+    ],
 
     'scheduler' => [
         'job_name' => env('SCHEDULER_JOB_NAME', 'cron_normal'),
@@ -138,9 +153,8 @@ return [
             'debug_mode' => env('SCHEDULER_UPDATEWHOIS_DEBUG', true),
             'audittrail_mode' => false,
         ],
-        // default OFF
         'createreports' => [
-            'active' => env('SCHEDULER_CREATEREPORT_ACTIVE', false),
+            'active' => env('SCHEDULER_CREATEREPORT_ACTIVE', true),
             'debug_mode' => env('SCHEDULER_CREATEREPORT_DEBUG', true),
             'take' => env('SCHEDULER_CREATEREPORT_TAKE', true),
             'recipient' => env('SCHEDULER_CREATEREPORT_RECIPIENT', ''),                // recipient
@@ -162,14 +176,18 @@ return [
         'siteowner_interval' => env('NTD_SITEOWNER_INTERVAL', 3),                     // send sitewowner NTD (sitewowner_interval) x (abusecontact_default_hours)
         'registrar_interval' => env('NTD_REGISTRAR_INTERVAL', 6),                     // send registrar NTD  (registrar_interval) x (abusecontact_default_hours)
         'use_blockeddays' => env('NTD_USE_BLOCKEDDAYS', true),                        // use blocked days funcion
-        'after_blockedday_hours' => env('NTD_AFTER_BLOCKEDDAY_HOURS', '12:00'),       // after blocked day begin not before hours
-        'before_blockedday_hours' => env('NTD_BEFORE_BLOCKEDDAY_HOURS', '16:30'),     // after blocked day begin not before hours
+        'after_blockedday_hours' => env('NTD_AFTER_BLOCKEDDAY_HOURS', '12'),          // after blocked day begin not before hours
+        'before_blockedday_hours' => env('NTD_BEFORE_BLOCKEDDAY_HOURS', '17'),        // after blocked day begin not before hours
         'after_hours' => env('NTD_AFTER_HOURS', '11:00'),                             // after hour every working day before start sending NTD's
     ],
 
     'iccam' => [
         'active' => env('ICCAM_ACTIVE', false),                                       // default no ICCAM
-        'hotlineid' => env('ICCAM_HOTLINEID', '43'),                                  // default first user EOKM
+        'version' => env('ICCAM_VERSION', 'v2'),                                      // ICCAM version
+        'hotlineid' => env('ICCAM_HOTLINEID', '43'),                                  // hotline ICCAM ID code
+        'urlroot' => env('ICCAM_URLROOT', ''),
+        'apiuser' => env('ICCAM_APIUSER', ''),
+        'apipass' => env('ICCAM_APIPASS', ''),
         'cacert' => env('ICCAM_CACERT', ''),
         'sslcert' => env('ICCAM_SSLCERT', ''),
         'sslcertpw' => env('ICCAM_SSLCERTPW', ''),
@@ -177,13 +195,8 @@ return [
         'sslkeypw' => env('ICCAM_SSLKEYPW', ''),
         'verifypeer' => env('ICCAM_VERIFYPEER', true),
         'cookie' => env('ICCAM_COOKIEFILE', ''),
-        'urlroot' => env('ICCAM_URLROOT', ''),
-        'apiuser' => env('ICCAM_APIUSER', ''),
-        'apipass' => env('ICCAM_APIPASS', ''),
-        'readimportmax' => env('ICCAM_READIMPORTMAX', '10'),                          // import read max
+        'readimportmax' => env('ICCAM_READIMPORTMAX', '200'),                         // import read max
         'exportmax' => env('ICCAM_EXPORTMAX', '20'),                                  // export max
-        // obsolute?
-        'import_stagedate' => '',
     ],
 
     'hashapi' => [

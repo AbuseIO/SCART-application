@@ -1,0 +1,8 @@
+mainController: Input_verify
+modelClass: abuseio\scart\models\Input_verify
+InputIsMain: false
+viewTemplate: $/abuseio/scart/behaviors/gradecontroller/questions.htm
+compare: grade_code
+reviewRepeat: 3
+
+

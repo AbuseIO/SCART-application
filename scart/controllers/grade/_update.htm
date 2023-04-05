@@ -1,34 +1,168 @@
 <div id="id_grade_screen">
     <?= $nexttxt ?>
-    <div id="idImageBIG" style="display: none;">
-        <a href="#" style="cursor: zoom-out" data-dismiss="modal">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-body table-bordered align-center" style="display: table-cell; text-align: center; vertical-align: middle;">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <br />
-                        <img id="imgImageBIG" style="border: 1px solid black; " src="" width="400" height="400"/>
+    <?php if (!isset($record_id)) $record_id = ((isset($record)) ? $record->id : 0); ?>
+    <div id="idImageBIG" style="display: none; cursor: pointer;" >
+        <div class="modal-content" style="z-index: 32;">
+            <form class="form-elements" role="form">
+            <input id="idImageBIGrecordid" type="hidden" name="record_id" value="" />
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Image viewer</h4>
+            </div>
+            <div class="modal-body" style="height: 500px;">
+                <div class="row">
+                    <div class="col-xs-8">
+                        <img id="imgImageBIG" style="border: 1px solid black; " src="" />
+                    </div>
+                    <div class="col-xs-4" style="border-left: 1px solid gray;">
+                        <span id="idImageBIGextra" style="display: none;">
+                            <div class="row" style="font-weight: bold; border-bottom: 1px solid gray; margin-bottom: 2px;">
+                                <div class="col-xs-8">
+                                    Attribute
+                                </div>
+                                <div class="col-xs-2">
+                                    AI value
+                                </div>
+                                <div class="col-xs-2">
+                                    Correction
+                                </div>
+                            </div>
+                            <span id="frmImageBIGextra"></span>
+                        </span>
                     </div>
                 </div>
+
             </div>
-        </a>
+            <div class="modal-footer">
+                <div class="form-buttons">
+                    <span id="saveImageBIG">
+                        <button
+                            type="button"
+                            data-dismiss="modal"
+                            data-request="onSaveAIattributes"
+                            data-request-loading="#loading_input"
+                            data-request-update="show_result: '#show_result'"
+                            data-hotkey="ctrl+enter, cmd+enter"
+                            class="btn btn-primary">
+                            <?= e(trans('backend::lang.form.save')) ?>
+                        </button>
+                    </span>
+                    <button
+                        type="button"
+                        data-dismiss="modal"
+                        class="btn btn-default">
+                        <?= e(trans('backend::lang.form.close')) ?>
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
     </div>
-    <div id="idPopupImageBIG">
+    <div id="frmImageBIGtemplate" style="display: none;">
+        <div class="row">
+            <div class="col-xs-8">
+                <label for="[key]">[key]</label>
+            </div>
+            <div class="col-xs-2">
+                [aivalue]
+            </div>
+            <div class="col-xs-2">
+                <input type="text" name="[key]" size="3" style="text-align: right;" value="[value]" />
+            </div>
+        </div>
     </div>
     <script type="text/javascript">
+        var defoffsize = 400;
+        function sizeImageBIG(elm,offsize) {
+            // set size relative width/height org image
+            console.log("sizeImageBIG offsize=" + offsize);
+            var sw=elm.width(), sh=elm.height(), w=offsize, h=offsize;
+            console.log("ref elm.height=" + sh + ", width=" + sw );
+            if (sw > sh) {
+                h = parseInt((sh/sw) * offsize);
+            } else if (sw < sh) {
+                w = parseInt((sw/sh) * offsize);
+            }
+            $('#imgImageBIG').css('width',w +'px').css('height',h +'px');
+            console.log("imgImageBIG.height=" + $('#imgImageBIG').height() + ", width=" + $('#imgImageBIG').width() );
+        }
+       function showImage(elm,record_id,extra) {
 
-       function showImage(elm) {
-           var src = elm.attr('src');
-           $('#imgImageBIG').attr('src', src);
+           //console.log(extra);
+
+           // prepare image
+           $('#imgImageBIG').attr('src', elm.attr('src'));
+
+           //var extra = {'PWCAI_Aantal_gezichten': [0,1],'PWCAI_Aantal_keer_blote_billen': [1,0],'PWCAI_Aantal_keer_blote_borsten': [0,1]};
+
+           // size window
+           var winHeight = $(window).height();
+           var winWidth = $(window).width();
+           console.log("winHeight=" + winHeight + ", winWidth=" + winWidth);
+
+           // set record id
+           console.log('record_id='+record_id);
+           $('#idImageBIGrecordid').val(record_id);
+
+           if (!$.isEmptyObject(extra)) {
+
+               // make form input fields
+
+               var forminputs='';
+               var formtemplate=$('#frmImageBIGtemplate').html();
+
+               Object.entries(extra).forEach(entry => {
+                   const [key, value] = entry;
+                   var tmp = formtemplate;
+                   tmp = tmp.replaceAll('[key]',key);
+                   tmp = tmp.replaceAll('[aivalue]',value[0]);
+                   tmp = tmp.replaceAll('[value]',value[1]);
+                   forminputs += tmp;
+               });
+
+               //console.log(forminputs);
+
+               $('#frmImageBIGextra').html(forminputs);
+               $('#idImageBIGextra').show();
+
+               // resize
+               var extrawidth = parseInt((winWidth)/2) + 50;
+               var extramax = (winHeight - 300);
+               if (extrawidth > extramax) extrawidth = extramax;
+               //console.log("extrawidth=" + extrawidth);
+               //$('#imgImageBIG').css('width',(winWidth - extrawidth) +'px');
+               sizeImageBIG(elm,extrawidth);
+
+           } else {
+               // resize
+               $('#imgImageBIG').css('height',(winHeight - 320) +'px');
+               // no save needed
+               $('#saveImageBIG').hide();
+           }
+
+           // popup
            $.popup({
                content: $('#idImageBIG').html(),
-               size: 'large',
+               size: 'giant',
+               backdrop: true,
                keyboard: true
            });
-           $('.modal-content').css('width','465px').css('height','465px');
-           $('.control-popup').click(function() {
-               $('.modal').trigger('close.oc.popup');
-           }).css('cursor','zoom-out');
+           $('.modal-content .modal-body').css({
+               width: "auto",
+               height: (winHeight - 300) + "px"
+           });
+           if (!$.isEmptyObject(extra)) {
+               $('.modal-dialog').css({
+                   left: "0px",
+                   width: (winWidth - 200) + "px"
+               });
+           } else {
+               // close on every where
+               $('.control-popup').click(function() {
+                   $('.modal').trigger('close.oc.popup');
+               }).css('cursor','zoom-out');
+           }
+
        }
     </script>
 </div>

@@ -69,16 +69,17 @@ class WhoisClient {
 	 * Constructor function
 	 */
 	function __construct () {
-		// Load DATA array
-		@require('whois.servers.php');
+
+        // Load DATA array
+		require 'whois.servers.php';
 
 		// Set version
 		$this->VERSION = sprintf("phpWhois v%s-%s", $this->CODE_VERSION, $this->DATA_VERSION);
 	}
 
-	/*
-	 * Perform lookup
-	 */
+    /*
+     * Perform lookup
+     */
 
 	function GetRawData ($query) {
 
@@ -194,8 +195,8 @@ class WhoisClient {
 
 			while (!feof($ptr))
 				{
-				// 2019/9/4/Gs: added '@' and check for false -> $r can be empty
-				if (@stream_select($r,$null,$null,$this->STIMEOUT)!==false)
+				// check $r emoty and for false
+				if (!empty($r) && stream_select($r,$null,$null,$this->STIMEOUT)!==false)
 					{
 					$raw .= fgets($ptr, $this->BUFFER);
 					}
@@ -246,7 +247,7 @@ class WhoisClient {
 		$result = array( 'rawdata' => $output );
 		$result = $this->set_whois_info($result);
 
-		// Return now on error
+        // Return now on error
 		if (empty($output)) return $result;
 
 		// If we have a handler, post-process it with it
@@ -259,7 +260,7 @@ class WhoisClient {
 			// Process data
 			$result = $this->Process($result,$deep_whois);
 
-			// Add new servers to the server list
+                // Add new servers to the server list
 			if (isset($result['regyinfo']['servers']))
 				$result['regyinfo']['servers'] = array_merge($servers,$result['regyinfo']['servers']);
 			else
@@ -321,10 +322,7 @@ class WhoisClient {
 	*/
 	function httpQuery ($query) {
 
-		//echo ini_get('allow_url_fopen');
-
-		//if (ini_get('allow_url_fopen'))
-			$lines = @file($this->Query['server']);
+   	    $lines = @file($this->Query['server']);
 
 		if (!$lines) return false;
 

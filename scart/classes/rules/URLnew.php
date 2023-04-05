@@ -1,6 +1,4 @@
 <?php
-
-
 namespace abuseio\scart\classes\rules;
 
 use abuseio\scart\classes\helpers\scartLog;
@@ -14,18 +12,18 @@ use Request;
 class URLnew implements Rule
 {
 
-
     public function passes($attribute, $value)
     {
         $bool = false;
-        $value = (strpos( $value, 'https://' ) !== false || strpos( $value, 'http://' ) !== false) ? $value : "http://".$value;
 
-        if (filter_var($value, FILTER_VALIDATE_URL) ) {
-            $headers = @get_headers($value);
+        try {
 
-            if(is_array($headers) && isset($headers[0])) {
-                $bool = (strpos($headers[0], 'HTTP') !== false);
-            }
+            $value = (strpos( $value, 'https://' ) !== false || strpos( $value, 'http://' ) !== false) ? $value : "https://".$value;
+
+            $bool = (filter_var($value, FILTER_VALIDATE_URL) );
+
+        } catch (\Exception $err) {
+            scartLog::logLine("W-URLnew; error when parsing: ".$err->getMessage());
         }
 
         if (!$bool) {

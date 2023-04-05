@@ -586,11 +586,17 @@ class scartExport {
         'online_counter' => 'online counter',
     ];
 
+    /**
+     * export where NTD's are sent for urls closed in the period from > status_time (NTD sent time) <= to
+     *
+     * @param $from
+     * @return string[]
+     */
 
-    public function exportNTDclosed($from) {
+    public function exportNTDclosed($to) {
 
-        $daybefore = date('Y-m-d',strtotime("$from -1 day"));
-        scartLog::logLine("D-exportNTDclosed($from) -> yesterday is: $daybefore");
+        $from = date('Y-m-d H:i:s',strtotime("$to -1 day"));
+        scartLog::logLine("D-exportNTDclosed; period is: '$from' > status_time <= '$to' ");
 
         $line = '';
         foreach (SELF::$_closedfields AS $field => $label) {
@@ -598,16 +604,19 @@ class scartExport {
         }
         $lines = [$line];
 
-        // get urls in NTD send the day BEFORE from
+        // get urls in NTD send the day BEFORE
 
         $ntdurls = Ntd_url::join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
-            ->whereIn(SCART_NTD_TABLE.'.status_code',['sent_succes','sent_api_succes'])
-            ->where(Db::raw("DATE_FORMAT(".SCART_NTD_TABLE.".status_time,'%Y-%m-%d')"),$daybefore)
-            ->select(SCART_NTD_URL_TABLE.'.*')->distinct();
+            ->whereIn(SCART_NTD_TABLE.'.status_code',[SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_SENT_API_SUCCES])
+            ->where(SCART_NTD_TABLE.'.status_time','>',$from)
+            ->where(SCART_NTD_TABLE.'.status_time','<=',$to)
+            ->select(SCART_NTD_URL_TABLE.'.*')
+            ->distinct();
         scartLog::logLine("D-SQL=".$ntdurls->toSql());
-        $ntdurls = $ntdurls->get();
 
-        if (count($ntdurls) > 0) {
+        if ($ntdurls->exists()) {
+
+            $ntdurls = $ntdurls->get();
 
             $doneurls = []; $cnt = $cntclosed = 0;
             foreach ($ntdurls AS $ntdurl) {
@@ -623,12 +632,19 @@ class scartExport {
 
                     // detect if urls has NOT CHECKONLINE or CHANGED status anymore
 
+                    /*
                     $input = Input::where('url',$ntdurl->url)
                         ->whereNotIn('status_code',[
                             SCART_STATUS_ABUSECONTACT_CHANGED,
                             SCART_STATUS_FIRST_POLICE,
                             SCART_STATUS_SCHEDULER_CHECKONLINE,
                             SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
+                        ->first();
+                    */
+                    $input = Input::where('url',$ntdurl->url)
+                        ->whereIn('status_code',[
+                            SCART_STATUS_CLOSE_OFFLINE,
+                            SCART_STATUS_CLOSE_OFFLINE_MANUAL])
                         ->first();
                     if ($input) {
 
@@ -643,7 +659,7 @@ class scartExport {
                         $line = '';
                         $line = self::addLineValue($line,$input->filenumber);
                         $line = self::addLineValue($line,$ntdurl->url);
-                        $line = self::addLineValue($line,$input->status_code);
+                        $line = self::addLineValue($line,$input->status_code);      // CLOSE_OFFLINE or CLOSE_OFFLINE_MANUAL
                         $line = self::addLineValue($line,$abusecontact->owner);
                         $line = self::addLineValue($line,$abusecontact->abusecountry);
                         $line = self::addLineValue($line,$abusecontact->abusecustom);
@@ -665,11 +681,11 @@ class scartExport {
 
             }
 
-            scartLog::logLine("D-Found $cnt NTD urls sent yesterday; number of urls closed: $cntclosed");
+            scartLog::logLine("D-Found $cnt NTD urls sent in this period; number of urls closed: $cntclosed");
 
         } else {
 
-            scartLog::logLine("D-No NTD urls sent yesterday");
+            scartLog::logLine("D-No NTD urls sent in this period");
 
         }
 

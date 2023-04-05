@@ -5,15 +5,21 @@ logs:
   view:
     list: $/abuseio/scart/models/log/columns.yaml
     showSorting: false
+    defaultSort:
+        id: ASC
+        updated_at: ASC
     recordsPerPage: 5
 history:
-    label: history
-    modelClass: abuseio\scart\models\Input_history
-    readOnly: true
-    view:
-        list: $/abuseio/scart/models/input_history/columns.yaml
-        showSorting: false
-        recordsPerPage: 5
+  label: history
+  modelClass: abuseio\scart\models\Input_history
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/input_history/columns.yaml
+    showSorting: false
+    defaultSort:
+        id: ASC
+        updated_at: ASC
+    recordsPerPage: 5
 items:
   label: items
   modelClass: abuseio\scart\models\Input

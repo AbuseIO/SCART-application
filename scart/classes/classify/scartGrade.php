@@ -367,9 +367,5 @@ class scartGrade {
         return (in_array(strtolower($val),$local));
     }
 
-    // grade questions
-    //
-
-
 
 }

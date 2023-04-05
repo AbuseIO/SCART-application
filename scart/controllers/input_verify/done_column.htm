@@ -1,0 +1,28 @@
+<?php
+      $img =  (isset($record->input)) ? $record->input : $record;
+?>
+<div class="row ">
+    <div class="col-xs-11 p-a-0">
+        <div class="table-bordered align-center" style="display: table-cell; width: 120px; height: 120px; text-align: center; vertical-align: middle; ">
+            <a
+                    data-control="popup"
+                    data-handler="onLoadImage"
+                    href="javascript:;"
+                    data-extra-data="id: <?=$img->id; ?>"
+                    >
+
+            <img <?= abuseio\scart\classes\helpers\scartImage::getImageSizeAttr($img,120) ?> style="cursor: zoom-in;display: inline;" src="<?= $img->getUrlDataAttribute() ?>" />
+            </a>
+        </div>
+    </div>
+    <div class="col-xs-1 p-a-0" align="left">
+        <?php if ($record->hashcheck_return): ?>
+        <span class="icon-exclamation-triangle" title="<?= e(trans('abuseio.scart::lang.text.found_hash')) ?>" data-toggle="tooltip" data-placement="right" data-delay="150" style="color: red;">&nbsp;</span>
+        <?php endif ?>
+        <?php if ($record->proxy_call_error): ?>
+        <span class="icon-exclamation-triangle" title="<?= e(trans('abuseio.scart::lang.text.proxy_error')) ?> <?php echo $record->proxy_call_error ?>" data-toggle="tooltip" data-placement="right" data-delay="150" style="color: #FDA43A;">&nbsp;</span>
+        <?php endif ?>
+    </div>
+</div>
+
+

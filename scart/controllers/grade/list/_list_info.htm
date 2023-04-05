@@ -52,6 +52,7 @@
 
     <?php if (isset($record->infoData['extra'])): ?>
     <div class="col-xs-4 p-a-0" style="height: 120px; overflow-y: auto; overflow-x: hidden">
+        <span id="extra_fields_<?= $record->url_hash ?>">
         <?php foreach ($record->infoData['extra'] AS $field) { ?>
         <div class="row" style="border-bottom: 2px solid transparent;">
             <?php if (substr($field['label'],0,6)=='PWCAI_'): ?>
@@ -71,7 +72,11 @@
             <?php endif; ?>
         </div>
         <?php } ?>
+        </span>
     </div>
     <?php endif ?>
+    <script type="text/javascript">
+        var extra_fields_<?= $record->filenumber ?>=<?= $record->infoData['extradata']; ?>;
+    </script>
 
 </div>

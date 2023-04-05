@@ -2,11 +2,8 @@
 
 namespace abuseio\scart\console;
 
-use abuseio\scart\classes\mail\scartAlerts;
 use Config;
-
 use Illuminate\Console\Command;
-use abuseio\scart\classes\mail\scartEXIM;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartMail;
 use abuseio\scart\classes\whois\scartWhois;
@@ -33,16 +30,9 @@ class testMailview extends Command
      */
     public function handle() {
 
-        $params = [
-            'reportname' => 'TEST MAILVIEW ',
-            'report_lines' => [
-                "Regel-1= TEST"
-            ]
-        ];
-        scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN, 'abuseio.scart::mail.admin_report', $params );
+        $to = 'gerald@svsnet.nl';
 
-
-
+        scartMail::sendMailRaw($to,'TEST message-id','TEST message-id');
 
         $this->info(str_replace("<br />\n",'',scartLog::returnLoglines()));
 

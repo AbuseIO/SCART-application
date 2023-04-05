@@ -1,0 +1,14 @@
+list: $/abuseio/scart/models/input_verify/columns.yaml
+modelClass: abuseio\scart\models\Input_verify
+title: Verify
+noRecordsMessage: 'backend::lang.list.no_records'
+customViewPath: '$/abuseio/scart/layouts/scart/list'
+showSetup: true
+showCheckboxes: false
+recordsPerPage: 20
+filter: config_filter.yaml
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+

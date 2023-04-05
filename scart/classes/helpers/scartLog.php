@@ -82,6 +82,14 @@ class scartLog {
         }
     }
 
+    public static function logDump($text='',$dumpvar=null, $echo=false) {
+
+        if ($dumpvar!=null) {
+            $text .= print_r($dumpvar,true);
+        }
+        self::logLine($text,$echo);
+    }
+
     public static function hasError() {
         return SELF::$_hasError;
     }
@@ -178,7 +186,7 @@ class scartLog {
                 $body .= 'User: login='.$user->login.', email='.$user->email.CRLF_NEWLINE;
             }
             $appurl = env('APP_URL', '(unknown)');
-            if ($user) {
+            if ($appurl) {
                 $body .= 'App: url='.$appurl.CRLF_NEWLINE;
             }
             $body .= 'Error lines:'.CRLF_NEWLINE;

@@ -25,7 +25,7 @@ class scartErrorHandler extends Handler {
      */
     public function render($request, Exception $exception) {
 
-        /* The rest of this code is just the 'default' code from OctoberCMS' error handler. */
+        /* The rest of this code is just the 'default' code from WinterCMS' error handler. */
         if (!class_exists('Event')) {
             return parent::render($request, $exception);
         }

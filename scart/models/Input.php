@@ -1,14 +1,14 @@
 <?php namespace abuseio\scart\models;
 
-use abuseio\scart\classes\iccam\scartICCAMfields;
 use Db;
 use Config;
 use BackendAuth;
 use abuseio\scart\classes\browse\scartBrowser;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
 use abuseio\scart\classes\base\scartModel;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\classes\helpers\scartLog;
+use abuseio\scart\classes\aianalyze\scartAIanalyze;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Log;
 use abuseio\scart\models\Grade_answer;
 use abuseio\scart\models\Grade_status;
@@ -19,8 +19,8 @@ use abuseio\scart\models\Scrape_cache;
 use abuseio\scart\models\Systemconfig;
 use abuseio\scart\models\Input_extrafield;
 use October\Rain\Translation\Translator;
-use abuseio\scart\classes\iccam\scartExportICCAM;
 use abuseio\scart\models\Input_history;
+use ValidationException;
 
 /**
  * Model
@@ -41,10 +41,8 @@ class Input extends scartModel
      * @var array Validation rules
      */
     public $rules = [
-        // disable URL validation -> not all urls can be handled by this validator, eg pornjav.online is reported as invalid
-        // the correct way to solve this problem, is to set a newer rule with the guidelines of Wintercms. We can maintaine this rule and share with others, without
-        // change to core code of wintercms
-//        'url' => 'required|URLvEOKM',
+        // Disable URL validation -> not all urls can be handled by this validator, eg pornjav.online is reported as invalid
+        // See validation in the beforeCreate function
         'url' => 'required',
         'type_code' => 'required',
         'source_code' => 'required',
@@ -99,7 +97,11 @@ class Input extends scartModel
             'abuseio\scart\models\Input',
             'table' => 'abuseio_scart_input_parent',
             'key' => 'parent_id',
-            'otherKey' => 'id',
+            'parentKey' => 'id',
+            'otherKey' => 'input_id',
+            'relatedKey' => 'id',
+            // do not forget this condition when join table has soft delete
+            'conditions' => 'abuseio_scart_input_parent.deleted_at is null',
             ],
     ];
 
@@ -268,19 +270,46 @@ class Input extends scartModel
         }
         $whoisraw = (isset($whoisfields[SCART_HOSTER.'_rawtext'])) ? $whoisfields[SCART_HOSTER.'_rawtext'] : '';
 
-        $extrafields = Input_extrafield::where('input_id',$this->id)->get();
         $extra = [];
+        $extradata = '{}';
+
+        $extrafields = Input_extrafield::where('input_id',$this->id)->get();
         if ($extrafields) {
+
+            // When type=SCART_INPUT_EXTRAFIELD_PWCAI fill also object with extrafield values
+            // AND if AI analyze is active
+
+            $extradata = '{';
+
             foreach ($extrafields AS $extrafield) {
-                $field = [
-                    'name' => $extrafield->type.'_'.$extrafield->label,
-                    'label' => $extrafield->type.'_'.$extrafield->label,
-                    'value' => $extrafield->value,
-                    'mark' => false,
-                    'link' => false,
-                ];
-                $extra[] = $field;
+
+                $fieldname = $extrafield->type.'_'.$extrafield->label;
+
+                // patch: skip always name from PWC AI module
+                if ($fieldname != 'PWCAI_Naam_afbeelding') {
+
+                    if (scartAIanalyze::isActive() && $extrafield->type == SCART_INPUT_EXTRAFIELD_PWCAI) {
+                        if ($extradata != '{') {
+                            $extradata .= ',';
+                        }
+                        $extradata .= "'$fieldname': ['$extrafield->value','$extrafield->secondvalue']";
+                    }
+
+                    $field = [
+                        'name' => $fieldname,
+                        'label' => $fieldname,
+                        'value' => $extrafield->value,
+                        'mark' => false,
+                        'link' => false,
+                    ];
+                    $extra[] = $field;
+
+                }
+
             }
+
+            $extradata .= '}';
+
         }
 
         $info = [
@@ -288,6 +317,7 @@ class Input extends scartModel
             'hoster' => $hoster,
             'registrar' => $registrar,
             'whoisraw' => $whoisraw,
+            'extradata' => $extradata,
         ];
         if (count($extra) > 0) {
             $info['extra'] = $extra;
@@ -366,12 +396,43 @@ class Input extends scartModel
         }
     }
 
+    public function beforeCreate()
+    {
+        parent::beforeCreate();
+
+        // Do some (extra) validations
+
+        // Validator::extend('URLvEOKM', URLnew::class);
+
+        // always schema
+        $this->url = (strpos( $this->url, 'https://' ) !== false || strpos( $this->url, 'http://' ) !== false) ? $this->url : "https://".$this->url;
+
+        // check if valid
+        if (filter_var($this->url, FILTER_VALIDATE_URL) === false) {
+
+            // problem with special chars in:
+            // "https://westergas.nl/en/wp-content/uploads/sites/2/2023/03/SchermÂ­afbeelding-2023-03-20-om-11.38.46-960x1040.jpg"
+
+            // try converting with ignoring the illegal chars
+            mb_substitute_character('none');
+            $url = mb_convert_encoding($this->url, 'UTF-8', 'UTF-8');
+            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+                throw new ValidationException(['url' => "The url '".$this->url."' (UTF-8 url='$url') is not valid (http://www.faqs.org/rfcs/rfc2396.html)"]);
+            }
+        }
+
+        // always check if double
+        if (Input::where('url',$this->url)->exists()) {
+            throw new ValidationException(['url' => 'The url "'.$this->url.'" is already active for a report']);
+        }
+
+    }
+
     /**
      * Aftercreate
      *
      * generate unique filenumber
      * set default status_code op SCART_STATUS_SCHEDULER_SCRAPE
-     *
      *
      */
     public function afterCreate() {
@@ -410,17 +471,18 @@ class Input extends scartModel
         $this->removeNtdIccam(false);
 
         // delete parent related items
-        $this->deleteRelated();
+        if ($this->url_type == SCART_URL_TYPE_MAINURL) $this->deleteRelated();
 
         // delete in related tables
         Log::where('record_type',SCART_INPUT_TABLE)->where('record_id', $this->id)->delete();
         Grade_answer::where('record_type',SCART_INPUT_TABLE)->where('record_id', $this->id)->delete();
         Input_selected::where('input_id', $this->id)->delete();
-        Scrape_cache::delCache($this->url_hash);
         Input_extrafield::where('input_id',$this->id)->delete();
         Input_history::where('input_id',$this->id)->delete();
 
-        // after this, record will be deleted
+        Scrape_cache::delCache($this->url_hash);
+
+        // after this, this record will be deleted by delete()
     }
 
     /**
@@ -433,18 +495,18 @@ class Input extends scartModel
         if (count($items) > 0) {
             scartLog::logLine("D-Input.beforeDelete; delete all related records; input_id=" . $this->id);
             foreach ($items AS $itemparent) {
-                // check if not connected to other input
-                if (Input_parent::where('parent_id','<>',$this->id)->where('input_id',$itemparent->input_id)->count() == 0) {
-                    scartLog::logLine("D-Input.deleteRelated; delete item (input_id=$itemparent->input_id)");
-                    // skip own record
-                    if ($itemparent->input_id!=$this->id) {
+                // skip parent
+                if ($itemparent->input_id != $this->id) {
+                    // check if not connected to other input
+                    if (Input_parent::where('parent_id','<>',$this->id)->where('input_id',$itemparent->input_id)->count() == 0) {
+                        scartLog::logLine("D-Input.deleteRelated; delete item (input_id=$itemparent->input_id)");
                         $item = Input::find($itemparent->input_id);
                         if ($item) {
                             $item->delete();
                         }
+                    } else {
+                        scartLog::logLine("D-Input.deleteRelated; item (input_id=$itemparent->input_id) also connected to other input - skip delete");
                     }
-                } else {
-                    scartLog::logLine("D-Input.deleteRelated; item (input_id=$itemparent->input_id) also connected to other input - skip delete");
                 }
             }
             Input_parent::where('parent_id', $this->id)->delete();
@@ -466,15 +528,15 @@ class Input extends scartModel
             $this->logText("Remove status (MANUAL) CHECKONLINE; remove also from any (grouping) NTD's");
             Ntd::removeUrlgrouping($this->url);
 
-            if ($iccamcr && scartICCAMmapping::isActive()) {
+            if ($iccamcr && scartICCAMinterface::isActive()) {
 
-                if (scartICCAMfields::getICCAMreportID($this->reference)) {
+                if (scartICCAMinterface::getICCAMreportID($this->reference)) {
 
                     // report ICCAM
 
                     // ICCAM content removed
                     $this->logText("Remove status CHECKONLINE; inform ICCAM about CONTENT_REMOVED");
-                    scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                         'record_type' => class_basename($this),
                         'record_id' => $this->id,
                         'object_id' => $this->reference,
@@ -515,16 +577,12 @@ class Input extends scartModel
     // Extra fields
 
     public function getExtrafieldValue($type,$field) {
-
         $extrafield = Input_extrafield::where('input_id',$this->id)->where('type',$type)->where('label',$field)->first();
         return ($extrafield) ? $extrafield->value : '';
     }
+
     public function addExtrafield($type,$field,$value) {
-
         try {
-
-            //scartLog::logLine("D-input.addExtrafield; input_id=$this->id, type=$type, field=$field, value=$value ");
-
             $extrafield = Input_extrafield::where('input_id',$this->id)->where('type',$type)->where('label',$field)->first();
             if (!$extrafield) {
                 $extrafield = new Input_extrafield();
@@ -536,11 +594,8 @@ class Input extends scartModel
             $extrafield->save();
 
         } catch (\Exception $err) {
-
             scartLog::logLine("W-input.addExtrafield; error on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage());
-
         }
-
     }
 
     // History
@@ -575,6 +630,39 @@ class Input extends scartModel
             }
         }
         return $gradecodes;
+    }
+
+    public function scopeAttribute($query,$value) {
+
+        /**
+         *
+         *
+        SELECT COUNT(*)
+        FROM `abuseio_scart_input_parent`,abuseio_scart_input_extrafield
+        WHERE abuseio_scart_input_parent.`deleted_at` IS NULL
+        AND abuseio_scart_input_parent.`parent_id` = 2071
+        AND abuseio_scart_input_extrafield.input_id=abuseio_scart_input_parent.input_id
+        AND abuseio_scart_input_extrafield.label='Aantal_keer_blote_borsten'
+        AND abuseio_scart_input_extrafield.value <> 0
+         *
+         *
+         */
+
+        scartLog::logLine("D-scopeAttribute call");
+        scartLog::logLine("D-value=" . print_r($value,true));
+        trace_sql();
+        foreach ($value AS $val) {
+            $query = $query->whereExists(function($query) use ($val) {
+                $query->select(Db::raw(1))
+                    ->from('abuseio_scart_input_extrafield')
+                    ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
+                    ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
+                    ->where('abuseio_scart_input_extrafield.label',$val)
+                    ->where('abuseio_scart_input_extrafield.value','<>',0);
+
+            });
+        }
+        return $query;
     }
 
 

@@ -49,12 +49,9 @@ class scartSchedulerSendAlerts extends scartScheduler {
 
                     // -1- behide workload
 
-                    $lastseen = scartSchedulerCheckOnline::Normal(0)
-                        ->orderBy('lastseen_at','ASC')
-                        ->select('lastseen_at')
-                        ->first();
+                    $lastseen = scartSchedulerCheckOnline::lastseen();
                     $lastseen = ($lastseen) ? $lastseen->lastseen_at : '';
-                    $lastseenago = ($lastseen) ? (time() - strtotime($lastseen)) : '';
+                    $lastseenago = ($lastseen) ? (time() - strtotime($lastseen)) : 0;
                     // note: CRON then more then 24 hours as warning
                     $lookagain = ($moderealtime) ? Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_look_again',120) : (24 * 60);
                     $check_online_every = Systemconfig::get('abuseio.scart::scheduler.checkntd.check_online_every',15);
@@ -69,28 +66,41 @@ class scartSchedulerSendAlerts extends scartScheduler {
                         $sendalert = intval($sendalert) + 1;
 
                         // records with more then (look_again) minutes last check
-                        $look_again = Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_look_again',120);
-                        $workloadcount = scartSchedulerCheckOnline::Normal($look_again)->count();
+                        $lookagaintime = date('Y-m-d H:i:s', strtotime("-$lookagain minutes"));
+                        $lastseencnt = scartSchedulerCheckOnline::lastseenCount($lookagaintime);
 
                         // check retry country for alerting -> alert after ($check_online_every) -> give classified records time to process
                         if (($sendalert % $check_online_every) == 0) {
 
                             // each half hour
-                            scartLog::logLine("W-SEND realtime oldest warning; sendalert=$sendalert; ($lastseenago >= ($lookagain * 60); workloadcount=$workloadcount");
+                            scartLog::logLine("W-SEND realtime oldest warning; sendalert=$sendalert; ($lastseenago >= ($lookagain * 60); lastseencnt=$lastseencnt");
+
+                            $report_lines = [
+                                "Lastseen normal/firsttime record: $lastseen",
+                                'Current max time: '.$lookagaintime,
+                                "Lastseen ago (lookagain=$lookagain minutes): ".round($lastseenago / 60,0).' minutes',
+                                "Number of 'old' normal/firsttime records: $lastseencnt",
+                                "Alert count: $sendalert",
+                                "Top 10 'old' normal/firsttime records:",
+                            ];
+
+                            $oldrecords = scartSchedulerCheckOnline::lastseenTop10($lookagaintime);
+                            foreach ($oldrecords AS $oldrecord) {
+                                $type = 'Normal';
+                                if ($oldrecord->online_counter == 0) {
+                                    $type = 'FirstTime';
+                                }
+                                $report_lines[] = "_filenumber=$oldrecord->filenumber, status=$oldrecord->status_code, type=$type, lastseen=$oldrecord->lastseen_at";
+                            }
 
                             // (ONE TIME) send admin warning
                             $params = [
-                                'reportname' => 'REALTIME OLDEST WARNING; lastseen not within allowed time!? ',
-                                'report_lines' => [
-                                    "Lastseen: $lastseen",
-                                    "Lastseen ago (lookagain=$lookagain minutes): ".round($lastseenago / 60,0).' minutes',
-                                    "Number of 'old' records: $workloadcount",
-                                    "Alert count: $sendalert",
-                                ]
+                                'reportname' => 'REALTIME OLDEST WARNING; lastseen not within allowed time ',
+                                'report_lines' => $report_lines
                             ];
                             scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
                         } else {
-                            scartLog::logLine("W-Realtime oldest warning; sendalert=$sendalert; ($lastseenago >= ($lookagain * 60); workloadcount=$workloadcount");
+                            scartLog::logLine("W-Realtime oldest warning; no time to (re)send; ($sendalert % $check_online_every) <> 0; ($lastseenago >= ($lookagain * 60); lastseencnt=$lastseencnt ");
                         }
                         scartUsers::setGeneralOption('REALTIME_OLDEST_WARNING', $sendalert);
 
@@ -120,37 +130,60 @@ class scartSchedulerSendAlerts extends scartScheduler {
 
                     // -2- checkonline-lock old
 
-                    $old = date('Y-m-d H:i:s',strtotime("-12 hours"));
+                    $old = date('Y-m-d H:i:s',strtotime("-24 hours"));
                     if ($cnt = scartCheckOnline::checkLocks($old)) {
 
-                        // Send warning (1x)
+                        // Log lock(s) and RESET old lock(s)
 
                         $sendalert = scartUsers::getGeneralOption('REALTIME_OLD_CHECKONLINELOCK');
                         if (empty($sendalert)) $sendalert = 1;
                         $sendalert = intval($sendalert) + 1;
 
-                        // check retry country for alerting -> alert after ($check_online_every) -> give classified records time to process
                         if (($sendalert % $check_online_every) == 0) {
 
-                            // each half hour
-                            scartLog::logLine("W-SEND realtime checkonline-lock old warning; sendalert=$sendalert; $cnt lock(s) older then $old");
+                            scartLog::logLine("W-SEND alert realtime checkonline-lock old warning; $cnt lock(s) older then $old");
 
-                            // (ONE TIME) send admin warning
+                            // get which type is locked
+                            $oldlockrecords = scartCheckOnline::getOldLocks($old);
+                            $normal = $retry = $firsttime = 0;
+                            foreach ($oldlockrecords AS $oldlockrecord) {
+                                if ($oldlockrecord->online_counter == 0) {
+                                    $firsttime += 1;
+                                } elseif ($oldlockrecord->browse_error_retry == 0) {
+                                    $normal += 1;
+                                } else {
+                                    $retry += 1;
+                                }
+                                //$report_lines[] = $oldlockrecord->filenumber.', status='.$oldlockrecord->status_code.', browse_error_retry='.$oldlockrecord->browse_error_retry.', checkonline_lock='.$oldlockrecord->checkonline_lock." <br />\n";
+                            }
+
+                            $report_lines = [
+                                "Lock(s) older then : $old",
+                                "Number of locked records: $cnt",
+                                "Number of FIRSTTIME locked: $firsttime ",
+                                "Number of RETRY locked: $retry ",
+                                "Number of NORMAL locked: $normal ",
+                            ];
+
+                            // Send admin warning and lock filenumber(s)
                             $params = [
-                                'reportname' => 'REALTIME CHECKONLINE-LOCK OLD WARNING',
-                                'report_lines' => [
-                                    "Lock is older then : $old",
-                                    "Number of records: $cnt",
-                                    "Alert count: $sendalert",
-                                ]
+                                'reportname' => 'REALTIME OLD LOCKS CHECKONLINE',
+                                'report_lines' => $report_lines,
                             ];
                             scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+
                         } else {
-                            scartLog::logLine("W-Realtime checkonline-lock old warning; sendalert=$sendalert; $cnt lock(s) lock older then $old");
+                            scartLog::logLine("W-Realtime checkonline-lock old warning; $cnt lock(s) older then $old; no alert send ($sendalert % $check_online_every) <> 0");
                         }
+
+                        //scartCheckOnline::resetOldLocks($old);
+
                         scartUsers::setGeneralOption('REALTIME_OLD_CHECKONLINELOCK', $sendalert);
 
-                    } else {
+                    }
+
+                    /*
+                    else {
 
                         $sendalert = scartUsers::getGeneralOption('REALTIME_OLD_CHECKONLINELOCK');
 
@@ -172,6 +205,7 @@ class scartSchedulerSendAlerts extends scartScheduler {
                         }
 
                     }
+                    */
 
                 }
 

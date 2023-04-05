@@ -101,13 +101,25 @@ class scartSchedulerCheckOnline extends scartScheduler {
         return $cnt;
     }
 
+    /**
+     * Basic query for getting worker records; online check of illegal content
+     *
+     * FirstTime; first time (online_counter=0)
+     * Retry; has browser of whois errors
+     * Normal; not first time and no errors
+     *
+     * lastseen; last seen time
+     * lastseenCount; number of records with last seen time before $lookagaintime
+     *
+     */
+
     public static function FirstTime() {
 
         scartLog::logLine("D-scartSchedulerCheckOnline; get FirstTime ");
         return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])
             ->where('grade_code',SCART_GRADE_ILLEGAL)
             ->whereNull('checkonline_lock')
-            ->where('online_counter', 0)
+            ->where('online_counter','=', 0)
             ->where('browse_error_retry',0)
             ->where('whois_error_retry',0)
             ->orderBy('id');
@@ -144,10 +156,130 @@ class scartSchedulerCheckOnline extends scartScheduler {
             });
     }
 
+    public static function countWork($runtime='') {
+
+        // Count every one, first time, normal and retry
+
+        $records = Input::where('grade_code',SCART_GRADE_ILLEGAL);
+        if ($runtime=='Normal') {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
+                ->where('online_counter','>',0)
+                ->where('browse_error_retry',0)
+                ->where('whois_error_retry',0);
+        } elseif ($runtime == 'FirstTime') {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])
+                ->where('online_counter','=',0)
+                ->where('browse_error_retry',0)
+                ->where('whois_error_retry',0);
+        } elseif ($runtime == 'Retry') {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
+                ->where(function($query) {
+                    $query->where('browse_error_retry', '<>', 0)->orWhere('whois_error_retry', '<>', 0);
+                });
+        } else {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE]);
+        }
+        return $records->count();
+    }
+
+
+    public static function lastseen() {
+
+        // last seen for cron/realtime job(s)
+        return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE])
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('online_counter','>=',0)            // also firsttime
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->whereNotNull('lastseen_at')
+            ->orderBy('lastseen_at','ASC')
+            ->select('lastseen_at')
+            ->first();
+    }
+
+    public static function lastseenCount($lookagaintime) {
+
+        // last seen for cron/realtime job(s)
+        return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE])
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('online_counter','>=',0)            // also firsttime
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->whereNotNull('lastseen_at')
+            ->where('lastseen_at', '<', $lookagaintime)
+            ->count();
+    }
+
+    public static function lastseenTop10($lookagaintime) {
+
+        // last seen for cron/realtime job(s)
+        return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE])
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('online_counter','>=',0)            // also firsttime
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->whereNotNull('lastseen_at')
+            ->where('lastseen_at', '<', $lookagaintime)
+            ->orderBy('lastseen_at','ASC')
+            ->take(10)
+            ->get();
+    }
+
     public static function All() {
 
         return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
             ->where('grade_code',SCART_GRADE_ILLEGAL);
+    }
+
+    public static function checkStddevTime($runtime='Normal') {
+
+        // note; FirstTime and Normal same, Retry different
+        $records = Input::where('grade_code',SCART_GRADE_ILLEGAL);
+        if ($runtime == 'Retry') {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE])
+                ->where('checkonline_leadtime','>',0)
+                ->where(function($query) {
+                    $query->where('browse_error_retry', '<>', 0)->orWhere('whois_error_retry', '<>', 0);
+                });
+        } else {
+            $records = $records->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE])
+                ->where('checkonline_leadtime','>',0)
+                ->where('online_counter','>=',0)
+                ->where('browse_error_retry',0)
+                ->where('whois_error_retry',0);
+        }
+        $stddev = $records->selectRaw('STDDEV(checkonline_leadtime) AS checkonline_leadtime_stddev')->first();
+        return (($stddev) ? $stddev->checkonline_leadtime_stddev : 0);
+    }
+
+    public static function checkAvgTime() {
+
+        return Input::where('status_code',SCART_STATUS_SCHEDULER_CHECKONLINE)
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->where('checkonline_leadtime','>',0)
+            ->avg('checkonline_leadtime');
+    }
+
+    public static function checkMaxTime() {
+
+        return Input::where('status_code',SCART_STATUS_SCHEDULER_CHECKONLINE)
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->where('checkonline_leadtime','>',0)
+            ->max('checkonline_leadtime');
+    }
+
+    public static function checkMinTime() {
+
+        return Input::where('status_code',SCART_STATUS_SCHEDULER_CHECKONLINE)
+            ->where('grade_code',SCART_GRADE_ILLEGAL)
+            ->where('browse_error_retry',0)
+            ->where('whois_error_retry',0)
+            ->where('checkonline_leadtime','>',0)
+            ->min('checkonline_leadtime');
     }
 
 

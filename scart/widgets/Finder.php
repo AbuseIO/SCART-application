@@ -35,7 +35,6 @@ class Finder extends WidgetBase
         if (is_array($filters) && count($filters) > 0) {
             scartLog::logLine("D-Finder(widget): begin process finder, with the term: " . $filters['criteria']);
             \Session::push('filter', $filters);
-            // https://octobercms.com/forum/post/connecting-2-widgets-in-a-modal-popup
 
             $results = [];
             if (!isset($filters['typeTable']) || $filters['typeTable'] == 'input') {

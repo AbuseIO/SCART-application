@@ -34,6 +34,7 @@ class pwcAIanalyzer {
     static $_pushurl = 'http://{host}/predict';
     static $_pollurl = 'http://{host}/poll_database';
     static $_lasterror = '';
+    static $_curltimeout = 60;
 
     private static $_pwcai_host = '';
     private static $_pwcai_port = '';
@@ -85,6 +86,8 @@ class pwcAIanalyzer {
                     CURLOPT_PORT => SELF::$_pwcai_port,
                     CURLOPT_SSL_VERIFYPEER => false,
                     CURLOPT_HEADER => false,
+                    CURLOPT_CONNECTTIMEOUT => self::$_curltimeout,    // time-out on connect
+                    CURLOPT_TIMEOUT => self::$_curltimeout,    // time-out on response
                 ];
             } else {
                 $extra = [
@@ -92,6 +95,8 @@ class pwcAIanalyzer {
                     CURLOPT_PORT => SELF::$_pwcai_port,
                     CURLOPT_SSL_VERIFYPEER => false,
                     CURLOPT_HEADER => false,
+                    CURLOPT_CONNECTTIMEOUT => self::$_curltimeout,    // time-out on connect
+                    CURLOPT_TIMEOUT => self::$_curltimeout,    // time-out on response
                 ];
             }
 

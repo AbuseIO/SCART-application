@@ -90,7 +90,7 @@ class Addon extends scartModel
     }
     public static function getAddonType($type) {
         if (!isset(SELF::$_addontype[$type])) {
-            SELF::$_addontype[$type] = Addon::where('type',SCART_ADDON_TYPE_AI_IMAGE_ANALYZER)->where('enabled',true)->first();
+            SELF::$_addontype[$type] = Addon::where('type',$type)->where('enabled',true)->first();
         }
         return SELF::$_addontype[$type];
     }

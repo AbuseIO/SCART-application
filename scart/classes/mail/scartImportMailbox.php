@@ -10,17 +10,20 @@ use abuseio\scart\models\Input_source;
 use abuseio\scart\models\Input_status;
 use abuseio\scart\models\Ntd;
 use abuseio\scart\models\Systemconfig;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
-use abuseio\scart\classes\iccam\scartICCAMfields;
-use abuseio\scart\classes\iccam\scartExportICCAM;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 
 class scartImportMailbox {
+
+    public static function isActive() {
+        // host must be set
+        $host =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host','');
+        return ($host!='');
+    }
 
     public static function importMailbox() {
 
         try {
 
-            // host set, then readimport config set
             $host =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host','');
             if ($host!='') {
 
@@ -78,22 +81,39 @@ class scartImportMailbox {
         $loglines = [];
         $cnt = 0;
 
-        $bodylines = explode("\n", $msg->body);
+        //scartLog::logLine("D-processBodylines; body='$msg->body'");
+
+        // check if not TEXT ASCII format
+        //
+        if (strpos($msg->body,'=0D=0A')!==false) {
+            // first combi with '='
+            $body = str_replace(["=\n","=\r","=\n\r"],'',$msg->body);
+            // then only cr or lf
+            $body = str_replace(["\r","\n"],'',$body);
+            $bodylines = explode("=0D=0A", $body);
+        } else {
+            // split on crlf
+            $bodylines = explode("\n", $msg->body);
+        }
+
         foreach ($bodylines AS $bodyline) {
 
             $reportline = '';
 
-            //scartLog::logLine("D-analyse '$bodyline'");
-            if (trim($bodyline)!='') {
+            // cleanup body line
+            $bodyline = trim($bodyline);
 
-                $bodyline = trim($bodyline) . ';';
+            scartLog::logLine("D-processBodylines; bodyline='$bodyline'");
+            if ($bodyline != '') {
+
+                $bodyline = $bodyline . ';';
 
                 $arrline = explode(';',$bodyline);
                 if (count($arrline) >= 1) {
 
                     $url = $arrline[0];
 
-                    if (filter_var($url, FILTER_VALIDATE_URL,FILTER_FLAG_HOST_REQUIRED)) {
+                    if (filter_var($url, FILTER_VALIDATE_URL)) {
 
                         if (Input::where('url',$url)->count() == 0) {
 
@@ -107,6 +127,7 @@ class scartImportMailbox {
                             if (count($arrline) >= 3) {
                                 $arrnote = array_splice($arrline,2);
                                 $note = implode(';' , $arrnote);
+                                $note = (trim($note)!=';') ? $note : '';
                             } else {
                                 $note = '';
                             }
@@ -158,7 +179,7 @@ class scartImportMailbox {
 
                     } else {
                         // skip
-                        //$reportline = "failed: url not valid; line=$bodyline";
+                        $reportline = "failed: url not valid; line=$bodyline";
                     }
 
                 }
@@ -179,9 +200,11 @@ class scartImportMailbox {
 
     public static function processERTinput($msg) {
 
-        scartLog::logLine("D-readImportMailbox; processERTinput");
+        $import_mail_direct_Scrape = Systemconfig::get('abuseio.scart::options.import_mail_direct_Scrape',false);
+        $newstatus = (($import_mail_direct_Scrape)? SCART_STATUS_SCHEDULER_SCRAPE : SCART_STATUS_OPEN);
+        scartLog::logLine("D-readImportMailbox; processERTinput; new status code will be: $newstatus");
 
-        $loglines = self::processBodylines($msg,SCART_MAILBOX_IMPORT_SOURCE_CODE_WEBFORM,SCART_STATUS_OPEN);
+        $loglines = self::processBodylines($msg,SCART_MAILBOX_IMPORT_SOURCE_CODE_WEBFORM,$newstatus);
 
         return $loglines;
     }
@@ -262,14 +285,14 @@ class scartImportMailbox {
 
                             foreach ($inputs AS $input) {
 
-                                if ($input->status_code != SCART_STATUS_CLOSE_OFFLINE) {
+                                if ($input->status_code != SCART_STATUS_CLOSE_OFFLINE && $input->status_code != SCART_STATUS_CLOSE_OFFLINE_MANUAL) {
 
                                     $reportline = "Close (offline) url '$url'; filenumber=$input->filenumber; status was '$input->status_code'";
 
                                     // log old/new for history
-                                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_CLOSE_OFFLINE,"Close offline by email import");
-
-                                    $input->status_code = SCART_STATUS_CLOSE_OFFLINE;
+                                    $new = ($input->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
+                                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,$new,"Close offline by email import");
+                                    $input->status_code = $new;
                                     $input->save();
                                     $input->logText("Close offline by mailbox import");
 
@@ -277,19 +300,19 @@ class scartImportMailbox {
                                     Ntd::removeUrlgrouping($input->url);
                                     $input->logText("Removed from any (grouping) NTD's");
 
-                                    if (scartICCAMmapping::isActive()) {
+                                    if (scartICCAMinterface::isActive()) {
 
                                         // check if valid ICCAM reportID
-                                        if ($reportID = scartICCAMfields::getICCAMreportID($input->reference)) {
+                                        if ($reportID = scartICCAMinterface::getICCAMreportID($input->reference)) {
 
                                             // ICCAM content removed
-                                            scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                            scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                                                 'record_type' => class_basename($input),
                                                 'record_id' => $input->id,
                                                 'object_id' => $input->reference,
                                                 'action_id' => $actionID,
                                                 'country' => '',                // hotline default
-                                                'reason' => 'SCART found content removed',
+                                                'reason' => 'ContentNotFound',
                                             ]);
 
                                             $reportline .= "; ICCAM action $actionID set for ReportID '$reportID'";
@@ -363,7 +386,7 @@ class scartImportMailbox {
 
                         $status_timestamp = '[' . date('Y-m-d H:i:s') . '] ';
 
-                        // check if not already in ERT
+                        // check if not already in SCART
                         if (!scartICCAMmapping::alreadyImportedICCAMreportID($reportID)) {
 
                             $txt = scartICCAMmapping::alreadyActionsSetICCAMreportID($reportID);
@@ -377,9 +400,7 @@ class scartImportMailbox {
 
                                     // check if siteType is set -> convert to SCART siteType value
                                     $siteTypeId = (isset($iccamreport->SiteTypeID)) ? $iccamreport->SiteTypeID : 1;
-                                    $siteTypeId = (is_numeric($siteTypeId)) ? intval($siteTypeId) : 1;
-                                    $key = array_search($siteTypeId, scartICCAMfields::$SiteTypeIDMap);
-                                    $type_code = ($key !== false) ? $key : SCART_ICCAM_IMPORT_TYPE_CODE_ICCAM;
+                                    $type_code = scartICCAMinterface::getSiteType($siteTypeId);
 
                                     $first = true;
                                     foreach ($iccamreport->Items as $item) {
@@ -399,7 +420,7 @@ class scartImportMailbox {
 
                                                 if ($first) {
                                                     $input->note = $note;
-                                                    $input->reference = scartICCAMfields::setICCAMreportID($reportID);
+                                                    $input->reference = scartICCAMinterface::setICCAMreportID($reportID);
                                                     $first = false;  // reset
                                                 } else {
                                                     $input->note = (!empty($item->Memo)) ? $item->Memo : '';

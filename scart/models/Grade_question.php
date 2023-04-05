@@ -3,7 +3,7 @@
 use abuseio\scart\classes\base\scartModel;
 use abuseio\scart\classes\export\scartExport;
 use abuseio\scart\classes\helpers\scartLog;
-use abuseio\scart\classes\iccam\scartICCAMfields;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 
 /**
  * Model
@@ -71,23 +71,10 @@ class Grade_question extends scartModel {
 
     public function getIccamFieldOptions($value,$formData) {
 
-        return scartICCAMfields::getICCAMsupportedFields();
-    }
-
-    /**    **/
-
-    private $_iccamfield = '';
-    public function isICCAMchanged($iccamfield) {
-        $ret = false;
-        if (!empty($this->id)) {
-            // last one in db
-            $ret = ($iccamfield != Grade_question::find($this->id)->iccamfield);
-        }
-        return $ret;
+        return scartICCAMinterface::getICCAMsupportedFields();
     }
 
     // if iccam_field then fill option values (if changed)
-
 
     public function beforeSave() {
 
@@ -105,37 +92,30 @@ class Grade_question extends scartModel {
                 Grade_question_option::where('grade_question_id',$this->id)->delete();
 
                 // fill iccam field options
-                $geticcamoptions = 'get'.$this->iccam_field.'Options';
-                //$options = call_user_func(['scartICCAMfields','get'.$this->iccam_field.'Options']);
-                $options = scartICCAMfields::$geticcamoptions();
+                $options = scartICCAMinterface::getICCAMfieldOptions($this->iccam_field);
                 $sortnr = 1;
                 foreach ($options AS $opt => $label) {
                     $option = new Grade_question_option();
                     $option->grade_question_id = $this->id;
-                    $option->sortnr = $sortnr;
+                    $option->sortnr = $sortnr++;
                     $option->value = $opt;
                     $option->label = $label;
                     $option->save();
-                    $sortnr++;
                 }
 
             } else {
                 scartLog::logLine("D-Grade_question.afterSave; iccam_field not filled or changed");
             }
 
-            $this->_iccamfield = $this->iccam_field;
         }
 
-
     }
-
 
     /** Questions get/set/fetch/save **/
 
     public static function getQuestionUrlType($url_type,$group=SCART_GRADE_QUESTION_GROUP_ILLEGAL) {
 
         // Different questions possible for SCART_GRADE_QUESTION_GROUP_ILLEGAL / SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL
-        // also for SCART_GRADE_QUESTION_GROUP_POLICE ?!
         if ($url_type != SCART_URL_TYPE_MAINURL) {
             // check if questions set
             if (Grade_question::where([

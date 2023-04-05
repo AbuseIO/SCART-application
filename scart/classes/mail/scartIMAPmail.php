@@ -22,7 +22,7 @@ class scartIMAPmail {
         try {
             $pattern = '/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i';
             preg_match_all($pattern, $string, $matches, PREG_PATTERN_ORDER);
-            scartLog::logLine("I-scartIMAPmail: matches=".print_r($matches,true));
+            //scartLog::logLine("I-scartIMAPmail: matches=".print_r($matches,true));
             if (count($matches[0]) > 0) {
                 // pick only first element; when format is "email" <email> we got 2x address
                 $address = (isset($matches[0][0])?$matches[0][0]:'');

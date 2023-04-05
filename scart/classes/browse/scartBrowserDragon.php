@@ -26,7 +26,7 @@ use abuseio\scart\classes\helpers\scartLog;
 class scartBrowserDragon extends scartBrowser {
 
     private static $_useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0';
-    private static  $_curltimeout = 300;     // 5 minuut
+    private static $_curltimeout = 300;     // 5 minuut
 
     private static $_imageMimeTypes = [
         'image/svg+xml',
@@ -58,6 +58,17 @@ class scartBrowserDragon extends scartBrowser {
         'video/quicktime',
     ];
 
+    private static $_audioMimeTypes = [
+        'audio/basic',
+        'audio/L24',
+        'audio/mid',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/x-aiff',
+        'audio/x-mpegurl',
+        'audio/x-wav',
+    ];
+
     /**
      *
      * browse url and get data (url response)
@@ -86,16 +97,17 @@ class scartBrowserDragon extends scartBrowser {
                 $request = curl_init();
                 $options = array(
                     CURLOPT_URL => $link,
-                    CURLOPT_RETURNTRANSFER => TRUE,
-                    CURLOPT_USERAGENT, self::$_useragent,
-                    CURLOPT_HEADER => FALSE,
-                    CURLOPT_SSL_VERIFYHOST => FALSE,
-                    CURLOPT_SSL_VERIFYPEER => FALSE,
-                    CURLOPT_FOLLOWLOCATION => TRUE,
+                    CURLOPT_RETURNTRANSFER => true,
+                    // No longer supported
+                    // CURLOPT_USERAGENT, self::$_useragent,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_FOLLOWLOCATION => true,
                     CURLOPT_CONNECTTIMEOUT => self::$_curltimeout,    // time-out on connect
                     CURLOPT_TIMEOUT => self::$_curltimeout,    // time-out on response
                     CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_POST => TRUE,
+                    CURLOPT_POST => true,
                     CURLOPT_POSTFIELDS => $post,
                 );
                 if ($referer) {

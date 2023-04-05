@@ -36,93 +36,106 @@ class Inputs_import extends scartController
      */
     public function formAfterSave($model) {
 
-        $file = $model->import_file;
-        if ($file) {
-            scartLog::logLine("D-formAfterCreate: Field.File.path=" . $file->getPath() . ", name=" . $file->getFilename() );
+        try {
 
-            $data = $file->getContents();
+            $file = $model->import_file;
+            if ($file) {
+                scartLog::logLine("D-formAfterCreate: Field.File.path=" . $file->getPath() . ", name=" . $file->getFilename() );
 
-            $rows = preg_split('/\r\n|\r|\n/', $data );
+                $data = $file->getContents();
 
-            scartLog::logLine("D-formAfterCreate: aantal regels=" . count($rows) );
+                $rows = preg_split('/\r\n|\r|\n/', $data );
 
-            $results = '';
-            $impcnt = $linecnt = 0;
-            foreach ($rows AS $row) {
+                scartLog::logLine("D-formAfterCreate: aantal regels=" . count($rows) );
 
-                // @TO-DO: line with: <url>;<sourcetype>
+                $results = '';
+                $impcnt = $linecnt = 0;
+                foreach ($rows AS $row) {
 
-                $row = strip_tags($row);
-                $row = str_replace("\n",'', $row);
+                    // @TO-DO: line with: <url>;<sourcetype>
 
-                if (trim($row)!='') {
+                    $row = strip_tags($row);
+                    $row = str_replace("\n",'', $row);
 
-                    $linecnt += 1;
+                    scartLog::logLine("D-formAfterCreate: got: $row");
 
-                    $linearr = explode(';', $row);
-                    $url = $linearr[0];
-                    $referer = (isset($linearr[1])) ? $linearr[1] : '';
-                    $workuser = (isset($linearr[2])) ? $linearr[2] : '';
-                    $reference = (isset($linearr[3])) ? $linearr[3] : '';
-                    $source = (isset($linearr[4])) ? $linearr[4] : '';
-                    $type = (isset($linearr[5])) ? $linearr[5] : '';
+                    if (trim($row)!='') {
 
-                    if (scartBrowser::validateURL($url)) {
+                        $linecnt += 1;
 
-                        $input = Input::where('url',$url)->where('deleted_at',null)->first();
-                        if ($input=='') {
+                        // <url>;<referer>;<workuser-email>;<reference>;<source>;<type>
 
-                            $input = new Input();
-                            $input->url = $url;
-                            $input->url_type = SCART_IMAGE_MAIN_NOT_FOUND;
-                            $input->url_referer = $referer;
-                            $input->reference = $reference;
-                            if ($workuser) {
-                                $input->workuser_id = scartUsers::getWorkuserId($workuser);
-                                if ($input->workuser_id == 0) {
-                                    $results .= "$linecnt: W-Workuser with email '$workuser' NOT found" . PHP_EOL;
+                        $linearr = explode(';', $row);
+                        $url = $linearr[0];
+                        $referer = (isset($linearr[1])) ? $linearr[1] : '';
+                        $workuser = (isset($linearr[2])) ? $linearr[2] : '';
+                        $reference = (isset($linearr[3])) ? $linearr[3] : '';
+                        $source = (isset($linearr[4])) ? $linearr[4] : SCART_SOURCE_CODE_DEFAULT;
+                        $type = (isset($linearr[5])) ? $linearr[5] : SCART_TYPE_CODE_DEFAULT;
+
+                        if (scartBrowser::validateURL($url)) {
+
+                            $input = Input::where('url',$url)->where('deleted_at',null)->first();
+                            if ($input=='') {
+
+                                $input = new Input();
+                                $input->url = $url;
+                                $input->url_type = SCART_URL_TYPE_MAINURL;
+                                $input->url_referer = $referer;
+                                $input->reference = $reference;
+                                $input->workuser_id = $model->workuser_id;
+                                if ($workuser) {
+                                    $input->workuser_id = scartUsers::getWorkuserId($workuser);
+                                    if ($input->workuser_id == 0) {
+                                        $results .= "$linecnt: W-Workuser with email '$workuser' NOT found" . PHP_EOL;
+                                        $input->workuser_id = $model->workuser_id;
+                                    }
                                 }
+                                $input->url = $url;
+                                $input->status_code = SCART_STATUS_SCHEDULER_SCRAPE;
+                                $input->source_code = $source;
+                                $input->type_code = $type;
+                                $input->save();
+
+                                $input->logText('Imported');
+
+                                // log old/new for history
+                                $input->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_SCHEDULER_SCRAPE,'Inputs import');
+
+                                $results .= "$linecnt: I-Imported '$row'; status=" . SCART_STATUS_SCHEDULER_SCRAPE . ", source='$source', type=$type" . PHP_EOL;
+                                $impcnt += 1;
+
+                            } else {
+                                $results .= "$linecnt: W-url '$row' already in database" . PHP_EOL;
+
                             }
-                            $input->url = $url;
-                            $input->status_code = SCART_STATUS_SCHEDULER_SCRAPE;
-                            $input->source_code = $source;
-                            $input->type_code = $type;
-                            $input->workuser_id = $model->workuser_id;
-                            $input->save();
-
-                            $input->logText('Imported');
-
-                            // log old/new for history
-                            $input->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_SCHEDULER_SCRAPE,'Inputs import');
-
-                            $results .= "$linecnt: I-Imported '$row'; status=" . SCART_STATUS_SCHEDULER_SCRAPE . ", source='$source', type=$type" . PHP_EOL;
-                            $impcnt += 1;
 
                         } else {
-                            $results .= "$linecnt: W-url '$row' already in database" . PHP_EOL;
-
+                            $results .= "$linecnt: E-Error; not a valid url: '$row' " . " (format: http[s]://<domain>/<page>)" . PHP_EOL;
                         }
 
-                    } else {
-                        $results .= "$linecnt: E-Error; not a valid url: '$row' " . " (format: http[s]://<domain>/<page>)" . PHP_EOL;
                     }
 
                 }
 
+                $results = "Number of rows: " . $linecnt . PHP_EOL .
+                    "Number imported: $impcnt" . PHP_EOL  . PHP_EOL .
+                    "Result for each row:" .  PHP_EOL .
+                    $results .
+                    'End of file' . PHP_EOL;
+
+                $model->import_result = $results;
+                $model->save();
+
+
+            } else {
+                scartLog::logLine("D-formAfterCreate: NO record file");
+
             }
 
-            $results = "Number of rows: " . $linecnt . PHP_EOL .
-                "Number imported: $impcnt" . PHP_EOL  . PHP_EOL .
-                "Result for each row:" .  PHP_EOL .
-                $results .
-                'End of file' . PHP_EOL;
+        } catch (\Exception $err) {
 
-            $model->import_result = $results;
-            $model->save();
-
-
-        } else {
-            scartLog::logLine("D-formAfterCreate: NO record file");
+            scartLog::logLine("E-formAfterCreate; error: ". $err->getMessage());
 
         }
 

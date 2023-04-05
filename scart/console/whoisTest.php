@@ -2,6 +2,7 @@
 
 namespace abuseio\scart\console;
 
+use abuseio\scart\classes\helpers\scartLog;
 use Illuminate\Console\Command;
 use abuseio\scart\classes\whois\scartWhois;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,6 +25,8 @@ class whoisTest extends Command
      * @return void
      */
     public function handle() {
+
+        scartLog::setEcho(true);
 
         // option paramater
         $domainip = $this->argument('domainip', '');

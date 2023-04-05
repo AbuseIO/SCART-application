@@ -122,36 +122,47 @@ class scartWhois  {
 
             if ($host) {
 
-                // 2020/7/27/Gs: integrate WHOIS CACHE
+                try {
 
-                $result = [
-                    'status_success' => true,
-                    'status_text' => 'Load from WHOIS cache',
-                ];
+                    $result = [
+                        'status_success' => true,
+                        'status_text' => 'Load from WHOIS cache',
+                    ];
 
-                $maindomain = self::getMaindomain($host);   // always main domain, exclude subdomains
-                if ($registrar_abusecontact_id = scartWhoisCache::getWhoisCache($maindomain,SCART_WHOIS_TARGET_DOMAIN)) {
-                    // save abusecontact_id
-                    $result[SCART_REGISTRAR.'_abusecontact_id'] = $registrar_abusecontact_id;
-                    // connect (maintain) SCART_REGISTRAR whois info
-                    $result = Whois::fillWhoisArray($result,$registrar_abusecontact_id,SCART_REGISTRAR);
-                    // overrule WHOIS lookup domain -> use always current
-                    $result[SCART_REGISTRAR.'_lookup'] = $maindomain;
+                    $maindomain = self::getMaindomain($host);   // always main domain, exclude subdomains
+                    if ($registrar_abusecontact_id = scartWhoisCache::getWhoisCache($maindomain,SCART_WHOIS_TARGET_DOMAIN)) {
+                        // save abusecontact_id
+                        $result[SCART_REGISTRAR.'_abusecontact_id'] = $registrar_abusecontact_id;
+                        // connect (maintain) SCART_REGISTRAR whois info
+                        $result = Whois::fillWhoisArray($result,$registrar_abusecontact_id,SCART_REGISTRAR);
+                        // overrule WHOIS lookup domain -> use always current
+                        $result[SCART_REGISTRAR.'_lookup'] = $maindomain;
 
-                } else {
+                    } else {
 
-                    // set provider class
-                    $classname = 'abuseio\scart\classes\whois\scartWhois'.SELF::$_provider;
+                        // set provider class
+                        $classname = 'abuseio\scart\classes\whois\scartWhois'.SELF::$_provider.'::lookupDomain';
 
-                    // CACHE NOT FILLED OF TO OLD -> LOOKUP REGISTRAR
-                    scartLog::logLine("D-scartWhois.lookupDomain; dynamic lookup DOMAIN WhoIs host=$host (whois provider=".SELF::$_provider.") " . (($returnresults) ? '(returnresults=true)' : '') );
-                    $result = call_user_func($classname.'::lookupDomain',$host,$returnresults);
+                        // CACHE NOT FILLED OR TO OLD -> LOOKUP REGISTRAR
+                        scartLog::logLine("D-scartWhois.lookupDomain; dynamic lookup DOMAIN WhoIs host=$host (whois provider=".SELF::$_provider.") " . (($returnresults) ? '(returnresults=true)' : '') );
 
-                    if ($result['status_success']) {
-                        scartLog::logLine("D-scartWhois.lookupDomain; register.owner=".$result['registrar_owner'].", register.abusecontact=".$result['registrar_abusecontact']);
+                        $result = call_user_func($classname,$host,$returnresults);
+                        //$result = ['status_success' => false,'status_text' => "not supported",];
+
+                        if ($result['status_success']) {
+                            scartLog::logLine("D-scartWhois.lookupDomain; register.owner=".$result['registrar_owner'].", register.abusecontact=".$result['registrar_abusecontact']);
+                        }
+
                     }
 
+                } catch (\Exception $err) {
+                    scartLog::logLine("E-scartWhois.lookupDomain; exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
+                    $result = [
+                        'status_success' => false,
+                        'status_text' => "error lookupDomain: " . $err->getMessage(),
+                    ];
                 }
+
             } else {
 
                 $result = [

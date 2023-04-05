@@ -1,6 +1,6 @@
 <?php namespace abuseio\scart\Controllers;
 
-use abuseio\scart\classes\iccam\scartICCAMfields;
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Abusecontact;
 use abuseio\scart\models\Systemconfig;
 use Session;
@@ -9,7 +9,6 @@ use Flash;
 use abuseio\scart\classes\base\scartController;
 use abuseio\scart\classes\browse\scartBrowser;
 use abuseio\scart\classes\classify\scartGrade;
-use abuseio\scart\classes\iccam\scartICCAMmapping;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Grade_answer;
@@ -96,10 +95,10 @@ class Changed extends scartController {
 
                     // ICCAM
 
-                    if (scartICCAMmapping::isActive()) {
+                    if (scartICCAMinterface::isActive()) {
 
                         // check if valid ICCAM reportID
-                        if (scartICCAMfields::getICCAMreportID($record->reference)) {
+                        if (scartICCAMinterface::getICCAMreportID($record->reference)) {
 
                             // get hoster counter -> can be outside NL (MOVE)
                             $country = '';
@@ -118,7 +117,7 @@ class Changed extends scartController {
                                 // CLOSE with MOVED action
 
                                 // ICCAM content moved (outside NL)
-                                scartExportICCAM::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                                     'record_type' => class_basename($record),
                                     'record_id' => $record->id,
                                     'object_id' => $record->reference,

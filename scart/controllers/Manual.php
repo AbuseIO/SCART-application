@@ -28,10 +28,14 @@ class Manual extends scartController {
     public function preview($recordId, $context = null) {
 
         $menu = \abuseio\scart\models\Manual::find($recordId);
-        $this->pageTitle = 'Manual - ' . $menu->title;
-        //scartLog::logLine("D-preview($recordId); chapter=$menu->chapter");
-        BackendMenu::setContext('abuseio.scart', 'manual','chapter' . $menu->chapter);
-        $sections = \abuseio\scart\models\Manual::where('deleted_at',null)->where('chapter',$menu->chapter)->get();
+        if ($menu) {
+            $this->pageTitle = 'Manual - ' . $menu->title;
+            //scartLog::logLine("D-preview($recordId); chapter=$menu->chapter");
+            BackendMenu::setContext('abuseio.scart', 'manual','chapter' . $menu->chapter);
+            $sections = \abuseio\scart\models\Manual::where('deleted_at',null)->where('chapter',$menu->chapter)->get();
+        } else {
+            $sections = [];
+        }
         $this->vars['sections'] = $sections ;
     }
 

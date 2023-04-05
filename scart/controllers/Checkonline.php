@@ -76,10 +76,10 @@ class Checkonline extends scartController
                     $record->removeNtdIccam(true);
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE_OFFLINE,'Set by analist');
-
+                    $new = ($record->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Set by analist');
                     // set status
-                    $record->status_code = SCART_STATUS_CLOSE_OFFLINE;
+                    $record->status_code = $new;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
                     $record->save();
 

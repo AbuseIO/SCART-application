@@ -2,9 +2,7 @@
 
 /**
  * General SCART users functions
- *
- * 2019/02/01
- *   Based on OctoberCMS backend administrator functionality
+ * Based on backend administrator functionality
  *
  */
 
@@ -165,6 +163,10 @@ class scartUsers {
         }
         $find->value = serialize($value);
         $find->save();
+    }
+
+    public static function resetGeneralOption($name) {
+        User_options::where('user_id', 0)->where('name','LIKE',$name.'%')->forceDelete();
     }
 
     public static function getFullName($id=0) {

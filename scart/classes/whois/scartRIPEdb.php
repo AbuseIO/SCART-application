@@ -10,9 +10,9 @@ class scartRIPEdb extends scartCURLcalls {
 
     static private $_debug = false;
 
-    static private $_ipwhois = 'https://stat.ripe.net/data/whois/data.json?resource=';
-    static private $_ipaswhois = 'https://stat.ripe.net/data/as-overview/data.json?resource=';
-    static private $_ipabuse = 'https://stat.ripe.net/data/abuse-contact-finder/data.json?resource=';
+    static private $_ipwhois = 'https://stat.ripe.net/data/whois/data.json?sourceapp=abuseio-scart&resource=';
+    static private $_ipaswhois = 'https://stat.ripe.net/data/as-overview/data.json?sourceapp=abuseio-scart&resource=';
+    static private $_ipabuse = 'https://stat.ripe.net/data/abuse-contact-finder/data.json?sourceapp=abuseio-scart&resource=';
 
     static private $_cachedholder = [];
     static private $_cachedabuse = [];

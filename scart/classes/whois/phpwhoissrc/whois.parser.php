@@ -343,9 +343,11 @@ if (!$items)
 $r = [];
 $disok = true;
 
+
 //while (list($key,$val) = each($rawdata))
 foreach ($rawdata AS $key => $val)
 	{
+
 	if (trim($val) != '')
 		{
 	     if (($val[0]=='%' || $val[0]=='#') && $disok)
@@ -356,7 +358,7 @@ foreach ($rawdata AS $key => $val)
 			}
 
 		$disok = false;
-		reset($items);
+//		reset($items);
 
 //		while (list($match, $field)=each($items))
         foreach ($items AS $match => $field)
@@ -420,7 +422,8 @@ function assign_recursive($array, $parts, $value)
 
 function assign($array, $vdef, $value)
 	{
-	return assign_recursive($array, explode('.', $vdef), $value);
+        $parts = explode('.', $vdef);
+	return assign_recursive($array, $parts, $value);
 	}
 
 //-------------------------------------------------------------------------
@@ -794,6 +797,16 @@ return $res;
 
 function get_date($date,$format)
 {
+
+    // 2022/3/6/Gs: buggy function -> converted to a simple time conversio
+
+    if (!($time = strtotime($date))) {
+        $time = time();
+    }
+
+return date('Y-m-d',$time);
+
+
 $months = array( 'jan'=>1,  'ene'=>1,  'feb'=>2,  'mar'=>3, 'apr'=>4, 'abr'=>4,
                  'may'=>5,  'jun'=>6,  'jul'=>7,  'aug'=>8, 'ago'=>8, 'sep'=>9,
                  'oct'=>10, 'nov'=>11, 'dec'=>12, 'dic'=>12 );
@@ -853,14 +866,22 @@ if (!$res) return $date;
 
 $ok = false;
 
+// following code KEEPS looping ->
+
+
+//\abuseio\scart\classes\helpers\scartLog::logLine("D-before getdata while; res=".print_r($res,true));
+
 while (!$ok)
 	{
-	reset($res);
+//	reset($res);
 	$ok = true;
 
 //	while (list($key, $val) = each($res))
-    foreach ($res AS $key =>  $val)
+    foreach ($res AS $key => $val)
 		{
+
+            \abuseio\scart\classes\helpers\scartLog::logLine("D-res[$key]=$val");
+
 		if ($val == '' || $key == '') continue;
 
 		if (!is_numeric($val) && isset($months[substr(strtolower($val),0,3)]))
@@ -880,6 +901,8 @@ while (!$ok)
 			}
 		}
 	}
+
+    \abuseio\scart\classes\helpers\scartLog::logLine("D-after getdata while");
 
 // 2019/10/4/Gs: when here, detect when not filled
 if (!isset($r['d']) || !isset($r['m']) || !isset($r['y'])) {
