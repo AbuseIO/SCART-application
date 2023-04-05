@@ -7,13 +7,16 @@
 4.0.1:
     - 'Domain rules & addons'
 5.0.1:
-    - 'Upgrade EOKM version'
+    - 'Upgrade old version(s)'
     - v6_drop_if_exists.php
-6.0.0:
-    - 'Multi hotline release - create tables'
+5.0.2:
+    - 'Create tables'
     - builder_create_v6_tables.php
+6.0.0:
+    - 'Multi hotline release - seeder SYSTEM tables'
+    - seeder_system_tables.php
 6.0.1:
-    - 'Multi hotline release - seeder stam tables'
+    - 'Multi hotline release - seeder STAM tables'
     - seeder_stam_tables.php
 6.0.2:
     - 'Updated table abuseio_scart_abusecontact'
