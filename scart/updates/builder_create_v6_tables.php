@@ -681,7 +681,6 @@ class BuilderCreateV6Tables extends Migration
             $tables = Db::select("show tables like 'abuseio_scart_%' ");
             foreach ($tables AS $table) {
                 foreach ($table AS $fld => $val) {
-                    Log::debug("D-Drop $fld=$val");
                     Schema::dropIfExists($val);
                 }
             }
