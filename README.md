@@ -1,7 +1,5 @@
 # Sexual Child Abuse Reporting Tool (SCART)
 
-**Release 6.3.2 Build 2**
-
 This tool is development by the AbuseIO Foundation and the dutch Child Abuse hotline (EOKM).
 
 AbuseIO is a registered non-profit (ANBI) Foundation in the Netherlands
@@ -9,11 +7,6 @@ and as such we are required by law to publish information regarding the
 Foundation and how funds are spend. AbuseIO is known under the dutch
 RSIN number 855149012 and with the chamber of commerce registration
 number 63234955.
-
-EOKM is registered non-profit Foundation in the Netherlands specialized
-in assessing and dealing with online child abuse.
-
-**The EOKM Reporting Tool (ERT) is specific version from the AbuseIO Reporting Tool (ART) made for EOKM.**
 
 ##Goals and what we do
 
@@ -27,14 +20,14 @@ See https://abuse.io
 
 ##System installation
 
-* install WinterCMS (<= v1.1.9) (https://wintercms.com/docs/setup/installation)
-* _up and running wintercms installation with backend_
+* install WinterCMS (https://wintercms.com/docs/setup/installation)
+* _(up and running wintercms installation with backend)_
 * cd <root-project>/plugins
 * git clone <repro> abuseio
 * cd ../
-* composer self-update --1 && composer update
+* composer update
 * php artisan winter:up
-* _scart plugin running_
-* _scart settings for user logins_
-* _scart settings config (!)_
+  * _scart plugin running_
+  * _scart settings for user logins_
+  * _scart settings config_
 
