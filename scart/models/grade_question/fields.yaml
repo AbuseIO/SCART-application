@@ -37,9 +37,6 @@ fields:
             left: left
         span: auto
         type: dropdown
-    section:
-        label: "New section"
-        type: section
     name:
         label: name
         required: 1
@@ -55,7 +52,6 @@ fields:
             field: type
             condition:
                 value[section]
-
 tabs:
     fields:
         options:
@@ -70,3 +66,4 @@ tabs:
                 field: type
                 condition:
                     value[section]
+                    value[text]

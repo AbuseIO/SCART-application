@@ -33,6 +33,7 @@ class pwcAIanalyzer {
 
     static $_pushurl = 'http://{host}/predict';
     static $_pollurl = 'http://{host}/poll_database';
+    static $_polllist = 'http://{host}/poll_database_list';
     static $_lasterror = '';
     static $_curltimeout = 60;
 
@@ -154,7 +155,7 @@ class pwcAIanalyzer {
             $action = (isset($record['action'])?$record['action']:'');
             $post = (isset($record['post'])?$record['post']:'');
 
-            if ($action && $post) {
+            if ($action) {
 
                 if ($action=='push') {
                     $poststring = http_build_query($post);
@@ -189,10 +190,13 @@ class pwcAIanalyzer {
                         $result = false;
                     }
 
+                } elseif ($action=='list') {
+                    $url = self::$_polllist;
+                    $result = self::callPwcAI($url);
                 }
 
             } else {
-                self::$_lasterror = 'action and/or post missing';
+                self::$_lasterror = 'action missing';
                 scartLog::logLine("W-PWCAIanalyzer; ".self::$_lasterror);
                 $result = false;
             }

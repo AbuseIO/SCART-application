@@ -765,9 +765,9 @@ class Grade extends scartController
             foreach ($items AS $item) {
                 $imgsize = scartImage::getImageSizeAttr($item,$colimgsize);
                 if ($item->url_type == SCART_URL_TYPE_IMAGEURL) {
-                    $src = scartBrowser::getImageBase64($item->url,$item->url_hash);
+                    $src = scartBrowser::getImageCache($item->url,$item->url_hash);
                 } else {
-                    $src = scartBrowser::getImageBase64($item->url,$item->url_hash, false,SCART_IMAGE_IS_VIDEO);
+                    $src = scartBrowser::getImageCache($item->url,$item->url_hash, false,SCART_IMAGE_IS_VIDEO);
                 }
                 $images[] = [
                     'data' => $src,
@@ -1963,7 +1963,6 @@ class Grade extends scartController
 
                 $value = Grade_answer::where('record_type',$recordtype)->where('record_id',$answer_record_id)->where('grade_question_id',$grade->id)->first();
                 $values = ($value) ? unserialize($value->answer) : '';
-                if ($values=='') $values = array();
                 //scartLog::logLine("D-show_grade_questions; question=$grade->name, type=$grade->type, values=" . implode(',', $values));
 
                 $question = new \stdClass();
@@ -1975,6 +1974,8 @@ class Grade extends scartController
                 $toggle = !$toggle;
 
                 if ($question->type == 'select' || $question->type == 'checkbox' || $question->type == 'radio') {
+
+                    if ($values=='') $values = array();
 
                     $options = [];
                     $opts = Grade_question_option::where('grade_question_id',$grade->id)->orderBy('sortnr')->get();
@@ -1998,7 +1999,7 @@ class Grade extends scartController
             }
 
             // if single and url set then show image
-            $src = ($single) ? scartBrowser::getImageBase64($rec->url,$rec->url_hash) : '';
+            $src = ($single) ? scartBrowser::getImageCache($rec->url,$rec->url_hash) : '';
 
             $gradeheader = (($questiongroup==SCART_GRADE_QUESTION_GROUP_ILLEGAL) ? 'ILLEGAL' :
                 (($questiongroup==SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL) ? 'NOT ILLEGAL' : 'FIRST POLICE') );

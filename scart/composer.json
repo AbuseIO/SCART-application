@@ -2,6 +2,7 @@
     "name": "abuseio/scart",
     "type": "winter-plugin",
     "description": "SCART plugin",
+    "keywords": ["winter", "wintercms", "scart"],
     "license": "MIT",
     "autoload": {
         "psr-4": {

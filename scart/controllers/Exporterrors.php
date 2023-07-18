@@ -33,9 +33,8 @@ class Exporterrors extends scartController
         //scartLog::logLine("D-listExtendQuery call"); trace_sql();
         $query->withTrashed()
             ->whereIn('action',[SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT])
-            ->where('status','=',SCART_IMPORTEXPORT_STATUS_ERROR);
+            ->where('status','<>',SCART_IMPORTEXPORT_STATUS_SUCCESS);
     }
-
 
 
 }

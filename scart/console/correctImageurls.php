@@ -66,7 +66,7 @@ class correctImageurls extends Command
                         ->withTrashed()
                         ->first();
 
-                    // 2022/2/16/Gs: sent CU
+                    // sent CU
 
                     if ($input) {
 

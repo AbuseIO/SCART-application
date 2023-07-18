@@ -130,7 +130,7 @@ class Input_verify extends scartController {
     public function onLoadImage()
     {
         $record = Input::find(post('id'));
-        return $this->makePartial('imagepopup', ['record' => $record, 'img' => scartBrowser::getImageBase64($record->url,$record->url_hash)]);
+        return $this->makePartial('imagepopup', ['record' => $record, 'img' => scartBrowser::getImageCache($record->url,$record->url_hash)]);
     }
 
 

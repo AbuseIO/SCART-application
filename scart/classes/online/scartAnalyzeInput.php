@@ -89,8 +89,7 @@ class scartAnalyzeInput {
 
         $result = ''; $stat_new = $stat_upd = $stat_skip = $donecnt = $imgcnt = $delivered_items = 0;
 
-        // 2020/5/15/Gs: check if scrapped before
-
+        // check if scrapped before
         $itemscount = Input_parent::where('parent_id',$input->id)->count();
         if ($itemscount > 0) {
 
@@ -98,6 +97,13 @@ class scartAnalyzeInput {
 
             // remove connection(s)
             Input_parent::where('parent_id',$input->id)->delete();
+
+            // To-Do:
+            //
+            // what if imageurl on status_code=grade and is not anymore found in the scrape below
+            // -> then this imageurl (record) is Orphan
+            // -> but because of some parent (mainurl) before this parent, this orphan is not closed
+
 
         }
 
@@ -321,9 +327,9 @@ class scartAnalyzeInput {
                             scartBrowser::delImageCache($hash);
                             $stat_skip += 1;
 
-                        } elseif ($image['type'] == SCART_URL_TYPE_IMAGEURL && $image['src'] == $input->url && $imgcnt==1) {
+                        } elseif (in_array($image['type'],[SCART_URL_TYPE_IMAGEURL,SCART_URL_TYPE_SCREENSHOT]) && $image['src'] == $input->url && $imgcnt==1) {
 
-                            // MAINURL = IMAGEURL
+                            // MAINURL = IMAGEURL or VIDEOURL (=screenshot)
 
                             // NOTE: no hash check in database, so can be double
 
@@ -441,9 +447,8 @@ class scartAnalyzeInput {
 
                         } elseif (($image['type'] != SCART_URL_TYPE_VIDEOURL) && ($image['imgsize'] <= $min_image_size) ) {
 
-                            // 2021/1/19/Gs: to many logging, ignore
                             //$input->logText("Warning; skip to small image (size=".$image['imgsize']."); min=$min_image_size; url=$src" );
-
+                            scartLog::logLine("D-Size image '$src' to small (".$image['imgsize']." <= $min_image_size); skip image");
                             // delete cache if filled
                             scartBrowser::delImageCache($hash);
                             $stat_skip += 1;

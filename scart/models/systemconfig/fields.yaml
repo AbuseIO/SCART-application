@@ -98,6 +98,7 @@ fields:
         options:
             BrowserBasic: 'BrowserBasic'
             BrowserDragon: 'BrowserDragon'
+            BrowserChrome: 'BrowserChrome'
     scheduler-scrape-min_image_size:
         label: 'scrape min image size (bytes)'
         span: storm

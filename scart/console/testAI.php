@@ -40,7 +40,7 @@ class testAI extends Command
 
         $addon = Addon::where('type',SCART_ADDON_TYPE_AI_IMAGE_ANALYZER)->where('codename','pwcAIanalyzer')->first();
 
-        if ($action && $filenumber && $addon) {
+        if ($action && $addon) {
 
             $result = '';
 
@@ -112,6 +112,12 @@ class testAI extends Command
                     $result = Addon::run($addon,$record);
                     break;
 
+                case 'list':
+                    $record = [
+                        'action' => 'list',
+                    ];
+                    $result = Addon::run($addon,$record);
+                    break;
             }
 
             if ($result) {

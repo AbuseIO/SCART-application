@@ -21,7 +21,7 @@ class SeederSystemTables extends Seeder
         ]);
 
 
-        Db::table('backend_user_roles')->truncate();
+        Db::table('backend_user_groups')->truncate();
         Db::table('backend_user_groups')->insert([
             ['name' => "Owners",'code' => "owners",'description' => "Default group for website owners.",'is_new_user_default' => "0",],
             ['name' => "SCARTworkuser",'code' => "SCARTworkuser",'description' => "SCARTworkuser can have work",'is_new_user_default' => "0",],

@@ -1,0 +1,17 @@
+columns:
+    created_at:
+        label: created
+        type: datetime
+        format: 'Y-m-d H:i:s'
+    module:
+        label: module
+        type: text
+    start:
+        label: start
+        type: text
+    end:
+        label: end
+        type: text
+    note:
+        label: note
+        type: text

@@ -181,6 +181,18 @@ class ScartICCAMapi {
     }
 
     /**
+     * @description This endpoint gives you access to all the content items that has no hotline reference
+     * @param int $maxResults
+     * @param string $datetime
+     * @example https://iccamapi.notion.site/response_content_unactioned-bfe56b9b06914cd7a65b63db1e158d5c
+     * @return bool|mixed|string
+     */
+    public function getnoreference(int $maxResults = 30, $datetime = '') {
+        return $this->send('GET',  'rest/Content/no-reference?maxResults='.
+            $maxResults.(!empty($datetime) ? '&countryAssignmentStartDate='.urlencode($datetime) : '') );
+    }
+
+    /**
      * @Description This endpoint gives you the ability enter settings to a Content item object by id.
      *
      */

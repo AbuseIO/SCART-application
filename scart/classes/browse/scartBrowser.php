@@ -11,7 +11,7 @@
  * - getImageData(url,referer)
  *
  * Helpers
- * - getImageBase64(url,hash,referer)
+ * - getImageCache(url,hash,referer)
  * - parse_base($link)
  * - get_host($base)
  * - validateURL($url)
@@ -84,13 +84,12 @@ class scartBrowser {
     }
 
     /**
-     * getImageBase64
+     * getImageCache
      *
-     * Get image base64 source data from cache
-     *
+     * Get image (data=base64) source data from cache
      */
 
-    public static function getImageBase64($url,$hash,$ifemptyshowurl=true,$imagenotfound=SCART_IMAGE_NOT_FOUND)
+    public static function getImageCache($url,$hash,$ifemptyshowurl=true,$imagenotfound=SCART_IMAGE_NOT_FOUND)
     {
 
         $imagebase64 = '';
@@ -111,11 +110,11 @@ class scartBrowser {
                         $inf = plugins_path($imagenotfound);
                         $data = file_get_contents($inf);
                         if ($data) {
-                            scartLog::logLine("D-getImageBase64; fill cache with '$imagenotfound' ($inf) ");
+                            scartLog::logLine("D-getImageCache; fill cache with '$imagenotfound' ($inf) ");
                             $imagebase64 = "data:image/png;base64," . base64_encode($data);
                             Scrape_cache::addCache($imagenotfound, $imagebase64);
                         } else {
-                            scartLog::logLine("W-getImageBase64; '$imagenotfound' ($inf) not found!?!");
+                            scartLog::logLine("W-getImageCache; '$imagenotfound' ($inf) not found!?!");
                         }
                     }
                 }
@@ -199,6 +198,26 @@ class scartBrowser {
         }
 
         return $host;
+    }
+
+    public static function isDataURI($data) {
+
+        $isDataURI = false;
+
+        try {
+
+            // data URI specification starts always with 'data:' and has <data> and <encoded data>in str string
+            $imgdata = explode(',',$data);
+            $isDataURI = (count($imgdata) > 0 && (strpos($data, 'data:' ) === 0) );
+            if (SELF::$_debug) scartLog::logLine("D-scartBrowserBasic.isDataURI; isDataURI=$isDataURI");
+
+        } catch (Exception $err) {
+
+            scartLog::logLine("E-scartBrowserBasic.isDataURI error: ".$err->getMessage());
+
+        }
+
+        return $isDataURI;
     }
 
     public static function validateURL($url) {

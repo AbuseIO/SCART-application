@@ -43,7 +43,7 @@ class checkHASH extends Command
             //scartLog::logLine("D-images=" . print_r($imagedata, true) );
 
 
-            //$imagedata = scartBrowser::getImageBase64($image, $imagehash);
+            //$imagedata = scartBrowser::getImageCache($image, $imagehash);
             //$arrdata = explode(',',$imagedata);
             //$base64 = $arrdata[1];
             //$data = base64_decode($base64);

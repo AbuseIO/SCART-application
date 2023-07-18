@@ -46,7 +46,7 @@ class scartICCAMfieldsV3 {
         $iccamfield = Iccam_api_field::where('scart_field','actionID')
             ->where('scart_code',$actionID)
             ->first();
-        return ($iccamfield) ? $iccamfield->iccam_name : '';
+        return ($iccamfield) ? $iccamfield->iccam_name : '(unknown)';
     }
 
     // actionReasons; iccam_name -> iccam id
@@ -121,7 +121,8 @@ class scartICCAMfieldsV3 {
     }
     public static $ClassificationNotIllegal = 'IG';     // Not illegal (ignore)
     public static $ClassificationIDNotDetermined = 1;   // fallback to Baseline
-    public static $ClassificationIDignore = 4;   // fallback to Baseline
+    public static $ClassificationIDbaseline = 1;   // fallback to Baseline
+    public static $ClassificationIDignore = 4;   // fallback to Ignore
     public static function getClassificationID($question,$record) {
 
         $answer = Grade_question::getGradeAnswer($question->name,$record);

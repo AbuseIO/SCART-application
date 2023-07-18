@@ -11,6 +11,7 @@ use abuseio\scart\models\Systemconfig;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartSendNTD;
 use abuseio\scart\classes\mail\scartAlerts;
+use Symfony\Component\Debug\Exception\FatalErrorException;
 
 class scartSchedulerSendNTD extends scartScheduler {
 
@@ -55,10 +56,13 @@ class scartSchedulerSendNTD extends scartScheduler {
                     $ntd_nots = array_merge($ntd_nots, $result);
                 }
 
+            }  catch (FatalErrorException $err) {
+
+                scartLog::logLine("E-SchedulerSendNTD.waitingNTD FatalErrorException on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
+
             }  catch (\Exception $err) {
 
                 scartLog::logLine("E-SchedulerSendNTD.waitingNTD exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
-
             }
 
             try {

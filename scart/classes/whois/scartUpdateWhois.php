@@ -36,7 +36,7 @@ class scartUpdateWhois {
          *
          */
 
-        $job_records = $admin_report = [];
+        $job_records = [];
 
         $proxyrules = scartRules::getProxyServiceRules();
         scartLog::logLine("D-checkProxyServices; count(domain PROXY rules)=" . count($proxyrules));
@@ -75,8 +75,6 @@ class scartUpdateWhois {
                     $proxyrule->enabled = false;
                     $proxyrule->save();
 
-                    $admin_report[] = "proxy contact '$proxycontact'; domain '$proxyrule->domain' has no active reports anymore - disable";
-
                     $job_records[] = [
                         'domain' => $proxyrule->domain,
                         'type_code' => $proxyrule->type_code,
@@ -103,14 +101,12 @@ class scartUpdateWhois {
                             if ($real_ip) {
 
                                 if ($proxyrule->ip != $real_ip) {
-                                    $admin_report[] = "proxy contact '$proxycontact'; real IP for domain '$proxyrule->domain' is changed, was '$proxyrule->ip', update with new REAL ip=$real_ip ";
                                     scartLog::logLine("D-checkProxyServices; real IP for domain '$proxyrule->domain' is changed, was '$proxyrule->ip', update with new REAL ip=$real_ip ");
                                     // update
                                     $proxyrule = self::updateProxyIP($proxyrule,$real_ip);
                                     $proxyrule->save();
                                     $job_real_update = 'changed';
                                 } else {
-                                    //$admin_report[] = "proxy contact '$proxycontact'; real IP for domain '$proxyrule->domain' is unchanged; REAL ip=$real_ip ";
                                     scartLog::logLine("D-checkProxyServices; real IP for domain '$proxyrule->domain' is unchanged; REAL ip=$real_ip ");
                                     $job_real_update = 'checked (unchanged)';
                                 }
@@ -146,17 +142,6 @@ class scartUpdateWhois {
                 }
 
             }
-
-        }
-
-        if (count($admin_report) > 0) {
-
-            // report admin
-            $params = [
-                'reportname' => 'Update WHOIS PROXY service rules',
-                'report_lines' => $admin_report,
-            ];
-            scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN, 'abuseio.scart::mail.admin_report', $params);
 
         }
 

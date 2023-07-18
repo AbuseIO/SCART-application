@@ -1,5 +1,6 @@
 <?php  namespace abuseio\scart\classes\mail;
 
+use abuseio\scart\Models\Maintenance;
 use abuseio\scart\Models\Whitelist;
 use Config;
 use League\Flysystem\Exception;
@@ -76,6 +77,23 @@ class scartImportMailbox {
 
     }
 
+    static function checkConvertBody($body) {
+
+        // check if not TEXT ASCII format
+        if (strpos($body,'=0D=0A')!==false) {
+            // first combi \n\r
+            $body = str_replace(["=\n","=\r","=\n\r"],'',$body);
+            // then only cr or lf
+            $body = str_replace(["\r","\n"],'',$body);
+            // then split
+            $bodylines = explode("=0D=0A", $body);
+        } else {
+            // split on crlf
+            $bodylines = explode("\n", $body);
+        }
+        return $bodylines;
+    }
+
     public static function processBodylines($msg,$source,$status_code) {
 
         $loglines = [];
@@ -83,18 +101,7 @@ class scartImportMailbox {
 
         //scartLog::logLine("D-processBodylines; body='$msg->body'");
 
-        // check if not TEXT ASCII format
-        //
-        if (strpos($msg->body,'=0D=0A')!==false) {
-            // first combi with '='
-            $body = str_replace(["=\n","=\r","=\n\r"],'',$msg->body);
-            // then only cr or lf
-            $body = str_replace(["\r","\n"],'',$body);
-            $bodylines = explode("=0D=0A", $body);
-        } else {
-            // split on crlf
-            $bodylines = explode("\n", $msg->body);
-        }
+        $bodylines = self::checkConvertBody($msg->body);
 
         foreach ($bodylines AS $bodyline) {
 
@@ -198,11 +205,11 @@ class scartImportMailbox {
     }
 
 
-    public static function processERTinput($msg) {
+    public static function processWEBSITEinput($msg) {
 
         $import_mail_direct_Scrape = Systemconfig::get('abuseio.scart::options.import_mail_direct_Scrape',false);
         $newstatus = (($import_mail_direct_Scrape)? SCART_STATUS_SCHEDULER_SCRAPE : SCART_STATUS_OPEN);
-        scartLog::logLine("D-readImportMailbox; processERTinput; new status code will be: $newstatus");
+        scartLog::logLine("D-readImportMailbox; processWEBSITEinput; new status code will be: $newstatus");
 
         $loglines = self::processBodylines($msg,SCART_MAILBOX_IMPORT_SOURCE_CODE_WEBFORM,$newstatus);
 
@@ -258,7 +265,7 @@ class scartImportMailbox {
 
 
 
-    public static function processERTsetActionClose($msg,$actionID) {
+    public static function processICCAMsetActionClose($msg,$actionID) {
 
         $loglines = []; $cnt = 0;
 
@@ -302,26 +309,17 @@ class scartImportMailbox {
 
                                     if (scartICCAMinterface::isActive()) {
 
-                                        // check if valid ICCAM reportID
-                                        if ($reportID = scartICCAMinterface::getICCAMreportID($input->reference)) {
+                                        // ICCAM content removed
+                                        scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                            'record_type' => class_basename($input),
+                                            'record_id' => $input->id,
+                                            'object_id' => $input->reference,
+                                            'action_id' => $actionID,
+                                            'country' => '',                                // hotline default
+                                            'reason' => 'SCART closed offline',
+                                        ]);
 
-                                            // ICCAM content removed
-                                            scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                                                'record_type' => class_basename($input),
-                                                'record_id' => $input->id,
-                                                'object_id' => $input->reference,
-                                                'action_id' => $actionID,
-                                                'country' => '',                // hotline default
-                                                'reason' => 'ContentNotFound',
-                                            ]);
-
-                                            $reportline .= "; ICCAM action $actionID set for ReportID '$reportID'";
-
-                                        } else {
-
-                                            $reportline .= "; no ICCAM reference - cannot set $actionID action";
-
-                                        }
+                                        $reportline .= "; ICCAM action $actionID set for ICCAM reference '$input->reference'";
 
                                     }
 
@@ -352,7 +350,7 @@ class scartImportMailbox {
 
             if ($reportline) {
                 $reportline = "[line $cnt] $reportline";
-                scartLog::logLine("D-processERTsetActionClose; $reportline");
+                scartLog::logLine("D-processICCAMsetActionClose; $reportline");
                 $loglines[] = $reportline;
             }
 
@@ -498,6 +496,37 @@ class scartImportMailbox {
         return $loglines;
     }
 
+    public static function processSetMaintenance($msg) {
+
+        $bodylines = self::checkConvertBody($msg->body);
+
+        scartLog::logDump("D-body=",$bodylines);
+
+        $fields = ['module','start','end','note'];
+        $fieldnr = 0;
+        $fieldtxt = '';
+        $maintenance = new Maintenance();
+        foreach ($bodylines as $bodyline) {
+            if (trim($bodyline) != '') {
+                $bodyline = str_replace("\r",'',$bodyline);
+                $field = $fields[$fieldnr++];
+                $maintenance->$field = $bodyline;
+                $fieldtxt .= ($fieldtxt ? ', ':'') . "$field='$bodyline'";
+                if ($fieldnr == count($fields)) {
+                    break;
+                }
+            }
+        }
+        if ($fieldnr == count($fields))  {
+            $maintenance->save();
+            $logline = "Insert maintenance record; $fieldtxt";
+            scartLog::logLine("D-$logline");
+        } else {
+            $logline = 'Unknown maintenance body contents: '.implode("\n",$bodylines);
+        }
+        return [$logline];
+    }
+
     public static function readImportMailbox($config) {
 
         $reports = [];
@@ -562,11 +591,14 @@ class scartImportMailbox {
 
                         } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_WEBSITE_INPUTS ) === 0) {
 
-                            $loglines = self::processERTinput($msg);
+                            $loglines = self::processWEBSITEinput($msg);
 
                         } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_ICCAM_INPUTS ) === 0){
 
-                            $loglines = self::processERTreadICCAM($msg);
+                            // OBSOLUTE
+                            //$loglines = self::processERTreadICCAM($msg);
+                            $loglines = ["DISABLED (OBSOLUTE) ICCAM REPORTID IMPORT OPTION"];
+
 
                         } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_HOTLINE_INPUTS ) === 0) {
 
@@ -574,11 +606,15 @@ class scartImportMailbox {
 
                         } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_CONTENT_REMOVED ) === 0) {
 
-                            $loglines = self::processERTsetActionClose($msg,SCART_ICCAM_ACTION_CR);
+                            $loglines = self::processICCAMsetActionClose($msg,SCART_ICCAM_ACTION_CR);
 
                         } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_CONTENT_UNAVAILABLE ) === 0) {
 
-                            $loglines = self::processERTsetActionClose($msg,SCART_ICCAM_ACTION_CU);
+                            $loglines = self::processICCAMsetActionClose($msg,SCART_ICCAM_ACTION_CU);
+
+                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_SET_MAINTENANCE ) === 0) {
+
+                            $adminreport = self::processSetMaintenance($msg);
 
                         } else {
 
@@ -587,12 +623,14 @@ class scartImportMailbox {
 
                         }
 
-                        $reports[] = [
-                            'from' => $msg->from,
-                            'subject' => $msg->subject,
-                            'arrived' => date('Y-m-d H:i:s',$msg->udate),
-                            'loglines' => $loglines
-                        ];
+                        if (count($loglines) > 0) {
+                            $reports[] = [
+                                'from' => $msg->from,
+                                'subject' => $msg->subject,
+                                'arrived' => date('Y-m-d H:i:s',$msg->udate),
+                                'loglines' => $loglines
+                            ];
+                        }
 
                     } else {
 
@@ -624,7 +662,7 @@ class scartImportMailbox {
 
                 // inform admin
                 $params = [
-                    'reportname' => 'readImportMailbox; found already processed messages',
+                    'reportname' => 'readImportMailbox; admin report(s)',
                     'report_lines' => $adminreport,
                 ];
                 scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);

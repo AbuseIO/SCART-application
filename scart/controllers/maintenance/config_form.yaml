@@ -1,0 +1,10 @@
+name: Maintenance
+form: $/abuseio/scart/models/maintenance/fields.yaml
+modelClass: abuseio\scart\Models\Maintenance
+defaultRedirect: abuseio/scart/maintenance
+create:
+    redirect: 'abuseio/scart/maintenance/update/:id'
+    redirectClose: abuseio/scart/maintenance
+update:
+    redirect: abuseio/scart/maintenance
+    redirectClose: abuseio/scart/maintenance

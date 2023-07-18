@@ -238,7 +238,7 @@ class Whois extends WhoisClient
 					}
 
 				// Regular handler exists for the tld ?
-				if (($fp = fopen('whois.'.$htld.'.php', 'r', 1)) and fclose($fp))
+				if (($fp = @fopen('whois.'.$htld.'.php', 'r', 1)) and fclose($fp))
 				    {
 					$handler = $htld;
 					break;
@@ -283,15 +283,21 @@ class Whois extends WhoisClient
 
 	function Checkdns(&$result)
 		{
-		if ($this->deep_whois && empty($result['regrinfo']['domain']['nserver']) && function_exists('dns_get_record'))
-			{
-			$ns = dns_get_record($this->Query['query'],DNS_NS);
-			if (!is_array($ns)) return;
-			$nserver = array();
-			foreach($ns as $row) $nserver[] = $row['target'];
-			if (count($nserver) > 0)
-				$result['regrinfo']['domain']['nserver'] = $this->FixNameServer($nserver);
-			}
+            try {
+
+                if ($this->deep_whois && empty($result['regrinfo']['domain']['nserver']) && function_exists('dns_get_record'))
+                {
+                    $ns = @dns_get_record($this->Query['query'],DNS_NS);
+                    if (!is_array($ns)) return;
+                    $nserver = array();
+                    foreach($ns as $row) $nserver[] = $row['target'];
+                    if (count($nserver) > 0)
+                        $result['regrinfo']['domain']['nserver'] = $this->FixNameServer($nserver);
+                }
+
+            } catch (\Exception $err) {
+                // ignore
+            }
         }
 	/*
 	 *  Fix and/or add name server information

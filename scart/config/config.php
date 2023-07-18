@@ -13,7 +13,7 @@ return [
 
     'release' => [
         'version' => '6.5',
-        'build' => 'Build 5',
+        'build' => 'Build 9',
         'title' => env('APP_TITLE', 'Sexual Child Abuse Reporter Tool (SCART)'),
     ],
 
@@ -33,13 +33,14 @@ return [
     'browser' => [
         'provider' => env('BROWSER_PROVIDER', 'BrowserBasic'),                  // BrowserBasic, BrowserDragon
         'provider_cache' => env('BROWSER_PROVIDER_CACHE', false),               // use scrape_cache
-        'provider_api' => env('BROWSER_PROVIDER_API', ''),                      // DataDragin api
+        'provider_api' => env('BROWSER_PROVIDER_API', ''),                      // provider (eg DataDragon) API
+        'use_curl_for_image' => env('BROWSER_USE_CURL_FOR_IMAGE', false),       // use curl for fetching image data (eg provider=Chrome)
     ],
 
     'AIanalyze' => [
         'active' => env('AIANALYZE_ACTIVE', false),
         'show_correction' => env('AIANALYZE_SHOW_CORRECTION', true),            // show correction fields in Clasify image viewer
-        'report_correction' => env('AIANALYZE_REPORT_CORRECTION', true),          // show report option for export AI attributes (correction)
+        'report_correction' => env('AIANALYZE_REPORT_CORRECTION', true),        // show report option for export AI attributes (correction)
     ],
 
     // force env settings for own mailer
@@ -109,6 +110,7 @@ return [
             'realtime_min_diff_spindown' => env('SCHEDULER_CHECKNTD_RT_MIN_SPINDOWN', 15),      // time in minutes before spinning down tasks
             'realtime_look_again' => env('SCHEDULER_CHECKNTD_RT_LOOK_AGAIN', 120),     // within (max) 120 mins check each record (url) again
             'realtime_memory_limit' => env('SCHEDULER_CHECKNTD_RT_MEMORY_LIMIT', '1G'),  // min memory
+            'realtime_max_wrokers' => env('SCHEDULER_CHECKNTD_RT_MAX_WORKERS', '8'),   // max concurrent workers - tuning with browser module
         ],
         'sendntd' => [
             'active' => env('SCHEDULER_SENDNTD_ACTIVE', true),

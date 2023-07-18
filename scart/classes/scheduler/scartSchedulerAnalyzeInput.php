@@ -2,6 +2,7 @@
 namespace abuseio\scart\classes\scheduler;
 
 use abuseio\scart\classes\aianalyze\scartAIanalyze;
+use abuseio\scart\classes\browse\scartBrowser;
 use abuseio\scart\models\Input_parent;
 use abuseio\scart\models\Scrape_cache;
 use Config;
@@ -70,6 +71,7 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
             $curtime = microtime(true);
             $endtime = $curtime + $maxmins;
 
+
             // find all input(s) with status=scheduled
             $input = Input::where('status_code',SCART_STATUS_SCHEDULER_SCRAPE)
                 ->where('url_type',SCART_URL_TYPE_MAINURL)
@@ -81,6 +83,9 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
                 scartLog::logLine("D-scheduleAnalyseInput [$cnt]; filenumber=$input->filenumber; seconds still to go: " . ($endtime - $curtime) );
 
                 // set working
+
+                // init/start browser
+                scartBrowser::startBrowser();
 
                 // log old/new for history
                 $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_WORKING,"Working on analyze (scrape)");
@@ -100,7 +105,14 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
                         if ($input->status_code == SCART_STATUS_WORKING) {
 
                             // next fase
-                            $status_next = ($AIaddon) ? SCART_STATUS_SCHEDULER_AI_ANALYZE : SCART_STATUS_GRADE;
+
+                            // Note: prerelease AI; only for webform source
+                            if ($input->source_code == SCART_SOURCE_CODE_WEBFORM && $AIaddon) {
+                                $status_next = SCART_STATUS_SCHEDULER_AI_ANALYZE;
+                            } else {
+                                $status_next = SCART_STATUS_GRADE;
+                            }
+
                             // log old/new for history
                             $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,$status_next,"Analyze (scrape) done; next fase");
                             $input->status_code = $status_next;
@@ -168,8 +180,10 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
                     ->orderBy('received_at','DESC')
                     ->first();
                 $curtime = microtime(true);
-            }
 
+                // stop browser
+                scartBrowser::stopBrowser();
+            }
 
             // log/alert
 

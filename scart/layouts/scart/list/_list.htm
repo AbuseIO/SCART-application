@@ -1,8 +1,15 @@
 <div class="control-list list-scrollable" data-control="listwidget">
-    <div class="list-pagination" style="margin-top:-8px;margin-right:15px;position: absolute; top:-35px; right:5px;">
-        <?= $this->makePartial('list_head_pagination') ?>
-    </div>
+    <?php if ($showPagination): ?>
+        <div class="list-pagination" style="margin-top:-8px;margin-right:15px;position: absolute; top:-35px; right:5px;">
+            <?php if ($showPageNumbers): ?>
+                <?= $this->makePartial('list_head_pagination') ?>
+            <?php else: ?>
+                <?= $this->makePartial('list_pagination_simple') ?>
+            <?php endif ?>
+        </div>
+        <!-- To-Do: if id=Filter-listFilter NOT exist then move id=Lists 42 pixels down -->
 
+    <?php endif ?>
 
     <table class="table data" data-control="rowlink">
         <thead>
@@ -20,6 +27,7 @@
             <?php endif ?>
         </tbody>
     </table>
+
     <?php if ($showPagination): ?>
         <div class="list-footer">
             <div class="list-pagination">

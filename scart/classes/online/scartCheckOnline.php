@@ -255,20 +255,22 @@ class scartCheckOnline {
                                 // NO CACHE (!)
                                 scartBrowser::setCached(false);
 
-                                // note: we do not need screenshots here
+                                // if website content then take only screenshot -> optimize scraping
                                 scartLog::logLine("D-scartCheckOnline; [$record->filenumber] start getImages...");
-                                $images = scartBrowser::getImages($record->url, $record->url_referer,false);
+                                $images = scartBrowser::getImages($record->url, $record->url_referer,true,true);
 
-                                // check if fatal crash browser (dataDragon), then skip this record -> continue when browser up again
+                                // check if error browser
                                 if ($browsererror = scartBrowser::getLasterror()) {
 
-                                    scartLog::logLine("W-scartCheckOnline; [$record->filenumber, $record->url] browser error=$browsererror - stop processing for now");
+                                    scartLog::logLine("W-scartCheckOnline; [$record->filenumber, $record->url] browser error=$browsererror - server/netwerk/image down");
 
                                     $browserretry = scartUsers::getGeneralOption('BROWSER_ERROR');
                                     if (empty($browserretry)) $browserretry = 0;
                                     $browserretry = intval($browserretry) + 1;
 
                                     if ($browserretry == 3 || $browserretry % 12 == 0) {
+
+                                        // when al lot of browser errors after each other, then alert admin because the environment can also be broken
 
                                         $params = [
                                             'reportname' => "BROWSER ERROR report ",
@@ -285,11 +287,8 @@ class scartCheckOnline {
 
                                     scartUsers::setGeneralOption('BROWSER_ERROR', $browserretry);
 
-                                    // reset lock -> direct update, NO SAVE() here -> record can be in an inconsistant state after error
-                                    self::setLock($record->id,false);
-
-                                    // exit without saving record
-                                    return $job_records;
+                                    // force no images
+                                    $images = [];
 
                                 } else {
 
@@ -322,46 +321,52 @@ class scartCheckOnline {
                                 //$input->logText("Input (link) $input->url CHECKONLINE; found $imgcnt image" . (($imgcnt > 1) ? 's' : ''));
 
                                 $imageleadtime = microtime(true);
-                                scartLog::logLine("D-scartCheckOnline; [$record->filenumber] getImages lead time: " . ($imageleadtime - $whoisleadtime) );
+                                scartLog::logLine("D-scartCheckOnline; [$record->filenumber] image count: $imgcnt; getImages lead time: " . ($imageleadtime - $whoisleadtime) );
 
                                 $image = [];
 
                                 if ($imgcnt > 0) {
 
+                                    reset($images);
+                                    $image = current($images);
+
                                     if ($record->url_type == SCART_URL_TYPE_MAINURL  ) {
 
-                                        // if 1 image and image[src]=url then mainurl = imageurl
+                                        /**
+                                         * Different results from getImages depending on type of url; website or direct image/video
+                                         * The first image holds this information; when website then screenshot, else the image
+                                         *
+                                         */
 
-                                        reset($images);
-                                        $image = current($images);
+                                        $imagetype = $image['type'] ?? SCART_URL_TYPE_IMAGEURL;
+                                        scartLog::logLine("D-scartCheckOnline; [$record->filenumber] image content: $imagetype ");
 
-                                        // one image then check if mainurl=imageurl
-                                        if ($imgcnt == 1) {
-                                            if ($image['src'] == $record->url) {
-                                                $online = ($record->url_hash == $image['hash']);
-                                                scartLog::logLine("D-scartCheckOnline; mainurl = imageurl; hash check=" . (($online)?'true':'false') );
-                                            } else {
-                                                $online = true;
+                                        if ($imagetype == SCART_URL_TYPE_SCREENSHOT) {
+
+                                            // Note: we don't hash the screenshot for checking differences because of dynamic/time/date values on website
+                                            $online = true;
+
+                                        } else  {
+
+                                            $online = ($record->url_hash == $image['hash']);
+                                            if (!$online) {
+                                                scartLog::logLine("W-scartCheckOnline; [$record->filenumber] mainurl '$record->url' hash check FALSE; url_hash=$record->url_hash <> image hash=" . $image['hash'] );
                                             }
-                                        } else {
-                                            // if more then 1 image then (always) online
-                                            if ($imgcnt > 1) {
-                                                // ONLINE
-                                                $online = true;
-                                            }
+
                                         }
 
                                     } elseif ($record->url_type == SCART_URL_TYPE_VIDEOURL || $record->url_type == SCART_URL_TYPE_IMAGEURL) {
 
                                         // first image is image/video
-
-                                        reset($images);
-                                        $image = current($images);
                                         $online = ($record->url_hash == $image['hash']);
+                                        if (!$online) {
+                                            scartLog::logLine("W-scartCheckOnline; [$record->filenumber] image/video url '$record->url' hash check FALSE; url_hash=$record->url_hash <> image hash=" . $image['hash'] );
+                                        }
 
                                     } else {
 
                                         // IGNORE
+                                        scartLog::logLine("W-scartCheckOnline; [$record->filenumber] unknown record url_type '$record->url_type' ");
 
                                     }
 
@@ -702,21 +707,32 @@ class scartCheckOnline {
 
                 if (scartICCAMinterface::isActive()) {
 
-                    // get hoster counter
-                    $reason = 'SCART content moved to country: '.$abusecountry;
-                    $status .= "; add action ICCAM moved country '$abusecountry'";
 
-                    // CLOSE with MOVED action
+                    // ONLY WHEN EXISTING RECORD IN ICCAM -> timing is important
+                    // -> because when export ICCAM is quicker then this checkonline, then
 
-                    // ICCAM content moved (outside NL)
-                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                        'record_type' => class_basename($record),
-                        'record_id' => $record->id,
-                        'object_id' => $record->reference,
-                        'action_id' => SCART_ICCAM_ACTION_MO,
-                        'country' => $abusecountry,
-                        'reason' => $reason,
-                    ]);
+
+                    if ($reportId = scartICCAMinterface::getICCAMreportID($record->reference)) {
+
+                        $contentId = scartICCAMinterface::getICCAMcontentID($record->reference);
+
+                        scartLog::logLine("D-scartCheckOnline; export content moved action for reportId=$reportId, contentId=$contentId");
+
+                        // get hoster counter
+                        $reason = 'SCART content moved to country: '.$abusecountry;
+                        $status .= "; add action ICCAM moved country '$abusecountry'";
+
+                        // ICCAM content moved (outside NL)
+                        scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                            'record_type' => class_basename($record),
+                            'record_id' => $record->id,
+                            'object_id' => $record->reference,
+                            'action_id' => SCART_ICCAM_ACTION_MO,
+                            'country' => $abusecountry,
+                            'reason' => $reason,
+                        ]);
+
+                    }
 
                 }
 

@@ -161,7 +161,7 @@ class GradeController extends \Winter\Storm\Extension\ExtensionBase
             }
 
             // if single and url set then show image
-            $src = ($single) ? scartBrowser::getImageBase64($input->url, $input->url_hash) : '';
+            $src = ($single) ? scartBrowser::getImageCache($input->url, $input->url_hash) : '';
 
             $gradeheader = (($questiongroup == SCART_GRADE_QUESTION_GROUP_ILLEGAL) ? 'ILLEGAL' :
                 (($questiongroup == SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL) ? 'NOT ILLEGAL' : 'FIRST POLICE'));

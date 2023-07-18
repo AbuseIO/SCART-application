@@ -131,7 +131,7 @@ class Police extends scartController
         if ($record) {
             $msgclass = 'success';
             $msgtext = 'Image loaded';
-            $src = scartBrowser::getImageBase64($record->url,$record->url_hash);
+            $src = scartBrowser::getImageCache($record->url,$record->url_hash);
         } else {
             $msgclass = 'error';
             $msgtext = 'Image NOT found!?';

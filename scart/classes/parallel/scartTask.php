@@ -23,7 +23,7 @@ class scartTask {
     public static function startTask($taskname,$configname) {
 
         // 2020/8/5/Gs: include PID for process investigation(s)
-        SELF::$logname = "scartRealtimeCheckonlineTask[$taskname]";
+        SELF::$logname = "scartRealtimeTask[$taskname]";
 
         SELF::$_loggedin = false;
 

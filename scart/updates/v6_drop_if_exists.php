@@ -3,17 +3,12 @@
 use Db;
 use Log;
 use Schema;
-use October\Rain\Database\Updates\Migration;
+use Winter\Storm\Database\Updates\Migration;
 
 class V6DropIfExists extends Migration
 {
     public function up()
     {
-
-
-    }
-
-    public function down() {
 
         // take down all tables (..)
 
@@ -27,6 +22,11 @@ class V6DropIfExists extends Migration
                 }
             }
         }
+
+
+    }
+
+    public function down() {
 
     }
 

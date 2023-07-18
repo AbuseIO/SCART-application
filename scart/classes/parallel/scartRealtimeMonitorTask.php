@@ -28,7 +28,7 @@ use abuseio\scart\classes\whois\scartRIPEdb;
 use abuseio\scart\models\Abusecontact;
 use abuseio\scart\models\Addon;
 
-return function ($taskname,$basepath) {
+$task = function ($taskname,$basepath) {
 
     // bootstrap -> init else we have no (laravel app) context
     $errtxt = require_once $basepath.'/plugins/abuseio/scart/classes/parallel/scartRealtimeBootstrap.php';
@@ -44,7 +44,7 @@ return function ($taskname,$basepath) {
 
             if (scartTask::startTask($taskname,'monitor')) {
 
-                $runtime = new scartRuntime($taskname);
+                $runtime = new scartRuntime('Monitor');
                 $runtime->initChannel();
 
                 $run = true;
@@ -53,12 +53,10 @@ return function ($taskname,$basepath) {
 
                     try {
 
-                        $cnt = 0;
-
                         // start looping
                         while ($run) {
 
-                            scartLog::logLine("D-" . scartTask::$logname . "; reading messages on channel '$taskname'");
+                            scartLog::logLine("D-" . scartTask::$logname . "; reading monitor messages on channel '$taskname'");
                             $stats = $runtime->readChannel();
 
                             if (isset($stats['sender']) && isset($stats['record_id']) && isset($stats['set']) && isset($stats['taskname'])) {

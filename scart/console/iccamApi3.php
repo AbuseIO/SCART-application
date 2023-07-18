@@ -124,7 +124,7 @@ class iccamApi3 extends Command
                             $showhelp = false;
                             $reportdata = (new ScartICCAMapi())->getReport($id);
                             foreach ($reportdata->reportContents as $key => $content) {
-                                $contentdata = (new ScartICCAMapi())->getContent($content->id);
+                                $contentdata = (new ScartICCAMapi())->getContent($content->contentId);
                                 $reportdata->reportContents[$key] = (object)array_merge((array)$content,(array)$contentdata);
                             }
                             scartLog::logDump("D-iccamAPI3; report=",$reportdata);

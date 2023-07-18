@@ -70,6 +70,16 @@ class scartBrowserDragon extends scartBrowser {
     ];
 
     /**
+     * General START and STOP functions
+     * Can be overrules by specific browser provider for optimalization
+     */
+    public static function startBrowser() {
+        SELF::$_lasterror = '';
+    }
+    public static function stopBrowser() {
+    }
+
+    /**
      *
      * browse url and get data (url response)
      *
@@ -154,6 +164,10 @@ class scartBrowserDragon extends scartBrowser {
 
                 $response = json_decode($response);
 
+                $firstcontenttype = $response->log->entries[0]->response->content->mimeType ?? '?';
+                scartLog::logDump("D-scartBrowserDragon.getRawContent; first contenttype is: ",$firstcontenttype);
+
+
             } catch (Exception $err) {
 
                 SELF::$_lasterror = $err->getMessage();
@@ -177,7 +191,7 @@ class scartBrowserDragon extends scartBrowser {
      * @return mixed
      */
 
-    public static function getImages($url,$referer='', $screenshot=true) {
+    public static function getImages($url,$referer='', $screenshot=true, $onlyscreenshot=false) {
 
         $images = [];
 
@@ -225,7 +239,7 @@ class scartBrowserDragon extends scartBrowser {
                             $height = $capture->size->height;
                         }
 
-                        scartLog::logLine("D-scartBrowserDragon.getImages; FOUND SCREENSHOT; mimeType=$mimeType, url=$url" );
+                        scartLog::logLine("D-scartBrowserDragon.getImages; got screenshot; mimeType=$mimeType, url=$url" );
 
                         $image = [
                             'src' => $url,
@@ -242,131 +256,151 @@ class scartBrowserDragon extends scartBrowser {
                         ];
                         $images[] = $image;
 
+                    } else {
+
+                        scartLog::logLine("D-scartBrowserDragon.getImages; skip making screenshot" );
+
                     }
                 }
 
                 // get response entries
-                $entries = (isset($decode->log->entries)) ? $decode->log->entries : [];
+                $entries = $decode->log->entries ?? [];
 
                 if (count($entries) > 0) {
 
-                    //scartLog::logLine("D-images: \n" . print_r($entries, true) );
+                    if ($onlyscreenshot) {
+                        // only active when website (text/html) url
+                        $firstcontenttype = $entries[0]->response->content->mimeType ?? '?';
+                        $onlyscreenshot = ($firstcontenttype == 'text/html');
+                        if (!$onlyscreenshot) {
+                            // remove screenshot
+                            $images = [];
+                        }
+                    }
 
-                    // each entry
-                    foreach ($entries AS $entry) {
+                    if ($onlyscreenshot) {
 
-                        $url = (isset($entry->request->url)) ? $entry->request->url : '';
+                        scartLog::logLine("D-scartBrowserDragon.getImages; only screenshot is set; content='text/html', skip loading rest of the entries" );
 
-                        if ($url) {
+                    } else {
 
-                            $ip = (isset($entry->serverIPAddress)) ? $entry->serverIPAddress : '?';
+                        // each entry
+                        foreach ($entries AS $entry) {
 
-                            $status = (isset($entry->response->status)) ? $entry->response->status : '';
-                            $content = (isset($entry->response->content)) ? $entry->response->content : '';
+                            $url = (isset($entry->request->url)) ? $entry->request->url : '';
 
-                            if ($content) {
+                            if ($url) {
 
-                                $encoding = (isset($content->encoding)) ? $content->encoding : '?';
-                                $mimeType = (isset($content->mimeType)) ? $content->mimeType : '?';
-                                $text = (isset($content->text)) ? $content->text : '';
-                                $size = strlen($text);
-                                $mem = memory_get_usage();
-                                //scartLog::logLine("D-scartBrowserDragon.getImages; status=$status, size=$size, memory=$mem, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
+                                $ip = (isset($entry->serverIPAddress)) ? $entry->serverIPAddress : '?';
 
-                                if (in_array($mimeType,SELF::$_imageMimeTypes) ) {
+                                $status = (isset($entry->response->status)) ? $entry->response->status : '';
+                                $content = (isset($entry->response->content)) ? $entry->response->content : '';
 
-                                    if ($text != '' && $encoding == 'base64') {
+                                if ($content) {
 
-                                        //scartLog::logLine("D-scartBrowserDragon.getImages; FOUND IMAGE; status=$status, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
+                                    $encoding = (isset($content->encoding)) ? $content->encoding : '?';
+                                    $mimeType = (isset($content->mimeType)) ? $content->mimeType : '?';
+                                    $text = (isset($content->text)) ? $content->text : '';
+                                    $size = strlen($text);
+                                    $mem = memory_get_usage();
+                                    //scartLog::logLine("D-scartBrowserDragon.getImages; status=$status, size=$size, memory=$mem, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
 
-                                        // base64 in text
-                                        $data = base64_decode($text);
-                                        $hash = scartBrowser::getImageHash($data);
+                                    if (in_array($mimeType,SELF::$_imageMimeTypes) ) {
 
-                                        // if not set, try ourself
-                                        $imgsiz = @getimagesizefromstring($data);
-                                        if ($imgsiz !== false) {
-                                            $width = $imgsiz[0];
-                                            $height = $imgsiz[1];
+                                        if ($text != '' && $encoding == 'base64') {
 
-                                            if (self::useCached()) {
-                                                // FILL CACHE
-                                                $cache = Scrape_cache::getCache($hash);
-                                                if (!$cache) {
-                                                    $cache = "data:" . $content->mimeType . ";base64," . $text;
-                                                    Scrape_cache::addCache($hash, $cache);
-                                                    //scartLog::logLine("D-scartBrowserDragon.getImages; url=$url; scrape cached filled ");
+                                            //scartLog::logLine("D-scartBrowserDragon.getImages; FOUND IMAGE; status=$status, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
+
+                                            // base64 in text
+                                            $data = base64_decode($text);
+                                            $hash = scartBrowser::getImageHash($data);
+
+                                            // if not set, try ourself
+                                            $imgsiz = @getimagesizefromstring($data);
+                                            if ($imgsiz !== false) {
+                                                $width = $imgsiz[0];
+                                                $height = $imgsiz[1];
+
+                                                if (self::useCached()) {
+                                                    // FILL CACHE
+                                                    $cache = Scrape_cache::getCache($hash);
+                                                    if (!$cache) {
+                                                        $cache = "data:" . $content->mimeType . ";base64," . $text;
+                                                        Scrape_cache::addCache($hash, $cache);
+                                                        //scartLog::logLine("D-scartBrowserDragon.getImages; url=$url; scrape cached filled ");
+                                                    }
                                                 }
+
+                                                $base = self::parse_base($url);
+
+                                                $image = [
+                                                    'src' => $url,
+                                                    'type' => SCART_URL_TYPE_IMAGEURL,
+                                                    'host' => self::get_host($base),
+                                                    'data' => $data,
+                                                    'base' => $base,
+                                                    'hash' => $hash,
+                                                    'width' => $width,
+                                                    'height' => $height,
+                                                    'mimetype' => $mimeType,
+                                                    'isBase64' => false,
+                                                    'imgsize' => strlen($data),
+                                                    //'data' => $content->text,
+                                                ];
+                                                $images[] = $image;
+
+                                            } else {
+                                                scartLog::logLine("W-scartBrowserDragon.getImages can NOT get imagesize; no valid image url=$url");
                                             }
 
-                                            $base = self::parse_base($url);
+                                        } else {
+                                            if ($text=='') {
+                                                scartLog::logLine("W-scartBrowserDragon.getImages; url=$url; empty TEXT (data) field ");
+                                            } else {
+                                                scartLog::logLine("W-scartBrowserDragon.getImages; url=$url; NOT encodeing=base64 ");
+                                            }
+                                        }
+
+                                    }
+
+                                    // VIDEO -> only get url, not scrape cache
+
+                                    if (in_array($mimeType,SELF::$_videoMimeTypes) ) {
+
+                                        if ($encoding == 'base64') {
+
+                                            //scartLog::logLine("D-scartBrowserDragon.getImages; FOUND VIDEO; status=$status, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
+
+                                            // text containts image of video
+
+                                            //if (isset($content->text)) $content->text = ''; scartLog::logLine("D-scartBrowserDragon.video content: " . print_r($content, true)) ;
+
+                                            // create special unique HASH
+                                            // base on url and ip
+                                            $text .= $url . $ip;
+                                            $hash = sprintf('%s%016d', md5($text),strlen($text));   // 48 tekens
+
+                                            $width = $height = 100;
+
+                                            $base = scartBrowser::parse_base($url);
 
                                             $image = [
                                                 'src' => $url,
-                                                'type' => SCART_URL_TYPE_IMAGEURL,
+                                                'type' => SCART_URL_TYPE_VIDEOURL,
                                                 'host' => self::get_host($base),
-                                                'data' => $data,
+                                                'data' => '',
                                                 'base' => $base,
                                                 'hash' => $hash,
                                                 'width' => $width,
                                                 'height' => $height,
                                                 'mimetype' => $mimeType,
                                                 'isBase64' => false,
-                                                'imgsize' => strlen($data),
+                                                'imgsize' => 0,
                                                 //'data' => $content->text,
                                             ];
                                             $images[] = $image;
 
-                                        } else {
-                                            scartLog::logLine("W-scartBrowserDragon.getImages can NOT get imagesize; no valid image url=$url");
                                         }
-
-                                    } else {
-                                        if ($text=='') {
-                                            scartLog::logLine("W-scartBrowserDragon.getImages; url=$url; empty TEXT (data) field ");
-                                        } else {
-                                            scartLog::logLine("W-scartBrowserDragon.getImages; url=$url; NOT encodeing=base64 ");
-                                        }
-                                    }
-
-                                }
-
-                                // VIDEO -> only get url, not scrape cache
-
-                                if (in_array($mimeType,SELF::$_videoMimeTypes) ) {
-
-                                    if ($encoding == 'base64') {
-
-                                        //scartLog::logLine("D-scartBrowserDragon.getImages; FOUND VIDEO; status=$status, mimeType=$mimeType, encoding=$encoding, ip=$ip, url=$url" );
-
-                                        // text containts image of video
-
-                                        //if (isset($content->text)) $content->text = ''; scartLog::logLine("D-scartBrowserDragon.video content: " . print_r($content, true)) ;
-
-                                        // create special unique HASH
-                                        // base on url and ip
-                                        $text .= $url . $ip;
-                                        $hash = sprintf('%s%016d', md5($text),strlen($text));   // 48 tekens
-
-                                        $width = $height = 100;
-
-                                        $base = scartBrowser::parse_base($url);
-
-                                        $image = [
-                                            'src' => $url,
-                                            'type' => SCART_URL_TYPE_VIDEOURL,
-                                            'host' => self::get_host($base),
-                                            'data' => '',
-                                            'base' => $base,
-                                            'hash' => $hash,
-                                            'width' => $width,
-                                            'height' => $height,
-                                            'mimetype' => $mimeType,
-                                            'isBase64' => false,
-                                            'imgsize' => 0,
-                                            //'data' => $content->text,
-                                        ];
-                                        $images[] = $image;
 
                                     }
 
@@ -374,8 +408,8 @@ class scartBrowserDragon extends scartBrowser {
 
                             }
 
-                        }
 
+                        }
 
                     }
 

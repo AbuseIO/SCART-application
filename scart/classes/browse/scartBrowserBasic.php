@@ -27,6 +27,16 @@ class scartBrowserBasic extends scartBrowser {
 
     private static $_useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0';
 
+    /**
+     * General START and STOP functions
+     * Can be overrules by specific browser provider for optimalization
+     */
+    public static function startBrowser() {
+        SELF::$_lasterror = '';
+    }
+    public static function stopBrowser() {
+    }
+
     // ** 1: Browse (access) external link ** //
 
     private static function _removeBom($var) {
@@ -165,26 +175,6 @@ class scartBrowserBasic extends scartBrowser {
         return $isbase64code;
     }
 
-    static function isDataURI($data) {
-
-        $isDataURI = false;
-
-        try {
-
-            // data URI specification starts always with 'data:' and has <data> and <encoded data>in str string
-            $imgdata = explode(',',$data);
-            $isDataURI = (count($imgdata) > 0 && (strpos($data, 'data:' ) === 0) );
-            if (SELF::$_debug) scartLog::logLine("D-scartBrowserBasic.isDataURI; isDataURI=$isDataURI");
-
-        } catch (Exception $err) {
-
-            scartLog::logLine("E-scartBrowserBasic.isDataURI error: ".$err->getMessage());
-
-        }
-
-        return $isDataURI;
-    }
-
     static function isImage($data) {
 
         $isimage = false;
@@ -290,14 +280,14 @@ class scartBrowserBasic extends scartBrowser {
     }
 
     /**
-     * getImageBase64
+     * getImageCache
      *
      * Get image base64 source data
      * Check cache -> if filed then use this
      *
      */
 
-    public static function getImageBase64($url,$hash='',$ifemptyshowurl=true,$imagenotfound=SCART_IMAGE_NOT_FOUND) {
+    public static function getImageCache($url,$hash='',$ifemptyshowurl=true,$imagenotfound=SCART_IMAGE_NOT_FOUND) {
 
         // always show url
         $imagebase65 = $url;
@@ -319,13 +309,16 @@ class scartBrowserBasic extends scartBrowser {
      * - base
      * - valid
      *
-     * NB: key is hash so duplicated images are ignored
+     * Note: key is hash so duplicated images are ignored
+     *
+     * Note: $screenshot and $onlyscreenshot not used
+     *
      *
      * @param $input (object)
      * @return array
      */
 
-    public static function getImages($url,$referer='',$screenshot=true) {
+    public static function getImages($url,$referer='', $screenshot=true, $onlyscreenshot=false) {
 
         if (SELF::$_debug) scartLog::logLine("D-scartBrowserBasic.getImages($url,$referer)");
 

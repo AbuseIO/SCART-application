@@ -1,0 +1,21 @@
+fields:
+    module:
+        label: Module
+        span: auto
+        type: dropdown
+        options:
+            'ALL': 'SCARt maintenance (for users offline)'
+            'ICCAM': 'ICCAM interface offline'
+    start:
+        label: Start
+        span: auto
+        type: datepicker
+    end:
+        label: End
+        span: auto
+        type: datepicker
+    note:
+        label: Note
+        size: ''
+        span: full
+        type: textarea

@@ -3,12 +3,12 @@ namespace abuseio\scart\classes\parallel;
 
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\classes\online\scartCheckOnline;
+use abuseio\scart\classes\parallel\scartRuntime;
 use abuseio\scart\classes\scheduler\scartScheduler;
 use abuseio\scart\models\Systemconfig;
 use parallel\{Future, Runtime, Channel, Error};
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartAlerts;
-use abuseio\scart\classes\parallel\scartRuntime;
 use abuseio\scart\classes\scheduler\scartSchedulerCheckOnline;
 
 class scartRealtimeCheckonline {
@@ -76,16 +76,18 @@ class scartRealtimeCheckonline {
 
             self::init($settings);
 
+            // monitor task
+            $monitortask = plugins_path().'/abuseio/scart/classes/parallel/scartRealtimeMonitorTask.php';
+            $monitorruntime = new scartRuntime('Monitor');
+            $monitorfuture = $monitorruntime->initTask($monitortask);
+
+            // runtime tasks
             $createruntimes = [
                 'FirstTime' => 1,
                 'Retry' => 1,
                 'Normal' => self::$start_normal_tasks,
             ];
-
-            // checkonline function
             $checkonlinetask = plugins_path().'/abuseio/scart/classes/parallel/scartRealtimeCheckonlineTask.php';
-
-            // create runtime objects
             $runtimeList = $runtimecontext = $futureList = $futureListTrash = [];
             foreach ($createruntimes AS $runtimename => $runtimeneeded) {
                 for ($i=0;$i<$runtimeneeded;$i++) {
@@ -100,11 +102,7 @@ class scartRealtimeCheckonline {
                     'tasklastset' => time(),
                 ];
             }
-
-            // monitor task
-            $monitortask = plugins_path().'/abuseio/scart/classes/parallel/scartRealtimeMonitorTask.php';
-            $monitorruntime = new scartRuntime('Monitor');
-            $monitorfuture = $monitorruntime->initTask($monitortask);
+            sleep(1);
 
             // go looping with dispatching checkonline jobs
             //$taskcurrent = 1;
@@ -153,18 +151,18 @@ class scartRealtimeCheckonline {
                      * - realtime_look_again; minimum time in minutes in which a record must be checked again
                      * - realtime_inputs_max; maximum records within one minute for a worker
                      *
-                     * Calcualtion
+                     * Calculation
                      * - (realtime_look_again - check_online_every) = working time in minutes for one worker
                      * - records_in_one_minute; number of records a working can do (based on (dynamic) average standard deviation)
                      * - so one worker can do within the working time; (realtime_look_again - check_online_every) x records_in_one_minute
                      *
-                     * Note: scartSchedulerSendAlerts is monitoring lastseen to check if workers is crashed or load is to heavy
+                     * Note: scartSchedulerSendAlerts is monitoring checkonline_lock/lastseen to check if workers are crashed or load is to heavy
                      *
                      */
 
-
-                    // 2022/12/28 Errors Datadragon Browser -> overloaded when to much
-                    $maxdatadragon = 8;
+                    // dynamic depending on local server (mem/cpu) capacity
+                    $maxdatadragon = Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_max_wrokers','8');
+                    scartLog::logLine("D-{$logname}; got realtime_max_wrokers=$maxdatadragon ");
 
                     foreach ($createruntimes AS $runtimename => $runtimeneeded) {
 
@@ -369,14 +367,15 @@ class scartRealtimeCheckonline {
                                 //$cnt = self::getNamedCount($taskname);
                                 $cnt = current($taskcounters);
                                 if ($cnt < ($runtimeList[$taskname]->maxChannel - 1)) {
-                                    $runtimeList[$taskname]->sendChannel($input->filenumber);
-                                    scartLog::logLine("D-{$logname}; push job '$input->filenumber' to task '$taskname'; cnt=$cnt  ");
                                     $monitorruntime->sendChannel([
                                         'sender' => 'scartRealtimeCheckonline',
                                         'record_id' => $input->id,
+                                        'filenumber' => $input->filenumber,
                                         'set' => true,
                                         'taskname' => $taskname,
                                     ]);
+                                    scartLog::logLine("D-{$logname}; push job '$input->filenumber' to task '$taskname'; cnt=$cnt  ");
+                                    $runtimeList[$taskname]->sendChannel($input->filenumber);
                                     $alreadydone[] = $input->filenumber;
                                 } else {
                                     scartLog::logLine("D-{$logname}; channel from task '$taskname' is full, count=$cnt - skip push");
@@ -489,12 +488,14 @@ class scartRealtimeCheckonline {
 
     public static function setNamedLock($id,$set,$name) {
 
-        scartCheckOnline::setLock($id,$set);
+        // disabled own set lock of record -> job of checkonline, not us
+        //scartCheckOnline::setLock($id,$set);
+
         $optionname = self::$namedprefix.$name;
         $cnt = scartUsers::getGeneralOption($optionname);
         if (empty($cnt)) $cnt = 0;
         $cnt += ($set)?1:-1;
-        scartLog::logLine("D-scartRealtimeCheckonline.setNamedLock; id=$id, set=$set, cnt=$cnt, name=$name");
+        scartLog::logLine("D-scartRealtimeCheckonline; ".(($set)?'SET':'RESET')." named lock; id=$id, set=$set, cnt=$cnt, name=$name");
         scartUsers::setGeneralOption($optionname,$cnt);
     }
 
@@ -509,7 +510,7 @@ class scartRealtimeCheckonline {
     public static function resetNamedLock($name) {
 
         $optionname = self::$namedprefix.$name;
-        scartLog::logLine("D-scartRealtimeCheckonline.resetNamedLock; name=$name");
+        scartLog::logLine("D-scartRealtimeCheckonline; reset named lock '$name'");
         scartUsers::setGeneralOption($optionname,0);
     }
 

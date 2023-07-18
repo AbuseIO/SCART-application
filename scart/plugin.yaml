@@ -112,6 +112,13 @@ navigation:
                 permissions:
                     - abuseio.scart.system_config
                 order: '1'
+            maintenance:
+                label: 'abuseio.scart::lang.menu.maintenance'
+                url: /abuseio/scart/Maintenance
+                icon: icon-coffee
+                permissions:
+                    - abuseio.scart.system_config
+                order: '1'
             addons:
                 label: 'abuseio.scart::lang.menu.addons'
                 url: /abuseio/scart/Addons
@@ -160,13 +167,14 @@ navigation:
                 icon: icon-table
                 permissions:
                     - abuseio.scart.grade_questions
+                order: '7'
             Manualedit:
                 label: 'abuseio.scart::lang.menu.manualedit'
                 url: /abuseio/scart/Manualedit
                 icon: icon-book
                 permissions:
                     - abuseio.scart.manual_write
-                order: '7'
+                order: '8'
             whois:
                 label: 'abuseio.scart::lang.menu.whoistest'
                 url: /abuseio/scart/Whois

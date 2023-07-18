@@ -3,6 +3,7 @@ namespace abuseio\scart\classes\iccam;
 
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\models\Input;
+use abuseio\scart\Models\Maintenance;
 use abuseio\scart\models\Systemconfig;
 
 use abuseio\scart\classes\iccam\api2\scartExportICCAM;
@@ -31,7 +32,9 @@ class scartICCAMinterface {
 
     public static function maintenance() {
         // check if no maintenance of ICCAM import/export
-        if (!Systemconfig::get('abuseio.scart::scheduler.importexport.iccam_active', false)){
+
+        $active = Systemconfig::get('abuseio.scart::scheduler.importexport.iccam_active', false);
+        if (!$active){
             scartLog::logLine("D-scartICCAMinterface; import/export interface ICCAM OFF (maintenance)");
             $bool = true;
         } else {
@@ -76,6 +79,11 @@ class scartICCAMinterface {
 
         $reference = self::setICCAMreportID($reportID,$contentID);
         return (Input::where('reference',$reference)->count() > 0);
+    }
+
+    public static function alreadyICCAMreportID($reportID) {
+
+        return (Input::where('reference','LIKE',$reportID.'#%')->count() > 0);
     }
 
     /** Import/export **/

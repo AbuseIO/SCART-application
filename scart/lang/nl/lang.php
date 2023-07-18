@@ -32,6 +32,7 @@ return [
         'checkonline' => 'Onlinecontrole',
         'settings' => 'Instellingen',
         'config' => 'Configuratie',
+        'maintenance' => 'Onderhoud',
         'addons' => 'Addons',
         'users' => 'Gebruikers',
         'blockeddays' => 'Geblokkeerde dagen',

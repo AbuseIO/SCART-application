@@ -11,7 +11,6 @@ use Db;
 use Log;
 use Config;
 use Flash;
-use October\Rain\Translation\Translator;
 use Session;
 use Request;
 use Backend;
@@ -20,15 +19,14 @@ use BackendAuth;
 use Redirect;
 use abuseio\scart\models\Systemconfig;
 use Validator;
-use League\Flysystem\Exception;
 use RuntimeException;
 use ErrorException;
-use October\Rain\Exception\SystemException;
+use Symfony\Component\Debug\Exception\FatalThrowableError;
+use Winter\Storm\Exception\SystemException;
+use Winter\Storm\Exception\ApplicationException;
 use abuseio\scart\classes\base\scartErrorHandler;
-
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\classes\helpers\scartLog;
-use abuseio\scart\classes\scheduler\scartScheduler;
 use abuseio\scart\classes\scheduler\scartSchedulerCleanup;
 use abuseio\scart\classes\scheduler\scartSchedulerSendAlerts;
 use abuseio\scart\classes\scheduler\scartSchedulerAnalyzeInput;
@@ -40,7 +38,6 @@ use abuseio\scart\classes\scheduler\scartSchedulerCreateReports;
 use abuseio\scart\classes\scheduler\scartSchedulerUpdateWhois;
 use abuseio\scart\models\Manual;
 
-use Symfony\Component\Debug\Exception\FatalThrowableError;
 use System\Classes\PluginBase;
 use System\Classes\SettingsManager;
 use System\Classes\PluginManager;
@@ -93,9 +90,11 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.monitorRealtime', 'abuseio\scart\console\monitorRealtime');
         $this->registerConsoleCommand('abuseio.analyzeTUDELFT', 'abuseio\scart\console\analyzeTUDELFT');
         $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
+        $this->registerConsoleCommand('abuseio.setMaintenance', 'abuseio\scart\console\setMaintenance');
 
         $this->registerConsoleCommand('abuseio.iccamApi3', 'abuseio\scart\console\iccamApi3');
 
+        $this->registerConsoleCommand('abuseio.testChrome', 'abuseio\scart\console\testChrome');
     }
 
     public function registerPermissions() {
@@ -342,6 +341,14 @@ class Plugin extends PluginBase {
         return $ertmenu;
     }
 
+    private function logError($exeception,$errtype='Exeception') {
+
+        $errmsg = "E-$errtype on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
+        scartLog::logLine($errmsg);
+        scartLog::errorMail($errmsg, $exeception,"RuntimeException");
+        return "FATAL '$errtype' ERROR " . Config::get('abuseio.scart::errors.display_user','Error found');
+    }
+
     public function boot() {
 
         // patch for phpwhois library -> @TO-DO setup own phpwhois
@@ -360,37 +367,23 @@ class Plugin extends PluginBase {
 
         // begin with error handlers
         App::error(function(RuntimeException $exeception) {
-            $errmsg = "E-RuntimeException on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
-            scartLog::logLine($errmsg);
-            scartLog::errorMail($errmsg, $exeception,"RuntimeException");
-            $reterror = 'APPLICATION Runtime ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
-            return $reterror;
+            return $this->logError($exeception,'RuntimeException');
         });
         App::error(function(ErrorException $exeception) {
-            $errmsg = "E-ErrorException on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
-            scartLog::logLine($errmsg);
-            scartLog::errorMail($errmsg, $exeception, "ErrorException");
-            $reterror = 'APPLICATION ErrorException ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
-            return $reterror;
+            return $this->logError($exeception,'ErrorException');
         });
         App::error(function(SystemException $exeception) {
-            $errmsg = "E-SystemException on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
-            scartLog::logLine($errmsg);
-            scartLog::errorMail($errmsg, $exeception, "SystemException");
-            $reterror = 'APPLICATION SystemException ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
-            return $reterror;
+            return $this->logError($exeception,'SystemException');
         });
-        App::error(function(FatalThrowableError $exeception) {
-            $errmsg = "E-FatalThrowableError exception on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
-            scartLog::logLine($errmsg);
-            scartLog::errorMail($errmsg, $exeception, "FatalThrowableError exception");
-            return 'FATAL ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
+        App::error(function(ApplicationException $exeception) {
+            return $this->logError($exeception,'ApplicationException');
         });
-        App::fatal(function($exeception) {
-            $errmsg = "E-Fatal exception on line " . $exeception->getLine() . " in " . $exeception->getFile() . "; message: " . $exeception->getMessage();
-            scartLog::logLine($errmsg);
-            scartLog::errorMail($errmsg, $exeception, "Fatal exception");
-            return 'FATAL ERROR ' . Systemconfig::get('abuseio.scart::errors.error_display_user','Error found');
+        // disable -> only get specific throw, validation
+        //App::error(function(\Throwable $exeception) {
+        //    return $this->logError($exeception,'Throwable');
+        //});
+        App::fatal(function(\Exception $exeception) {
+            return $this->logError($exeception,'Exception');
         });
 
         // Check if we are currently in backend module.

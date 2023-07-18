@@ -1,6 +1,6 @@
 <?php
  $height = abuseio\scart\classes\helpers\scartImage::getImageSizeAttr($form->model->input,500);
- $img = abuseio\scart\classes\browse\scartBrowser::getImageBase64($form->model->input->url, $form->model->input->url_hash);
+ $img = abuseio\scart\classes\browse\scartBrowser::getImageCache($form->model->input->url, $form->model->input->url_hash);
 // echo $toolbar->render();
 ?>
 

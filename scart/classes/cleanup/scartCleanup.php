@@ -151,12 +151,11 @@ class scartCleanup {
 
     public static function cleanupOrphan() {
 
-        // Orphan = (not mainurl input without a (active) connection in input_parent)
-
         $cnt = 0;
-        // status_code = grade or schedule_scrape
 
         Try {
+
+            // 1: Orphan = (image/video url input without a (active) connection in input_parent)
 
             $orphans = Db::select("SELECT id FROM ".SCART_INPUT_TABLE." WHERE url_type <> 'mainurl'
                  AND ".SCART_INPUT_TABLE.".deleted_at IS NULL

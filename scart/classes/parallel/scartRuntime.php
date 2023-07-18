@@ -34,9 +34,14 @@ class scartRuntime {
         // scartSchedulerSendAlerts is monitoring realtime operation and alert operator if tasks are stuck
         $this->channel = Channel::make($this->name,$this->maxChannel);
         $basepath = base_path();
-        $task = require $taskfile;
+        // dummy task
+        $task = function($taskname,$basepath) {
+            scartLog::logLine("E-Empty task!?");
+        };
+        // include specific taskfile
+        require $taskfile;
         $future = $this->runtime->run($task,[$this->name,$basepath]);
-        scartLog::logLine("D-scartRuntime[$this->name]; init task (with channel) created");
+        scartLog::logLine("D-scartRuntime[$this->name]; init task '$taskfile' (with channel '$this->name') created");
         $this->running += 1;
         return $future;
     }

@@ -314,17 +314,13 @@ class scartSendNTD {
 
                                             if (trim($abuseemail)!='') {
 
-                                                // nb: constrain that msg_abusecontact contains a valid email address
+                                                // note: constrain that msg_abusecontact contains a valid email address
                                                 $to = $ntd->msg_abusecontact = $abuseemail;
 
                                                 // add filenumber ref to subject
                                                 $ntd->msg_subject = "[$ntd->filenumber] " . $ntd->msg_subject;
 
-                                                // 2020/1/15/Gs: check option
-
-                                                // 2020/3/10/Gs: remove NOTE; sometimes privileges info is included
-
-                                                // 2020/5/15/Gs: special treatement of police
+                                                // special treatement of police
                                                 $isPolice = ($abusecontact->police_contact);
 
                                                 $ntdurls = Ntd_url::where('ntd_id',$ntd->id)->get();
@@ -340,6 +336,9 @@ class scartSendNTD {
                                                 foreach ($ntdurls AS $ntdurl) {
                                                     $record = Input::find($ntdurl->record_id);
                                                     if ($record) {
+
+                                                        // Note: in this stage only urls are included which are still online
+
                                                         if ($isPolice) {
                                                             $reason = $record->police_reason;
                                                         } else {
@@ -553,13 +552,15 @@ class scartSendNTD {
 
         scartLog::logLine("D-schedulerSendNTD; validateWhois for ntd_id=$ntd->id, abuseemail=$abuseemail ");
 
-        // collect domains
-        $proxy_update_domains = [];
+        // collect domains for optimalization of verify/whois/proxyAPI calls
+        $proxy_update_domains = $notchanged_domains = [];
 
         $ntdurls = Ntd_url::where('ntd_id',$ntd->id)->get();
         foreach ($ntdurls AS $ntdurl) {
             $record = Input::find($ntdurl->record_id);
             if ($record) {
+
+                // Note: double check here if record has checkonline status? To be sure?
 
                 // set work var
                 $domain = $record->url_host;
@@ -582,42 +583,52 @@ class scartSendNTD {
 
                 // Note: if proxy real IP rule is updated (above) then the verifyWhoIs detects this change and will take action if needed
 
-                // verify WhoIs -> force no database cache
-                $whois = scartWhois::verifyWhoIs($record,true,false);
+                // Note: check domain only once if not changed
 
-                if ($whois['status_success']) {
+                if (!in_array($domain,$notchanged_domains)) {
 
-                    // CHECK IF CHANGED HOSTER
+                    // verify WhoIs -> force no database cache
+                    $whois = scartWhois::verifyWhoIs($record,true,false);
 
-                    if ($whois[SCART_HOSTER . '_changed']) {
+                    if ($whois['status_success']) {
 
-                        scartLog::logLine("D-schedulerSendNTD; WhoIs changed for ntdurl_id=$ntdurl->id, record_type=$ntdurl->record_type, record_id=$ntdurl->record_id");
+                        // CHECK IF CHANGED HOSTER
 
-                        // log change of hoster
-                        $record->logText($whois[SCART_HOSTER . '_changed_logtext']);
+                        if ($whois[SCART_HOSTER . '_changed']) {
 
-                        $status = (($whois[SCART_HOSTER . '_changed_logtext']!='') ? $whois[SCART_HOSTER . '_changed_logtext'] : '');
-                        $status = "Stop sending NTD - check analist (CHANGED) - $status";
-                        scartLog::logLine("D-$status");
+                            scartLog::logLine("D-schedulerSendNTD; WhoIs changed for ntdurl_id=$ntdurl->id, record_type=$ntdurl->record_type, record_id=$ntdurl->record_id");
 
-                        // be sure this url is removed from (any) NTD
-                        Ntd::removeUrlgrouping($record->url);
+                            // log change of hoster
+                            $record->logText($whois[SCART_HOSTER . '_changed_logtext']);
 
-                        // log old/new for history
-                        $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_ABUSECONTACT_CHANGED,"Detected hoster change for url within NTD");
+                            $status = (($whois[SCART_HOSTER . '_changed_logtext']!='') ? $whois[SCART_HOSTER . '_changed_logtext'] : '');
+                            $status = "Stop sending NTD - check analist (CHANGED) - $status";
+                            scartLog::logLine("D-$status");
 
-                        // set waiting for analist
-                        $record->status_code = SCART_STATUS_ABUSECONTACT_CHANGED;
+                            // be sure this url is removed from (any) NTD
+                            Ntd::removeUrlgrouping($record->url);
 
-                        $record->logText($status);
-                        $record->logText("Set status_code on: " . $record->status_code);
+                            // log old/new for history
+                            $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_ABUSECONTACT_CHANGED,"Detected hoster change for url within NTD");
 
-                    }
+                            // set waiting for analist
+                            $record->status_code = SCART_STATUS_ABUSECONTACT_CHANGED;
 
-                    // always save because of possible changes in scartWhois::verifyWhoIs
-                    $record->save();
+                            $record->logText($status);
+                            $record->logText("Set status_code on: " . $record->status_code);
 
-                }  // ignore
+                        } else {
+                            $notchanged_domains[$domain] = $domain;
+                        }
+
+                        // always save because of possible changes in scartWhois::verifyWhoIs
+                        $record->save();
+
+                    }  // ignore
+
+                } else {
+                    //scartLog::logLine("D-schedulerSendNTD; hoster of '$domain' not  changed - skip verify");
+                }
 
             } else {
                 scartLog::logLine("E-schedulerSendNTD; cannot find record from NTD-url; ntdurl=$ntdurl->id, record_type=$ntdurl->record_type, record_id=$ntdurl->record_id");

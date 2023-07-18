@@ -3,11 +3,19 @@ namespace abuseio\scart\classes\scheduler;
 
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\classes\online\scartCheckOnline;
+use abuseio\scart\Models\Maintenance;
 use Config;
 
 use abuseio\scart\models\Systemconfig;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartAlerts;
+
+/**
+ * SendAlerts
+ *
+ * General scheduler for alerts and monitor purposes
+ *
+ */
 
 class scartSchedulerSendAlerts extends scartScheduler {
 
@@ -16,6 +24,8 @@ class scartSchedulerSendAlerts extends scartScheduler {
         if (SELF::startScheduler('SendAlerts', 'sendalerts')) {
 
             try {
+
+                // Check if there are alerts to be send
 
                 $send_alerts_info  = Systemconfig::get('abuseio.scart::scheduler.sendalerts.info', 15);
                 if (scartAlerts::timeForSend(SCART_ALERT_LEVEL_INFO, $send_alerts_info) ) {
@@ -32,9 +42,20 @@ class scartSchedulerSendAlerts extends scartScheduler {
                     scartAlerts::sendAlerts(SCART_ALERT_LEVEL_ADMIN);
                 }
 
+                // Monitoring the status of the system
+
+                $iccammaintenance = Maintenance::checkICCAMdisabled();
+                if ($iccammaintenance!==null) {
+                    if ($iccammaintenance) {
+                        scartLog::logLine("D-schedulerSendAlerts; ICCAM maintenance; set ICCAM active on false");
+                        Systemconfig::set('abuseio.scart::scheduler.importexport.iccam_active',false);
+                    } else {
+                        scartLog::logLine("D-schedulerSendAlerts; ICCAM maintenance; set ICCAM active on true");
+                        Systemconfig::set('abuseio.scart::scheduler.importexport.iccam_active',true);
+                    }
+                }
+
                 /**
-                 * Do some monitoring of the status of the system
-                 *
                  * - check if realtime workers are not behide workload
                  * - check if no (long) outstanding checkonline-locks
                  *

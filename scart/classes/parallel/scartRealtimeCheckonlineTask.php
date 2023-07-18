@@ -27,8 +27,9 @@ use abuseio\scart\classes\whois\scartWhois;
 use abuseio\scart\classes\whois\scartRIPEdb;
 use abuseio\scart\models\Abusecontact;
 use abuseio\scart\models\Addon;
+use abuseio\scart\classes\browse\scartBrowser;
 
-return function ($taskname,$basepath) {
+$task = function ($taskname,$basepath) {
 
     // bootstrap -> init else we have no (laravel app) context
     $errtxt = require_once $basepath.'/plugins/abuseio/scart/classes/parallel/scartRealtimeBootstrap.php';
@@ -65,12 +66,12 @@ return function ($taskname,$basepath) {
                         while ($run) {
 
                             $count = scartRealtimeCheckonline::getNamedCount($taskname);
-                            scartLog::logLine("D-" . scartTask::$logname . "; reading messages (count=$count) on channel '$taskname'");
+                            scartLog::logLine("D-" . scartTask::$logname . "; reading filenumber (count=$count) on channel '$taskname'");
                             $filenumber = $runtime->readChannel();
 
-                            scartLog::logLine("D-" . scartTask::$logname . "; received message '$filenumber'");
+                            scartLog::logDump("D-" . scartTask::$logname . "; received filenumber=",$filenumber);
                             $record = '';
-                            if ($filenumber) {
+                            if (!is_array($filenumber) && $filenumber) {
                                 if (trim($filenumber) == 'stop') {
                                     scartLog::logLine("D-" . scartTask::$logname . "; got STOP message");
                                     $run = false;
@@ -102,13 +103,21 @@ return function ($taskname,$basepath) {
 
                                         }
 
-                                        $processtime = (microtime(true) - $startTime);
-                                        scartLog::logLine("D-" . scartTask::$logname . "; filenumber '$filenumber' (base=$record->url_base) process time (sec): ".round($processtime,3));
+                                        $processtime = round(microtime(true) - $startTime,3);
+                                        scartLog::logLine("D-" . scartTask::$logname . "; filenumber '$filenumber' (base=$record->url_base) process time (sec): $processtime");
+
+                                        // Note: other solution for below; first push checkonline lock, then sent message
+                                        // To prefend race condition timing problem with checkonline lock, let the minimum working time be 0.5 secs
+                                        //if ($processtime < 0.5) {
+                                        //    scartLog::logLine("D-" . scartTask::$logname . "; sleep 0.5 secs to prefend race condition ($processtime < 0.5) ");
+                                        //    sleep(0.5);
+                                        //}
 
                                         // report job done
                                         $monitorruntime->sendChannel([
                                             'sender' => scartTask::$logname,
                                             'record_id' => $record->id,
+                                            'filenumber' => $record->filenumber,
                                             'set' => false,
                                             'taskname' => $taskname,
                                         ]);
@@ -117,6 +126,8 @@ return function ($taskname,$basepath) {
                                         scartLog::logLine("W-" . scartTask::$logname . "; input with filenumber '$filenumber' not found");
                                     }
                                 }
+                            } else {
+                                scartLog::logLine("W-" . scartTask::$logname . "; empty or unknown received message");
                             }
 
                             /**
@@ -126,10 +137,10 @@ return function ($taskname,$basepath) {
                              * - scartLog
                              * - Abusecontacts
                              * - Addon
+                             * - browser
                              * Else we blowup the memory...
                              *
-                             * Count > 100 input records
-                             * Can also be time (6 or 12 hours)
+                             * Trigger (arbitraire) Count > 100 input records
                              *
                              */
 
@@ -141,6 +152,7 @@ return function ($taskname,$basepath) {
                                 scartWhois::resetCache();
                                 Abusecontact::resetCache();
                                 Addon::resetCache();
+                                scartBrowser::stopBrowser();
                                 $cnt = 0;
                             }
 

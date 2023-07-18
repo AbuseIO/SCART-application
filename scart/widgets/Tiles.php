@@ -381,9 +381,9 @@ class Tiles extends WidgetBase
             foreach ($items AS $item) {
                 $imgsize = scartImage::getImageSizeAttr($item,$colimgsize);
                 if ($item->url_type == SCART_URL_TYPE_IMAGEURL) {
-                    $src = scartBrowser::getImageBase64($item->url,$item->url_hash);
+                    $src = scartBrowser::getImageCache($item->url,$item->url_hash);
                 } else {
-                    $src = scartBrowser::getImageBase64($item->url,$item->url_hash, false,SCART_IMAGE_IS_VIDEO);
+                    $src = scartBrowser::getImageCache($item->url,$item->url_hash, false,SCART_IMAGE_IS_VIDEO);
                 }
                 $images[] = [
                     'data' => $src,

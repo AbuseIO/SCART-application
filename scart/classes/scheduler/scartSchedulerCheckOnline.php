@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\scheduler;
 
+use abuseio\scart\classes\browse\scartBrowser;
 use Config;
 
 use Db;
@@ -59,14 +60,16 @@ class scartSchedulerCheckOnline extends scartScheduler {
                 $lastrec = 0;
             }
 
+            // init/start browser
+            scartBrowser::startBrowser();
+
             scartLog::logLine("D-scartSchedulerCheckOnline; checkref=$checkref; check_online_every $check_online_every minute(s); lastrec: $lastrec, take: $scheduler_process_count, cntrecs: $cntrecs ");
 
+            $cntdone = 0;
             $records = $inputs
                 ->skip($lastrec)
                 ->take($scheduler_process_count)
                 ->get();
-
-            $cntdone = 0;
             foreach ($records AS $record) {
 
                 $result = [];
@@ -86,6 +89,9 @@ class scartSchedulerCheckOnline extends scartScheduler {
                 $cntdone += 1;
 
             }
+
+            // stop browser
+            scartBrowser::stopBrowser();
 
             // save last record count
             if ($cntdone == $scheduler_process_count && $lastrec < $cntrecs ) {
@@ -127,13 +133,16 @@ class scartSchedulerCheckOnline extends scartScheduler {
 
     public static function Retry() {
 
-        scartLog::logLine("D-scartSchedulerCheckOnline; get Retry ");
+        // min 15mins before retry again
+        $last5min = date('Y-m-d H:i:s', strtotime("-15 minutes"));
+        scartLog::logLine("D-scartSchedulerCheckOnline; get Retry (updated_at < '$last5min')");
         return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
             ->where('grade_code',SCART_GRADE_ILLEGAL)
             ->whereNull('checkonline_lock')
             ->where(function($query) {
                 $query->where('browse_error_retry', '<>', 0)->orWhere('whois_error_retry', '<>', 0);
             })
+            ->where('updated_at','<',$last5min)
             ->orderBy('browse_error_retry','DESC')->orderBy('whois_error_retry','DESC')->orderBy('received_at','ASC');
     }
 

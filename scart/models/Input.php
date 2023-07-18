@@ -190,11 +190,11 @@ class Input extends scartModel
 
         $src = SCART_IMAGE_NOT_FOUND;
         if ($this->url_type == SCART_URL_TYPE_IMAGEURL) {
-            $src = scartBrowser::getImageBase64($this->url,$this->url_hash);
+            $src = scartBrowser::getImageCache($this->url,$this->url_hash);
         } elseif ($this->url_type == SCART_URL_TYPE_VIDEOURL) {
-            $src = scartBrowser::getImageBase64($this->url,$this->url_hash, false,SCART_IMAGE_IS_VIDEO);
+            $src = scartBrowser::getImageCache($this->url,$this->url_hash, false,SCART_IMAGE_IS_VIDEO);
         } else {
-            $src = scartBrowser::getImageBase64($this->url,$this->url_hash, false,SCART_IMAGE_MAIN_NOT_FOUND);
+            $src = scartBrowser::getImageCache($this->url,$this->url_hash, false,SCART_IMAGE_MAIN_NOT_FOUND);
         }
 
         if ($this->url_image_width == 0 || $this->url_image_height == 0) {
@@ -215,11 +215,11 @@ class Input extends scartModel
 
     private $_generalfields = [
         'url' => '#url',
+        'url_type' => 'url type',
         'url_referer' => 'referer',
         'filenumber' => 'filenumber',
-        'type_code' => 'input',
+        'type_code' => 'type',
         'source_code' => 'source',
-        'url_type' => 'type',
     ];
     private $_hosterfields = [
         'host_owner' => 'hoster',
@@ -571,7 +571,8 @@ class Input extends scartModel
      * @return mixed
      */
     public static function getItemOnUrl($url) {
-        return Input::where('url',$url)->where('url_type','<>',SCART_URL_TYPE_MAINURL)->first();
+        //return Input::where('url',$url)->where('url_type','<>',SCART_URL_TYPE_MAINURL)->first();
+        return Input::where('url',$url)->first();
     }
 
     // Extra fields

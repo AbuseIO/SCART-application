@@ -1,9 +1,9 @@
 <div class="loading-indicator-container size-small pull-right">
     <div class="control-pagination">
-        <span class="page-iteration">
-
-        </span>
         <?php if ($pageLast > 1): ?>
+            <span class="page-iteration">
+                <?= e(trans('backend::lang.list.pagination', ['from' => $pageFrom, 'to' => $pageTo, 'total' => $recordTotal])) ?>
+            </span>
             <?php if ($pageCurrent > 1): ?>
                 <a
                     href="javascript:;"

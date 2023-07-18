@@ -47,6 +47,7 @@ class Seeder6018 extends Seeder
             ['iccam_field' => "action",'iccam_id' => "2",'iccam_name' => "ReportedToISP",'scart_field' => "actionID",'scart_code' => "2",],
             ['iccam_field' => "action",'iccam_id' => "3",'iccam_name' => "Removed",'scart_field' => "actionID",'scart_code' => "3",],
             ['iccam_field' => "action",'iccam_id' => "4",'iccam_name' => "Unavailable",'scart_field' => "actionID",'scart_code' => "4",],
+            ['iccam_field' => "action",'iccam_id' => "0",'iccam_name' => "Moved",'scart_field' => "actionID",'scart_code' => "5",],
             ['iccam_field' => "action",'iccam_id' => "6",'iccam_name' => "NotIllegal",'scart_field' => "actionID",'scart_code' => "7",],
             ['iccam_field' => "classification",'iccam_id' => "1",'iccam_name' => "Baseline CSAM",'scart_field' => "ClassificationID",'scart_code' => "BA",],
             ['iccam_field' => "classification",'iccam_id' => "2",'iccam_name' => "National CSAM",'scart_field' => "ClassificationID",'scart_code' => "NA",],

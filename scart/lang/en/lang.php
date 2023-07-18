@@ -32,6 +32,7 @@ return [
         'checkonline' => 'Checkonline',
         'settings' => 'Settings',
         'config' => 'Config',
+        'maintenance' => 'Maintenance',
         'addons' => 'Addons',
         'users' => 'Users',
         'blockeddays' => 'Blocked days',

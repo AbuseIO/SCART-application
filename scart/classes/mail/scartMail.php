@@ -176,6 +176,7 @@ class scartMail {
 
             // NB: \Expection is important, else not in this catch when error in Mail
             scartLog::errorMail("Error sendNTD (to=$to,from=$from): error=" . $err->getMessage(), $err);
+            $message = '';
 
         }
 
