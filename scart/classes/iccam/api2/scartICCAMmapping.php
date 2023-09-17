@@ -36,16 +36,37 @@ class scartICCAMmapping {
             try {
 
                 if ($record->grade_code==SCART_GRADE_IGNORE || $record->grade_code==SCART_GRADE_NOT_ILLEGAL ) {
+
+                    scartLog::logLine("W-insertUpdateICCAM; filenumber=$record->filenumber; grade_code=IGNORE/NOT_ILLEGAL - skip update report");
+
                     // strange when here -> processed in Grade->onDone()
+                    // NOTE: can be because of switch back from ICCAM V3 tot ICCAM v2 mode
+
+                    $reportId = scartICCAMinterface::getICCAMreportID($record->reference);
+                    if ($reportId) {
+
+                        scartLog::logLine("D-insertUpdateICCAM; filenumber=$record->filenumber; add ICCAM action NOT-ILLEGAL ");
+
+                        // addAction NotIllegal
+                        scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                            'record_type' => class_basename($record),
+                            'record_id' => $record->id,
+                            'object_id' => $record->reference,
+                            'action_id' => SCART_ICCAM_ACTION_NI,     // NOT_ILLEGAL
+                            'country' => '',                          // hotline default
+                            'reason' => 'SCART reported NI',
+                        ]);
+
+                    }
+
                     $reportID = ' - CLASSIFY IS IGNORE/NOT_ILLEGAL';
-                    scartLog::logLine("W-insertUpdateICCAM; filenumber=$record->filenumber; grade_code=IGNORE/NOT_ILLEGAL - skip");
                     return $reportID;
                 }
 
                 $hostabusecontact = Abusecontact::find($record->host_abusecontact_id);
                 if (!$hostabusecontact) {
                     $reportID = ' - HOSTER NOT SET';
-                    scartLog::logLine("W-insertUpdateICCAM; filenumber=$record->filenumber; hoster not set - skip");
+                    scartLog::logLine("W-insertUpdateICCAM; filenumber=$record->filenumber; hoster not set - skip update report");
                     return $reportID;
                 }
 
@@ -109,13 +130,15 @@ class scartICCAMmapping {
                     if ($record->reference != '') {
                         $iccamdata['ReportID'] = scartICCAMinterface::getICCAMreportID($record->reference);
                         $reportID = scartICCAM::updscartICCAM($iccamdata);
+                        // if empty string, then no error on update
+                        if ($reportID==='') $reportID = $iccamdata['ReportID'];
                         $actiontxt= 'update';
                     } else {
                         $reportID = scartICCAM::insscartICCAM($iccamdata);
                         $actiontxt= 'insert';
                     }
 
-                    if ($reportID===false) {
+                    if (empty($reportID)) {
 
                         scartLog::logLine("W-insertUpdateICCAM; action=$actiontxt, filenumber='$record->filenumber'; error exporting");
 

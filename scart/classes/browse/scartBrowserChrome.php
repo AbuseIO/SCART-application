@@ -6,9 +6,7 @@
  * NOTE: SCRAPE_CACHE IS ALWAYS USED FOR THIS PROVIDER
  *
  * Provider Functions
- * - getData(url,referer)
  * - getImages(url,referer,screenshot)
- * - getImageData(url)
  *
  */
 
@@ -238,9 +236,9 @@ class scartBrowserChrome extends scartBrowser {
             }
 
         } catch (OperationTimedOut $err) {
-            SELF::$_lasterror = $err->getMessage();
-            // timeout is warning
-            scartLog::logLine("W-scartBrowserChrome.getImageScreenshot timeout message: ".SELF::$_lasterror );
+            // timeout is server offline or dead -> image(s) not found
+            scartLog::logLine("W-scartBrowserChrome.getImageScreenshot timeout message: ".$err->getMessage());
+            $image - false;
         } catch (\Exception $err) {
             SELF::$_lasterror = $err->getMessage();
             scartLog::logLine("E-scartBrowserChrome.getImageScreenshot error: line=".$err->getLine()." in ".$err->getFile().", message: ".SELF::$_lasterror );
@@ -365,9 +363,9 @@ class scartBrowserChrome extends scartBrowser {
             }
 
         } catch (OperationTimedOut $err) {
-            SELF::$_lasterror = $err->getMessage();
-            // timeout is warning
-            scartLog::logLine("W-scartBrowserChrome.getImageFromContent timeout message: ".SELF::$_lasterror );
+            // timeout is server offline or dead -> image(s) not found
+            scartLog::logLine("W-scartBrowserChrome.getImageFromContent timeout message: ".$err->getMessage());
+            $image - false;
         } catch (\Exception $err) {
             SELF::$_lasterror = $err->getMessage();
             scartLog::logLine("E-scartBrowserChrome.getImageFromContent error: line=".$err->getLine()." in ".$err->getFile().", message: ".SELF::$_lasterror );
@@ -418,6 +416,7 @@ class scartBrowserChrome extends scartBrowser {
 
                 $step = 3;
 
+                // catch errors, but ignore errors because of false/corrupt html documents
                 try {
 
                     // catch possible javascript errors - ignore
@@ -429,6 +428,7 @@ class scartBrowserChrome extends scartBrowser {
                     // timeout is warning
                     scartLog::logLine("W-scartBrowserChrome.getImages evaluate timeout: after step=$step, message: ".$err->getMessage() );
                 } catch (\Exception $err) {
+                    // evaluation error is warning (javascript can be corrupt)
                     scartLog::logLine("W-scartBrowserChrome.getImages evaluate error: after step=$step, line=".$err->getLine()." in ".$err->getFile().", message: ".$err->getMessage() );
                 }
 
@@ -521,14 +521,14 @@ class scartBrowserChrome extends scartBrowser {
                 $step = 9;
 
                 // video
-                scartLog::logLine("D-scartBrowserChrome.getData; got video '$contentType'");
+                scartLog::logLine("D-scartBrowserChrome.getImages; got video '$contentType'");
 
                 $image = self::getImageScreenshot($page,$url);
                 if ($image && self::$_lasterror == '') $images[] = $image;
 
             } else {
 
-                scartLog::logLine("W-scartBrowserChrome.getData; UNKNOWN contentType '$contentType' - skip");
+                scartLog::logLine("W-scartBrowserChrome.getImages; UNKNOWN contentType '$contentType' - skip");
 
             }
 
@@ -539,9 +539,9 @@ class scartBrowserChrome extends scartBrowser {
             $page->close();
 
         } catch (OperationTimedOut $err) {
-            SELF::$_lasterror = $err->getMessage();
-            // timeout is warning
-            scartLog::logLine("W-scartBrowserChrome.getImages timeout: after step=$step, message: ".SELF::$_lasterror );
+            // timeout is server offline or dead -> image(s) not found
+            scartLog::logLine("W-scartBrowserChrome.getImages timeout '$url': after step=$step, message: ".$err->getMessage());
+            $images = [];
         } catch (\Exception $err) {
             SELF::$_lasterror = $err->getMessage();
             scartLog::logLine("E-scartBrowserChrome.getImages error: after step=$step, line=".$err->getLine()." in ".$err->getFile().", message: ".SELF::$_lasterror );
@@ -602,14 +602,11 @@ class scartBrowserChrome extends scartBrowser {
         return $response;
     }
 
-
+    /** To-Do; clean below because obsolute (?) **/
 
     /**
      * getImageData
-     *
      * Get image (url) direct
-     *
-     * DataDragin -> reuse getImages; first image = image
      *
      * @param $data
      * @param string $referer
@@ -621,8 +618,6 @@ class scartBrowserChrome extends scartBrowser {
         // first one
         return (!empty($images)) ? $images[0] : false;
     }
-
-    /** obsolute **/
 
     /**
      * TESTING browse url and get data (url response)

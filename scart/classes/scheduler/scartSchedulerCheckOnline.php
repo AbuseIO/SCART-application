@@ -76,7 +76,7 @@ class scartSchedulerCheckOnline extends scartScheduler {
 
                 try {
 
-                    $result = scartCheckOnline::doCheckIllegalOnline($record, $cntrecs,($cntdone + 1 + $lastrec));
+                    $result = scartCheckOnline::doCheckIllegalOnline($record, $cntrecs,($cntdone + 1 + $lastrec),'scheduler');
 
                 } catch (\Exception $err) {
                     scartLog::logLine("E-scartSchedulerCheckOnline exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );

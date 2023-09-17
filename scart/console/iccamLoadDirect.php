@@ -166,10 +166,6 @@ class iccamLoadDirect extends Command
         return $this->insertERTaction2ICCAM($reportID,$actionID,$country,$reason);
     }
 
-    function getICCAMreportID($reference) {
-        return trim(str_replace(' (ICCAM)','',$reference));
-    }
-
     function insertERTaction2ICCAM($reportID,$actionID,$country,$reason='SCART API action') {
 
         $result = '';

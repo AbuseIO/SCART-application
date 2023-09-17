@@ -88,13 +88,14 @@ class ICCAMcurl {
 
     static function setHeader($contentLength=0) {
 
-        curl_setopt(self::$_channel,CURLOPT_HTTPHEADER, array(
-                'Authorization: Bearer '.self::$_token,
-                'Content-Type: application/json',
-                'accept: application/json',
-                'Content-Length: ' . $contentLength
-            )
+        $header = array(
+            'Authorization: Bearer '.self::$_token,
+            'Content-Type: application/json',
+            'accept: application/json',
+            'Content-Length: ' . $contentLength
         );
+        //if (self::$_debug) scartLog::logDump("D-ICCAMurl (setHeader); header=",$header);
+        curl_setopt(self::$_channel,CURLOPT_HTTPHEADER,$header);
     }
 
     /**
@@ -120,16 +121,23 @@ class ICCAMcurl {
         $info = curl_getinfo(self::$_channel);
         if (isset($info['http_code'])) {
             if (self::$_debug) scartLog::logDump("D-ICCAMurl (call_curl); http_code=",$info['http_code']);
-            if ($info['http_code'] >= '400' && $info['http_code'] <= '405') {
+            // if ERROR then log error and skip transaction - if tmp error then log error and retry transaction (offline status)
+            if (in_array($info['http_code'],['500','400','401','403'])) {
 
-                // iCCAM error reporting
+                // server error reporting
+
+                // 500; server error
+                // 400; failure request
+                // 401; unauthorized (sub) call
+                // 403; forbidden call
 
                 self::$_curlerror = true;
                 $result = @json_decode($result);
                 if (isset($result->errors)) {
                     $errors = $result->errors;
                 } else {
-                    $errors = '(unknown)';
+                    $errors = '(unknown); http_code=' . $info['http_code'];
+                    scartLog::logDump("W-ICCAMurl; $errors; result=", $result);
                 }
                 $error = print_r($errors,true);
                 self::$_curlerrortext = $error;
@@ -139,6 +147,7 @@ class ICCAMcurl {
 
             } elseif ($info['http_code'] != '200') {
 
+                // offline - retry
                 self::$_curlerroroffline = true;
 
                 $error = "not valid http code: ".$info['http_code'].", text: ".self::httpCodeToText($info['http_code']);
@@ -154,6 +163,7 @@ class ICCAMcurl {
 
         } elseif (curl_errno(self::$_channel) !== 0) {
 
+            // offline - retry
             self::$_curlerroroffline = true;
             $error = "CURL ERROR (no): ".curl_errno(self::$_channel);
             scartLog::logLine("W-ICCAMurl; $error");
@@ -184,6 +194,8 @@ class ICCAMcurl {
                 scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
             }
             scartUsers::setGeneralOption('ICCAM_CURL_ERROR', $sendalert);
+
+            scartLog::logLine("W-ICCAMur; error retry count: $sendalert");
 
         } elseif (!self::$_curlerror)  {
 
@@ -233,14 +245,10 @@ class ICCAMcurl {
      * @return bool|mixed|string
      * @throws IccamException
      */
-    public static function send ($request = 'GET', $action='', $postdata='')
-    {
+    public static function send ($request = 'GET', $action='', $postdata='') {
 
         $url = self::$_urlroot . $action;
-        if (self::$_debug) scartLog::logLine("D-ICCAMurl: $request url=$url");
-
         self::init($url);
-
         if ($request == 'GET') {
             // default GET
             curl_setopt(self::$_channel, CURLOPT_CUSTOMREQUEST, $request);
@@ -258,9 +266,8 @@ class ICCAMcurl {
         }
         // set header with Bearer and length of Json data
         self::setHeader($contentLength);
-
+        if (self::$_debug) scartLog::logLine("D-ICCAMurl: $request url=$url");
         $result = self::call_curl();
-
         return $result;
     }
 

@@ -75,7 +75,7 @@ class testAddon extends Command
                                             $record->url_ip = scartWhois::getIP($host);
                                             $record->filenumber = 'N' . sprintf('%010d', 1);
 
-                                            $result = Addon::run($addon,$record);
+                                            $result = Addon::run($addon,$record,true);
                                             $cnt += 1;
 
                                             $this->info("testAddon; addon:run($codename); ip=$record->url_ip; result=" . print_r($result,true) );

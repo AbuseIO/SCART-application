@@ -92,7 +92,7 @@ class scartICCAM {
 
         $result = curl_exec(self::$_channel);
 
-        // check always also http return code
+        // check always also http return code if result
         if ($result) {
             $info = curl_getinfo(self::$_channel);
             if (isset($info['http_code'])) {

@@ -119,7 +119,7 @@ class Startpage extends scartController
             'statusProviders',
             'statusInputWeek',
         ];
-        scartLog::logLine("D-resetLoadCache; " . print_r($caches, true) );
+        scartLog::logLine("D-resetLoadCache; do a refill ");
         foreach ($caches AS $cache) {
             $this->setCache($cache,'');
             //scartLog::logLine("D-resetLoadCache($cache) " );

@@ -3,6 +3,8 @@ namespace abuseio\scart\addon;
 
 use abuseio\scart\classes\browse\scartCURLcalls;
 use abuseio\scart\classes\helpers\scartLog;
+use abuseio\scart\classes\helpers\scartUsers;
+use abuseio\scart\classes\mail\scartAlerts;
 
 /**
  * Cloudflare API
@@ -108,7 +110,6 @@ class cloudflareProxyservice {
                         SELF::$_lastmessage = "got real IP from cloudflare ";
                     }
 
-
                 }
 
             }
@@ -132,9 +133,9 @@ class cloudflareProxyservice {
         return SELF::$_lastsuccess;
     }
 
-    static function callCloudflare($url) {
+    static function callCloudflare($url,$debug=false) {
 
-        $success = false;
+        $success = $error = false;
 
         $extra = [
             CURLOPT_HTTPHEADER => [
@@ -144,15 +145,63 @@ class cloudflareProxyservice {
             CURLOPT_HEADEROPT => CURLHEADER_UNIFIED,
         ];
 
-        //scartLog::logLine("D-cloudflareProxyservice; callCURL url='$url' with extra=" . print_r($extra,true) );
+        if ($debug) scartLog::logLine("D-cloudflareProxyservice; callCURL url='$url' with extra=" . print_r($extra,true) );
         scartLog::logLine("D-cloudflareProxyservice; callCURL url='$url' ");
         $result = scartCURLcalls::call($url,$extra);
+        if ($debug) scartLog::logLine("D-cloudflareProxyservice; callCURL result=" . print_r($result,true) );
 
-        if (scartCURLcalls::hasError()) {
-            scartLog::logLine("E-cloudflareProxyservice; curl error=" . scartCURLcalls::getError() );
-        } else {
-            $success = SELF::handleCloudflareResponse($result);
+        $error = scartCURLcalls::hasError();
+
+        if (!$error && $success = SELF::handleCloudflareResponse($result)) {
+
             scartLog::logLine("D-cloudflareProxyservice; return IP=".SELF::$_lastrealIP.", message=" . SELF::$_lastmessage );
+
+            $cloudflareretry = scartUsers::getGeneralOption('CLOUDFLARE_ERROR');
+            if (empty($cloudflareretry)) $cloudflareretry = 0;
+            if ($cloudflareretry > 2) {
+
+                scartLog::logLine("D-cloudflareProxyservice; cloudflare available again; retry=$cloudflareretry");
+
+                $params = [
+                    'reportname' => "CLOUDFLARE RESTORE report ",
+                    'report_lines' => [
+                        'report time: ' . date('Y-m-d H:i:s'),
+                        "cloudflare restore (running again)",
+                        "retry count; $cloudflareretry",
+                    ]
+                ];
+                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+
+                scartUsers::setGeneralOption('CLOUDFLARE_ERROR', '');
+            }
+
+        } else {
+
+            $errortxt = ($error) ? scartCURLcalls::getError() : SELF::$_lastmessage;
+
+            $cloudflareretry = scartUsers::getGeneralOption('CLOUDFLARE_ERROR');
+            if (empty($cloudflareretry)) $cloudflareretry = 0;
+            $cloudflareretry = intval($cloudflareretry) + 1;
+
+            scartLog::logLine("W-cloudflareProxyservice; [retry=$cloudflareretry] error '$errortxt' - server/netwerk/image down!?");
+
+            if ($cloudflareretry == 3 || $cloudflareretry % 12 == 0) {
+
+                $params = [
+                    'reportname' => "CLOUDFLARE ERROR report ",
+                    'report_lines' => [
+                        'report time: ' . date('Y-m-d H:i:s'),
+                        "error: " . $errortxt,
+                        'url: ' . $url,
+                        'retry count: ' . $cloudflareretry,
+                    ]
+                ];
+                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+
+            }
+
+            scartUsers::setGeneralOption('CLOUDFLARE_ERROR', $cloudflareretry);
+
         }
 
         return $success;
@@ -186,7 +235,7 @@ class cloudflareProxyservice {
      * @param $record
      * @return false|string
      */
-    public static function run($record) {
+    public static function run($record,$debug=false) {
 
         $proxyip = SELF::$_lastsuccess = false;
         SELF::$_lastmessage = '';
@@ -200,7 +249,7 @@ class cloudflareProxyservice {
                     $url = SELF::$_endpoint;
                     $url = str_replace('{caseID}',$caseID,$url);
                     $url .= "?hostname=$host";
-                    if (SELF::callCloudflare($url)) {
+                    if (SELF::callCloudflare($url,$debug)) {
                         $proxyip = SELF::$_lastrealIP;
                         SELF::$_lastsuccess = true;
                     }

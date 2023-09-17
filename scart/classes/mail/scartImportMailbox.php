@@ -307,7 +307,7 @@ class scartImportMailbox {
                                     Ntd::removeUrlgrouping($input->url);
                                     $input->logText("Removed from any (grouping) NTD's");
 
-                                    if (scartICCAMinterface::isActive()) {
+                                    if (scartICCAMinterface::isActive() && scartICCAMinterface::hasICCAMreportID($input->reference)) {
 
                                         // ICCAM content removed
                                         scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[

@@ -320,9 +320,4 @@ class Domainrule extends scartModel
         return $resultproxy;
     }
 
-    public function listExtendQuery($query)
-    {
-        $test = 234;
-    }
-
 }

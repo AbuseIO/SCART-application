@@ -98,7 +98,7 @@ class Changed extends scartController {
                     if (scartICCAMinterface::isActive()) {
 
                         // check if valid ICCAM reportID
-                        if (scartICCAMinterface::getICCAMreportID($record->reference)) {
+                        if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
 
                             // get hoster counter -> can be outside NL (MOVE)
                             $country = '';

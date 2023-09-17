@@ -91,10 +91,11 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.analyzeTUDELFT', 'abuseio\scart\console\analyzeTUDELFT');
         $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
         $this->registerConsoleCommand('abuseio.setMaintenance', 'abuseio\scart\console\setMaintenance');
-
         $this->registerConsoleCommand('abuseio.iccamApi3', 'abuseio\scart\console\iccamApi3');
-
         $this->registerConsoleCommand('abuseio.testChrome', 'abuseio\scart\console\testChrome');
+
+        $this->registerConsoleCommand('abuseio.checkICCAMexport', 'abuseio\scart\console\checkICCAMexport');
+
     }
 
     public function registerPermissions() {

@@ -17,12 +17,12 @@ class ICCAMAuthentication {
     private static $_token = '';
     private static $_refreshtoken = '';
     private static $_expiresIn = '';
+    private static $_delayafterlogin = 2;
 
     public static function login($calling='') {
 
-        // do login actiopn if not loggedin or channel empty
-        if (!self::$_loggedin || !ICCAMcurl::hasErrors()) {
-            $calling = ($calling) ? "$calling; " : '';
+        $calling = ($calling) ? "$calling; " : '';
+        if (!self::$_loggedin) {
             ICCAMcurl::connect();
             $result = ICCAMcurl::send('POST','Authentication', [
                 'username' => Systemconfig::get('abuseio.scart::iccam.apiuser', ''),
@@ -36,12 +36,21 @@ class ICCAMAuthentication {
                     $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
                     self::$_expiresIn = time() + intval($refreshsecs);
                     scartLog::logLine("D-".$calling."ICCAMurl(login): token valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
-                    //scartLog::logLine("D-".$calling."token=".self::$_token);
+                    if (self::$_debug) scartLog::logLine("D-".$calling."ICCAMurl(login): token=".self::$_token);
+
+                    // 2023/9/8 delay is needed for ICCAM to be ready for the next (tokenized) ICCAM call
+                    scartLog::logLine("D-".$calling."ICCAMurl(login): delay ".self::$_delayafterlogin." second(s) to give ICCAM time to init this login/token");
+                    sleep(self::$_delayafterlogin);
+
+                } else {
+                    scartLog::logLine("E-".$calling."ICCAMurl(login): no bearerToken received!?");
                 }
             }
             self::$_loggedin = ($result !== false);
         } else {
-            self::$_loggedin = false;
+            // To-Do: if errors then login=false
+            //if (ICCAMcurl::hasErrors()) self::$_loggedin = false;
+            scartLog::logLine("D-".$calling."ICCAMurl(login): reuse login token; valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
         }
         return self::$_loggedin;
     }
@@ -86,8 +95,10 @@ class ICCAMAuthentication {
                 self::$_refreshtoken = (isset($result->refreshToken) ? $result->refreshToken : '');
                 $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
                 self::$_expiresIn = time() + intval($refreshsecs);
+                scartLog::logLine("D-ICCAMurl(refreshToken): token valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
             }
         }
+        return $result;
     }
 
     public static function isLoggedin() {

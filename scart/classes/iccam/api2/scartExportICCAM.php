@@ -72,31 +72,23 @@ class scartExportICCAM {
                                 $record->reference = scartICCAMinterface::setICCAMreportID($ICCAMreportID);
                                 $record->save();
 
-                                $loglines[] = $status_timestamp."exported (insert) SCART report to ICCAM";
+                                $loglines[] = $status_timestamp."exported (insert/update) SCART report to ICCAM";
 
                             } else {
 
-                                $ICCAMreportID = '?';
-
-                                // 2020/6/9/gs: if ICCAM offline then skip
+                                // if ICCAM offline then skip
                                 if (scartICCAM::isOffline()) {
                                     $logline = $status_text = "ICCAM OFFLINE? - CANNOT export to ICCAM - SKIP and RETRY later";
                                     $loglines[] = $status_timestamp.$logline;
                                     scartLog::logLine("W-scartExportICCAM; $logline");
                                     $status = SCART_IMPORTEXPORT_STATUS_EXPORT;
                                     $skip = true;
-                                } elseif ($record->reference == '') {
-                                    $logline = $status_text = "CAN NOT export to ICCAM " . (($ICCAMreportID) ? $ICCAMreportID : ' - already in ICCAM!?');
+                                } else {
+                                    $logline = $status_text = "CAN NOT export to ICCAM $ICCAMreportID" ;
                                     $loglines[] = $status_timestamp.$logline;
                                     scartLog::logLine("W-scartExportICCAM; $logline");
                                     $status = SCART_IMPORTEXPORT_STATUS_ERROR;
-                                    $status_text = "[filenumber=$record->filenumber] ".$logline;
-                                } else {
-                                    // update iccam; result=empty?!
-                                    $loglines[] = $status_timestamp."exported (update) SCART report to ICCAM ";
-                                    $record->logText("(ICCAM) Exported; updated ICCAM");
-                                    // get current ICCAM reportID
-                                    $ICCAMreportID = scartICCAMinterface::getICCAMreportID($record->reference);
+                                    $status_text = "[filenumber=$record->filenumber] ".$status_text;
                                 }
 
                             }
@@ -115,6 +107,7 @@ class scartExportICCAM {
                         if ($record = self::getDataRecord($job['data']) ) {
                             $loglines[] = "url: $record->url ($record->filenumber)";
                             $actionID = $job['data']['action_id'];
+                            $actionname = (isset(scartICCAMfields::$actionMap[$actionID])) ? scartICCAMfields::$actionMap[$actionID] : 'unknown';
                             if ($ICCAMreportID = scartICCAMinterface::getICCAMreportID($record->reference)) {
                                 // ICCAM set action
                                 if (!in_array($ICCAMreportID, $notinonerun)) {
@@ -123,14 +116,14 @@ class scartExportICCAM {
                                     if ($warning = scartICCAMmapping::insertERTaction2ICCAM($ICCAMreportID,$actionID,$record,$county,$reason)) {
 
                                         if (scartICCAM::isOffline()) {
-                                            $logline = $status_text = "ICCAM OFFLINE? - error export action (".scartICCAMfields::$actionMap[$actionID].") report to ICCAM - skip and retry later";
+                                            $logline = $status_text = "ICCAM OFFLINE? - error export action ($actionname) report to ICCAM - skip and retry later";
                                             $loglines[] = $status_timestamp.$logline;
                                             scartLog::logLine("W-scartExportICCAM; $logline");
                                             $status = SCART_IMPORTEXPORT_STATUS_EXPORT;
                                             $skip = true;
                                         } else {
 
-                                            $logline = $status_text = "error export action (".scartICCAMfields::$actionMap[$actionID].") report to ICCAM ";
+                                            $logline = $status_text = "error export action ($actionname) report to ICCAM ";
                                             $loglines[] = $status_timestamp.$logline;
                                             scartLog::logLine("W-scartExportICCAM; $logline");
 
@@ -151,7 +144,7 @@ class scartExportICCAM {
 
                                     } else {
                                         $record->logText("(ICCAM) $reason");
-                                        $logtext = "Export action '".scartICCAMfields::$actionMap[$actionID]."' with reason '$reason' to ICCAM ";
+                                        $logtext = "Export action '$actionname' with reason '$reason' to ICCAM ";
                                         $loglines[] = $status_timestamp.$logtext;
 
                                         // ICCAMreportID no change, force history insert, external (iccam) action add
@@ -165,7 +158,7 @@ class scartExportICCAM {
                                     scartLog::logLine("W-scartExportICCAM; skip this action ($actionID) from ReportId '$ICCAMreportID' - cannot in same ICCAM API run ");
                                 }
                             } else {
-                                $logline = $status_text = "empty (ICCAM) reportID in SCART!?; cannot export action " . scartICCAMfields::$actionMap[$actionID];
+                                $logline = $status_text = "empty (ICCAM) reportID in SCART!?; cannot export action '$actionname'";
                                 scartLog::logLine("W-scartExportICCAM; $logline");
                                 $loglines[] = $status_timestamp.$logline;
                                 $status = SCART_IMPORTEXPORT_STATUS_ERROR;

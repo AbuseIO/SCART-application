@@ -79,7 +79,7 @@ class Police extends scartController
                     // check if ICCAM active (for this record)
 
                     if (scartICCAMinterface::isActive()) {
-                        if (scartICCAMinterface::getICCAMreportID($record->reference)) {
+                        if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
                             // get hoster
                             $abusecontact = Abusecontact::find($record->host_abusecontact_id);
                             if ($abusecontact) {

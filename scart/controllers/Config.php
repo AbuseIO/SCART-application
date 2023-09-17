@@ -27,7 +27,7 @@ class Config extends Controller
         // Check if record exists -> if not, load from ENV
         $systemconfig = Systemconfig::initLoad();
 
-        return Redirect::to('/backend/abuseio/scart/Config/update/'.$systemconfig->id);
+        return Redirect::to('/backend/abuseio/scart/config/update/'.$systemconfig->id);
     }
 
     public function onCheckMaintenance() {

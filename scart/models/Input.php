@@ -530,7 +530,7 @@ class Input extends scartModel
 
             if ($iccamcr && scartICCAMinterface::isActive()) {
 
-                if (scartICCAMinterface::getICCAMreportID($this->reference)) {
+                if (scartICCAMinterface::hasICCAMreportID($this->reference)) {
 
                     // report ICCAM
 

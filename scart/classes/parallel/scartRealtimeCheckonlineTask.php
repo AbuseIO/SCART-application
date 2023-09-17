@@ -86,7 +86,7 @@ $task = function ($taskname,$basepath) {
                                             // check always if still valid CHECKONLINE status -> push can be quicker then processing
                                             if (in_array($record->status_code,[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])) {
                                                 scartLog::logLine("D-" . scartTask::$logname . "; doCheckIllegalOnline filenumber '$filenumber' with lastseen of '$record->lastseen_at'");
-                                                $result = scartCheckOnline::doCheckIllegalOnline($record, 1, 1);
+                                                $result = scartCheckOnline::doCheckIllegalOnline($record, 1, 1, scartTask::$logname);
                                                 if (count($result) > 0) {
                                                     $params = [
                                                         'job_inputs' => $result,

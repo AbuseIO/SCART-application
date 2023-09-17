@@ -52,7 +52,7 @@ class scartICCAMinterface {
         // reference <reportID>#<contentID> (ICCAM)
         $reference = trim(str_replace(self::$_ICCAMreference,'',$reference));
         $refarr = explode('#',$reference);
-        $reportID = (isset($refarr[0])?$refarr[0]:'');
+        $reportID = (!empty($refarr[0])?$refarr[0]:'');
         return $reportID;
     }
 
@@ -62,6 +62,12 @@ class scartICCAMinterface {
         $refarr = explode('#',$reference);
         $contentID = (isset($refarr[1])?$refarr[1]:'');
         return $contentID;
+    }
+
+    public static function hasICCAMreportID($reference) {
+        // reference <reportID>#<contentID> (ICCAM)
+        if (!is_string($reference)) $reference = '';
+        return (trim($reference) !== '');
     }
 
     public static function setICCAMreportID($reportID,$contentID='') {
@@ -315,14 +321,16 @@ class scartICCAMinterface {
 
             } else {
 
-                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                    'record_type' => class_basename($record),
-                    'record_id' => $record->id,
-                    'object_id' => $record->reference,
-                    'action_id' => SCART_ICCAM_ACTION_NI,     // NOT_ILLEGAL
-                    'country' => '',                          // hotline default
-                    'reason' => 'SCART reported NI',
-                ]);
+                if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
+                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                        'record_type' => class_basename($record),
+                        'record_id' => $record->id,
+                        'object_id' => $record->reference,
+                        'action_id' => SCART_ICCAM_ACTION_NI,     // NOT_ILLEGAL
+                        'country' => '',                          // hotline default
+                        'reason' => 'SCART reported NI',
+                    ]);
+                }
 
             }
 
@@ -331,13 +339,13 @@ class scartICCAMinterface {
             // send ONLY mainurl record to Export -> in Export mainurl is hanlded with items in one flow
 
             if ($record->url_type==SCART_URL_TYPE_MAINURL && $record->online_counter == 0) {
-                scartLog::logLine("D-scartICCAMinterface (v3); [$record->filenumber] is MAINURL; add action exportReport"  );
+                scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is MAINURL; add action exportReport"  );
                 scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
                     'record_type' => class_basename($record),
                     'record_id' => $record->id,
                 ]);
             } else {
-                scartLog::logLine("D-scartICCAMinterface (v3); [$record->filenumber] is NO mainurl; skip action exportReport"  );
+                scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is NO mainurl or already added (online_counter=$record->online_counter) " );
             }
 
             // for v3 the NotIllegal action are done AFTER assessment -> required by ICCAM API v3 -> see SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT in scartExportICCAMV3

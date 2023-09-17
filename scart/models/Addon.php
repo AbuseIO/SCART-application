@@ -125,7 +125,11 @@ class Addon extends scartModel
             if (class_exists($class)) {
                 if (method_exists($class, 'run')) {
                     scartLog::logLine("D-Addon; run '$class::run(record)'...");
-                    $result = call_user_func($class . '::run',$record);
+                    if ($debug) {
+                        $result = call_user_func($class . '::run',$record,$debug);
+                    } else {
+                        $result = call_user_func($class . '::run',$record);
+                    }
                     if ($debug) scartLog::logLine("D-Addon; result=" . print_r($result,true) );
                 } else {
                     scartLog::logLine("E-Addon; run methode '$class' does NOT exists!?");

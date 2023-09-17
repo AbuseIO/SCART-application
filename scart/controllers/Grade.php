@@ -63,6 +63,8 @@ class Grade extends scartController
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\FormController',
         'Backend\Behaviors\RelationController',
+
+
     ];
 
     public $listConfig = 'config_list.yaml';
@@ -151,7 +153,7 @@ class Grade extends scartController
     }
 
     /**
-     * @Description Save current page number in de database als user option, zo we can restore if the user login again
+     * @Description Save current page number in the database, so we can restore if the user login again
      * @param $number Int|bool
      * @return void
      */
@@ -290,7 +292,7 @@ class Grade extends scartController
                     $item->logText('closed with classification ignore');
 
                     // if ICCAM reportID set then export action NI
-                    if (scartICCAMinterface::getICCAMreportID($item->reference) && scartICCAMinterface::isActive()) {
+                    if (scartICCAMinterface::hasICCAMreportID($item->reference) && scartICCAMinterface::isActive()) {
                         scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                             'record_type' => class_basename($item),
                             'record_id' => $item->id,
@@ -311,7 +313,7 @@ class Grade extends scartController
                 $input->logText('closed with classification ignore');
 
                 // if ICCAM reportID set then export action NI
-                if (scartICCAMinterface::getICCAMreportID($input->reference) && scartICCAMinterface::isActive()) {
+                if (scartICCAMinterface::hasICCAMreportID($input->reference) && scartICCAMinterface::isActive()) {
                     scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
                         'record_type' => class_basename($input),
                         'record_id' => $input->id,
@@ -888,12 +890,12 @@ class Grade extends scartController
                             $item->firstseen_at = date('Y-m-d H:i:s');
                             $item->logText("Classification done; $item->grade_code; status set on '$item->status_code' ");
 
+                            if (scartICCAMinterface::isActive()) {
+                                scartICCAMinterface::exportReport($item);
+                            }
+
                         }
                         $item->save();
-
-                        if (scartICCAMinterface::isActive()) {
-                            scartICCAMinterface::exportReport($item);
-                        }
 
                     }
 
@@ -1245,7 +1247,7 @@ class Grade extends scartController
             SCART_RULE_TYPE_PROXY_SERVICE_API]);
 
 
-        // 2022/12/9: ToDo; solve bug; if paging is needed for the domainrules list, the paging is controlling the main list, not the domainrule list
+        // To-Do: if paging is needed for the domainrules list, the paging is controlling the main list, not the domainrule list
         // workarround; set recordsPerPage on a large number
 
         // config LIST widget

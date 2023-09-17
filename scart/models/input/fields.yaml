@@ -95,12 +95,11 @@ tabs:
             context: update
             type: partial
             tab: Items
-        Note:
+        note:
             tab: Notes
             size: small
             span: full
-            type: richeditor
-            toolbarButtons: 'bold,italic,underline,strikeThrough,align,formatOL,formatUL,undo,redo,clearFormatting,selectAll,html'
+            type: textarea
         logs:
             span: full
             path: input_logs

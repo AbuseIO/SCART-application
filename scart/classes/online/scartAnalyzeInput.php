@@ -12,6 +12,7 @@
 
 namespace abuseio\scart\classes\online;
 
+use abuseio\scart\classes\iccam\scartICCAMinterface;
 use BackendMenu;
 use BackendAuth;
 use League\Flysystem\Exception;
@@ -208,7 +209,8 @@ class scartAnalyzeInput {
                             $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_FIRST_POLICE,"Direct classify rule, first police; illegal");
 
                             $input->status_code = SCART_STATUS_FIRST_POLICE;
-                            //2020/5/29/gs: also reason if set
+
+                            // also reason if set
                             if (isset($settings['police_reason'][0])) {
                                 $clone = new Grade_answer();
                                 $clone->record_id = $input->id;
@@ -217,6 +219,7 @@ class scartAnalyzeInput {
                                 $clone->answer = (isset($settings['police_reason'][0]['answer']) ? serialize($settings['police_reason'][0]['answer']) : '');
                                 $clone->save();
                             }
+
                         } else {
 
                             // log old/new for history
@@ -229,7 +232,20 @@ class scartAnalyzeInput {
                         $input->save();
                         $input->logText("Direct_classify; illegal classification set based on rule; status set on: '$input->status_code' ");
 
+                        // add mainurl parent table
+                        $iteminp = Input_parent::where('parent_id',$input->id)->where('input_id',$input->id)->first();
+                        if (!$iteminp) {
+                            $iteminp = new Input_parent();
+                            $iteminp->parent_id = $input->id;
+                            $iteminp->input_id = $input->id;
+                            $iteminp->save();
+                        }
+
                         $warning = "Mainurl in DIRECT CLASSIFY ILLEGAL rule - classified - status set on '$input->status_code' ";
+
+                        if (scartICCAMinterface::isActive()) {
+                            scartICCAMinterface::exportReport($input);
+                        }
 
                     } else {
 

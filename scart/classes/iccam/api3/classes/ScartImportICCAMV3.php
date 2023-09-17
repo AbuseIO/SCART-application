@@ -128,7 +128,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 if (count($reports) > 0) {
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_import_iccam', ['reports' => $reports]);
                 } elseif (ICCAMcurl::hasErrors()) {
-                    scartLog::logLine("W-scartImportICCAM; ICCAM OFFLINE!?");
+                    scartLog::logLine("W-scartImportICCAM; ICCAM OFFLINE!?: error=" . ICCAMcurl::getErrors());
                 }
             }
 
