@@ -65,7 +65,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 $hotlineAssignmentDate = $this->gethotlineAssignmentDate($iccamtimeframe);
                 $lastdate = $hotlineAssignmentDate['lastdate'];
 
-                //$types = [SCART_ICCAM_REPORTSTAGE_UNACTIONED,SCART_ICCAM_REPORTSTAGE_UNASSESSED];
+                // INHOPE/ICCAM/Kalina; act on unreference reports for current hotline; mark with own reference when done
                 $types = [SCART_ICCAM_REPORTSTAGE_UNREFERENCE];
                 foreach ($types as $type) {
 

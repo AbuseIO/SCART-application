@@ -570,7 +570,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                         'sourceUrlPaymentMethods' => [scartICCAMfieldsV3::$PaymentMethodIDNotDetermined],
                     ],$this->iccamClassification($parent,$scartfield2iccamreport));
 
-                    ICCAMcurl::setDebug(true);
+                    //ICCAMcurl::setDebug(true);
                     if ($report->sourceUrlSiteType == null) {
                         scartLog::LogLine("D-scartExportICCAMV3; reportId=$reportId; update sourceUrlSiteType");
                         $this->addPosts([
@@ -595,7 +595,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                         ]);
                         (new ScartICCAMapi())->putReportPaymentMethods($reportId,$iccamreport->sourceUrlPaymentMethods);
                     }
-                    ICCAMcurl::setDebug(false);
+                    //ICCAMcurl::setDebug(false);
                 } else {
                     scartLog::logLine("W-scartExportICCAMV3; cannot find parent from input_id=$record->id!?!");
                 }
@@ -621,13 +621,13 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         $assessment->assessingAnalystName = Systemconfig::get('abuseio.scart::iccam.apiuser', '');
         // sent to ICCAM
         scartLog::LogLine("D-scartExportICCAMV3; contentId=$contentId; post assessment to ICCAM ");
-        ICCAMcurl::setDebug(true);
+        //ICCAMcurl::setDebug(true);
         $this->addPosts([
             'contentId' => $contentId,
             'assessment' => $assessment,
         ]);
         $result = (new ScartICCAMapi())->putContentAssessment($contentId,$assessment);
-        ICCAMcurl::setDebug(false);
+        //ICCAMcurl::setDebug(false);
     }
 
     /**
@@ -890,13 +890,14 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             $action->reasonId = $iccamActionReasonId;
             $action->reasonText = $reason;
         }
-        ICCAMcurl::setDebug(true);
+        //ICCAMcurl::setDebug(true);
         $this->addPosts([
             'contentId' => $contentId,
             'action' => $action,
         ]);
+        scartLog::logLine("D-scartExportICCAMV3; postAction; contentId=$contentId put action '".scartICCAMfieldsV3::getActionName($actionID)."' ");
         $result = (new ScartICCAMapi())->postContentAction($contentId, $action);
-        ICCAMcurl::setDebug(false);
+        //ICCAMcurl::setDebug(false);
     }
 
     /**
@@ -928,7 +929,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
      */
     public function postMovedAction($contentId,$newIpAddress,$newCountryCode) {
 
-        ICCAMcurl::setDebug(true);
+        //ICCAMcurl::setDebug(true);
         // new hoster with country (outside hotline country)
         $this->addPosts([
             'contentId' => $contentId,
@@ -940,7 +941,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             // move to new country hotline
             $result = (new ScartICCAMapi())->putContentAssignedCountry($contentId, $newCountryCode);
         }
-        ICCAMcurl::setDebug(false);
+        //ICCAMcurl::setDebug(false);
 
     }
 
@@ -952,7 +953,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
      */
     private function postHotlineReference($contentId, $scartreference) {
 
-        ICCAMcurl::setDebug(true);
+        //ICCAMcurl::setDebug(true);
         // addPost?!
         $this->addPosts([
             'contentId' => $contentId,
@@ -960,7 +961,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             'scartreference' => $scartreference.'_'.date('YmdHi'),
         ]);
         $result = (new ScartICCAMapi())->putContentHotlineReference($contentId, $scartreference);
-        ICCAMcurl::setDebug(false);
+        //ICCAMcurl::setDebug(false);
     }
 
     /**

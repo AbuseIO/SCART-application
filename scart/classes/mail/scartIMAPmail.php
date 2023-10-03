@@ -91,14 +91,13 @@ class scartIMAPmail {
         return SELF::$_messagcount;
     }
 
+
     public static function imapGetMessageBody($msg_numer) {
 
         if (SELF::$_client==null) SELF::imapInit();
         if (SELF::$_client!=null) {
-            // body text part
+            // body text part -> always 1
             $body = imap_fetchbody (SELF::$_client, $msg_numer, 1);
-            // 2020/7/16/Gs: skip
-            //if ($body) $body = quoted_printable_decode($body);
         } else {
             $body = '';
         }

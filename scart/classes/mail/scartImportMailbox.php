@@ -79,15 +79,25 @@ class scartImportMailbox {
 
     static function checkConvertBody($body) {
 
+        // try to convert it into printable chars
+        try {
+            $body = quoted_printable_decode($body);
+        } catch (\Exception $err) {
+            scartLog::logLine("W-checkConvertBody; error quoted_printable_decode: ".$err->getMessage());
+        }
+        //scartLog::logDump("D-processBodylines; checkConvertBody=",$body);
+
         // check if not TEXT ASCII format
         if (strpos($body,'=0D=0A')!==false) {
+            scartLog::logLine("D-checkConvertBody; type=0D0A");
             // first combi \n\r
-            $body = str_replace(["=\n","=\r","=\n\r"],'',$body);
+            $body = str_replace(["=\n", "=\r", "=\n\r"], '', $body);
             // then only cr or lf
-            $body = str_replace(["\r","\n"],'',$body);
+            $body = str_replace(["\r", "\n"], '', $body);
             // then split
             $bodylines = explode("=0D=0A", $body);
         } else {
+            scartLog::logLine("D-checkConvertBody; type=plain text");
             // split on crlf
             $bodylines = explode("\n", $body);
         }
@@ -99,7 +109,7 @@ class scartImportMailbox {
         $loglines = [];
         $cnt = 0;
 
-        //scartLog::logLine("D-processBodylines; body='$msg->body'");
+        //scartLog::logDump("D-processBodylines; dump msg=",$msg);
 
         $bodylines = self::checkConvertBody($msg->body);
 

@@ -2,9 +2,10 @@
 namespace abuseio\scart\console;
 
 /**
+ * OFFLIMITS recover ICCAM API errors
+ *
  * Specifieke reperatie script voor OFFLIMITS september 2023
  * Bij de overgang naar de nieuwe ICCAM V3 zijn fouten ontstaan.
- *
  * Met deze handler wordt op basis van een (specifiek) importexport tabel backup
  *
  */
@@ -61,7 +62,7 @@ class checkICCAMexport extends Command
 
         $alreadydone = [];
 
-        $knownerrors = ['Trace failed','Report not in correct state','no Content provided','Cannot get (ICCAM) contentId of this'];
+        $knownerrors = ['Trace failed','Report not in correct state','no Content provided','Cannot get (ICCAM) contentId of this','incoming request has too many parameters'];
 
         $info = false;
 

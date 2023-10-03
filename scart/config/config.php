@@ -13,7 +13,7 @@ return [
 
     'release' => [
         'version' => '6.5',
-        'build' => 'Build 9',
+        'build' => 'Build 10',
         'title' => env('APP_TITLE', 'Sexual Child Abuse Reporter Tool (SCART)'),
     ],
 
@@ -197,7 +197,7 @@ return [
         'sslkeypw' => env('ICCAM_SSLKEYPW', ''),
         'verifypeer' => env('ICCAM_VERIFYPEER', true),
         'cookie' => env('ICCAM_COOKIEFILE', ''),
-        'readimportmax' => env('ICCAM_READIMPORTMAX', '200'),                         // import read max
+        'readimportmax' => env('ICCAM_READIMPORTMAX', '500'),                         // import read max
         'exportmax' => env('ICCAM_EXPORTMAX', '20'),                                  // export max
     ],
 

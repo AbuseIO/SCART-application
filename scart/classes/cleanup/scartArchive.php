@@ -20,6 +20,7 @@ class scartArchive {
     private static $_tableprefix = 'abuseio_scart_';
     private static $_skiptables = [
         'abuseio_scart_scrape_cache',
+        'abuseio_scart_importexport_job',       // 2023-09-21; SPECIAL EXCLUDE FOR NEW ICCAM API ERRORS SOLVING
     ];
     private static $_columnstringsize = 512;
     private static $_chunkinsert = 500;     // testing value based on big size tables
@@ -249,6 +250,12 @@ class scartArchive {
                         $job_records[] = $job_record;
                     }
 
+                }
+
+            } else {
+
+                if (!$doaction) {
+                    scartLog::logLine("D-Archive; table '$table' in EXCLUDE list - skip");
                 }
 
             }
