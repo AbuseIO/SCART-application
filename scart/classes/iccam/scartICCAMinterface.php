@@ -340,15 +340,14 @@ class scartICCAMinterface {
             // send ONLY mainurl record to Export -> in Export mainurl is hanlded with items in one flow
 
             if ($record->url_type==SCART_URL_TYPE_MAINURL && $record->online_counter == 0) {
-                if (!empty($record->host_abusecontact_id)) {
-                    scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is MAINURL; add action exportReport"  );
-                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
-                        'record_type' => class_basename($record),
-                        'record_id' => $record->id,
-                    ]);
-                } else {
-                    scartLog::logLine("W-scartICCAMinterface (v3); exportReport [$record->filenumber] has NO hoster set - skip export"  );
-                }
+
+                // add report to export ICCAM
+                scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is MAINURL; add action exportReport"  );
+                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
+                    'record_type' => class_basename($record),
+                    'record_id' => $record->id,
+                ]);
+
             } else {
                 if ($record->online_counter == 0) {
                     $parent = Input_parent::where('input_id',$record->id)->first();
