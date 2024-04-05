@@ -86,45 +86,47 @@ class Changed extends scartController {
 
                     // log old/new for history
                     $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE,"Changed; set by analist");
-
                     $record->status_code = SCART_STATUS_CLOSE;
                     $record->save();
                     $record->logText("Manual set on $record->status_code");
 
-                    scartLog::logLine("D-Filenumber=$record->filenumber, url=$record->url, set on $record->status_code");
+                    scartLog::logLine("D-Filenumber=$record->filenumber, grade=$record->grade_code, url=$record->url, set on $record->status_code");
 
-                    // ICCAM
+                    if ($record->grade_code == SCART_GRADE_ILLEGAL) {
 
-                    if (scartICCAMinterface::isActive()) {
+                        // if ICCAM then check if moved action must be given
 
-                        // check if valid ICCAM reportID
-                        if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
+                        if (scartICCAMinterface::isActive()) {
 
-                            // get hoster counter -> can be outside NL (MOVE)
-                            $country = '';
-                            $abusecontact = Abusecontact::find($record->host_abusecontact_id);
-                            if ($abusecontact) {
-                                $country = $abusecontact->abusecountry;
-                            }
-                            // set on local when not filled
-                            if (!$country) $country = Systemconfig::get('abuseio.scart::classify.hotline_country', '');;
+                            // check if valid ICCAM reportID
+                            if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
 
-                            // if not local then ICCAM moved action
-                            if (!scartGrade::isLocal($country)) {
+                                // get hoster counter -> can be outside NL (MOVE)
+                                $country = '';
+                                $abusecontact = Abusecontact::find($record->host_abusecontact_id);
+                                if ($abusecontact) {
+                                    $country = $abusecontact->abusecountry;
+                                }
+                                // set on local when not filled
+                                if (!$country) $country = Systemconfig::get('abuseio.scart::classify.hotline_country', '');;
 
-                                $reason = 'SCART content moved to country: '.$country;
+                                // if not local then ICCAM moved action
+                                if (!scartGrade::isLocal($country)) {
 
-                                // CLOSE with MOVED action
+                                    $reason = 'SCART content moved to country: '.$country;
 
-                                // ICCAM content moved (outside NL)
-                                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                                    'record_type' => class_basename($record),
-                                    'record_id' => $record->id,
-                                    'object_id' => $record->reference,
-                                    'action_id' => SCART_ICCAM_ACTION_MO,
-                                    'country' => $country,
-                                    'reason' => $reason,
-                                ]);
+                                    // ICCAM content moved (outside NL)
+                                    $record->logText("CHANGED function set CLOSE illegal content; inform ICCAM about '$reason'");
+                                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                        'record_type' => class_basename($record),
+                                        'record_id' => $record->id,
+                                        'object_id' => $record->reference,
+                                        'action_id' => SCART_ICCAM_ACTION_MO,
+                                        'country' => $country,
+                                        'reason' => $reason,
+                                    ]);
+
+                                }
 
                             }
 

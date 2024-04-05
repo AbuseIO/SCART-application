@@ -10,6 +10,8 @@ use Redirect;
 
 class Iccam_api_field extends Controller
 {
+    public $requiredPermissions = ['abuseio.scart.system_config'];
+
     public $implement = [        'Backend\Behaviors\ListController',        'Backend\Behaviors\FormController'    ];
 
     public $listConfig = 'config_list.yaml';

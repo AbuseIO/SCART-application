@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\mail;
 
+use abuseio\scart\classes\helpers\scartUsers;
 use Log;
 use Lang;
 use Config;
@@ -195,6 +196,71 @@ class scartAlerts {
 
     }
 
+    /**
+     * General function to alert ADMIN about (error) status
+     * Retry count, so repeating errors are muted
+     *
+     * @param $alertReference           Unique reference for saving state
+     * @param $alertLogService          Log service name
+     * @param bool $alertSignal         true=signal, false=no signal
+     * @param string $alertError        Error description (can be array)
+     * @param int $alertFirstSignal     First signal; default 3
+     * @param int $alertResignal        Resignal count; default 100
+     */
+
+    public static function alertAdminStatus($alertReference,$alertLogService,$alertSignal=true,$alertError='',$alertFirstSignal=3,$alertResignal=100) {
+
+        if ($alertReference && $alertLogService) {
+
+            $retry = scartUsers::getGeneralOption($alertReference);
+            if (empty($retry)) $retry = 0;
+
+            if ($alertSignal) {
+
+                $retry += 1;
+
+                scartLog::logDump("W-$alertLogService; [retry=$retry] error: ",$alertError);
+                if ($retry == 3 || $retry % $alertResignal == 0) {
+
+                    $params = [
+                        'reportname' => "$alertLogService ERROR report ",
+                        'report_lines' => [
+                            'report time: ' . date('Y-m-d H:i:s'),
+                            "error: " . print_r($alertError,true),
+                            'retry count: ' . $retry,
+                        ]
+                    ];
+                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+
+                }
+                scartUsers::setGeneralOption($alertReference, $retry);
+
+            } else {
+
+                if ($retry > 2) {
+
+                    scartLog::logLine("D-$alertLogService; [retry=$retry] error state is over");
+
+                    $params = [
+                        'reportname' => "$alertLogService RESTORE ",
+                        'report_lines' => [
+                            'report time: ' . date('Y-m-d H:i:s'),
+                            "Error state is over",
+                            "retry count; $retry",
+                        ]
+                    ];
+                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+
+                    scartUsers::setGeneralOption($alertReference, '');
+                }
+
+            }
+
+        } else {
+            scartLog::logLine("W-alertAdminStatus call without reference ($alertReference) and/or logservice name ($alertLogService)");
+        }
+
+    }
 
 
 }

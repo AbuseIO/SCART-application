@@ -56,7 +56,7 @@ class scartMail {
      * @param $params
      */
 
-    public static function sendMail($to,$mailview,$params, $bcc='' ) {
+    public static function sendMail($to,$mailview,$params,$bcc='',$attachment='') {
 
         $from = 'noreply@' . Systemconfig::get('abuseio.scart::errors.domain','local.domain');
 
@@ -64,17 +64,26 @@ class scartMail {
 
             // get language
             $lang = Lang::getLocale();
+            // check if available
+            if (!file_exists(plugins_path('abuseio/scart/views/mail/'.$lang))) {
+                scartLog::logLine("W-sendMail; mailview language '$lang' not avaliable - set default 'en'");
+                $lang = 'en';   // fallback
+            }
             // language version
             $mailview = str_replace('::mail.',"::mail.$lang.",$mailview);
+            // Send the message
+            Mail::sendTo($to, $mailview, $params, function($message) use ($bcc,$from,$attachment) {
 
-            // Send your message
-            Mail::sendTo($to, $mailview, $params, function($message) use ($bcc,$from) {
                 $message->from($from, $name = null);
-                // bcc for testing
+
                 if ($bcc) $message->bcc($bcc);
+
+                // add attachment
+                if ($attachment) $message->attach($attachment);
+
             });
 
-            //Log::info("D-sendMail succes");
+            scartLog::logLine("D-sendMail done");
 
         } catch(\Exception $err) {
 
@@ -124,17 +133,19 @@ class scartMail {
         return $message_id;
     }
 
-    public static function sendNTD($to,$subject,$body,$bcc='',$attachment='') {
+    public static function sendNTD($to,$subject,$body,$bcc='',$attachment='',$forceTo=false) {
 
         $from = Systemconfig::get('abuseio.scart::scheduler.sendntd.from','from@local.domain');
         $envelope_from  = Systemconfig::get('abuseio.scart::scheduler.sendntd.envelope_from',$from);
         $reply_to  = Systemconfig::get('abuseio.scart::scheduler.sendntd.reply_to','reply_to@local.domain');
 
-        $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
-        if ($alt_email) {
-            Log::debug("D-Alternate email address (TEST MODE); use '$alt_email' for '$to' ");
-            $subject = "[ALT_EMAIL active; org=$to] $subject";
-            $to = $alt_email;
+        if (!$forceTo) {
+            $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
+            if ($alt_email) {
+                Log::debug("D-Alternate email address (TEST MODE); use '$alt_email' for '$to' ");
+                $subject = "[ALT_EMAIL active; org=$to] $subject";
+                $to = $alt_email;
+            }
         }
 
         $message = '';

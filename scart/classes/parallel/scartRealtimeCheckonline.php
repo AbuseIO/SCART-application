@@ -377,8 +377,11 @@ class scartRealtimeCheckonline {
                                     scartLog::logLine("D-{$logname}; push job '$input->filenumber' to task '$taskname'; cnt=$cnt  ");
                                     $runtimeList[$taskname]->sendChannel($input->filenumber);
                                     $alreadydone[] = $input->filenumber;
+                                    scartAlerts::alertAdminStatus('REALTIME_TASK_PUSH',$logname, false);
                                 } else {
-                                    scartLog::logLine("D-{$logname}; channel from task '$taskname' is full, count=$cnt - skip push");
+                                    $warning = "channel from task '$taskname' is full, count=$cnt - skip push";
+                                    scartLog::logLine("W-{$logname}; $warning");
+                                    scartAlerts::alertAdminStatus('REALTIME_TASK_PUSH',$logname, true, $warning, 3, 100 );
                                 }
                                 $taskcounters[$taskname] += 1;
                                 if ($taskcounters[$taskname] > $maxcount) {
@@ -399,6 +402,9 @@ class scartRealtimeCheckonline {
                 } else {
                     scartLog::logLine('D-'.$logname.'; NOT active ' . (($maintenance) ? '(MAINTENANCE MODE)' : '')  );
                 }
+
+                // mark end of running
+                scartUsers::setGeneralOption($logname,0);
 
                 // give room for workers (threats) do work
                 scartLog::logLine("D-{$logname}; wait ".self::$every_secs." seconds ");

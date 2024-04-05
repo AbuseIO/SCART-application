@@ -25,7 +25,7 @@ use October\Rain\Translation\Translator;
 
 class Inputs extends scartController {
 
-    public $requiredPermissions = ['abuseio.scart.startpage'];
+    public $requiredPermissions = ['abuseio.scart.input_manage'];
 
     public $implement = [
         'Backend\Behaviors\ListController',

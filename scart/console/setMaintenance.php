@@ -2,17 +2,12 @@
 
 namespace abuseio\scart\console;
 
-use Config;
-
-use Illuminate\Console\Command;
-use abuseio\scart\classes\mail\scartEXIM;
 use abuseio\scart\classes\helpers\scartLog;
-use abuseio\scart\classes\mail\scartMail;
-use abuseio\scart\classes\whois\scartWhois;
-use abuseio\scart\models\Ntd_template;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use abuseio\scart\models\Systemconfig;
+use abuseio\scart\models\User_options;
+use Config;
+use Illuminate\Console\Command;
+use Symfony\Component\Console\Input\InputOption;
 
 class setMaintenance extends Command
 {
@@ -38,6 +33,22 @@ class setMaintenance extends Command
         $this->info("D-setMaintenance; set maintenance on '$set'");
         scartLog::logLine("D-setMaintenance; console set maintenance on '$set'");
         Systemconfig::set('abuseio.scart::maintenance.mode',$set);
+
+        if ($set) {
+            // dynamic waiting for running job(s)
+            $timeout = 60;
+            while ($timeout > 0) {
+                $count = User_options::where('user_id', 0)->where('name','like','scheduler%')->where('value',serialize(1))->count();
+                if ($count == 0) break;
+                sleep(1);
+                $timeout -= 1;
+            }
+            if ($timeout > 0) {
+                $this->info("D-setMaintenance; no active jobs (anymore)");
+            } else {
+                $this->info("D-setMaintenance; still running jobs (count=$count)");
+            }
+        }
 
     }
 

@@ -11,6 +11,8 @@ use abuseio\scart\models\Systemconfig;
 
 class Whois extends scartController {
 
+    public $requiredPermissions = ['abuseio.scart.whois'];
+
     public $implement = [    ];
 
     public function __construct() {

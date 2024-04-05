@@ -12,6 +12,8 @@ use abuseio\scart\models\Domainrule;
 
 class Abusecontacts extends scartController
 {
+    public $requiredPermissions = ['abuseio.scart.abusecontact_manage'];
+
     public $implement = [
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\RelationController',

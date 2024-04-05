@@ -29,7 +29,7 @@ class ICCAMAPI3 extends Command
     protected $name = 'abuseio:ICCAMAPI3';
     protected $description = 'Testen ICCAM API versie 3.0';
     protected $signature = 'abuseio:ICCAMAPI3
-        {mode? : read: read reports from lastdate, token: show token get: read content item, put_action: put action, loadiccamfields: INIT basic iccam values}
+        {mode? : read: read reports from lastdate, token: show token get: read content item, get_report: read report, put_action: put action, loadiccamfields: INIT basic iccam values}
         {--l|lastdate= : read from date, default current time}
         {--c|count= : read number of records, default 20}
         {--i|id= : content id }
@@ -63,12 +63,12 @@ class ICCAMAPI3 extends Command
 
             if (in_array($mode,['read','token','get','get_report','put_action','loadiccamfields','special','export'])) {
 
+                ICCAMcurl::setDebug(true);
+
                 // Check if we can do (ICCAM) requests and get Token
                 if (ICCAMAuthentication::login('ICCAMAPI3')) {
 
                     scartLog::logLine("D-ICCAMAPI3; authenticated" );
-
-                    ICCAMcurl::setDebug(true);
 
                     switch ($mode) {
 

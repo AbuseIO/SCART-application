@@ -2,6 +2,7 @@
 
 use abuseio\scart\classes\aianalyze\scartAIanalyze;
 use abuseio\scart\models\Addon;
+use abuseio\scart\models\Systemconfig;
 use Redirect;
 use Response;
 use Backend;
@@ -13,6 +14,8 @@ use abuseio\scart\classes\export\scartExport;
 
 class Reports extends scartController
 {
+    public $requiredPermissions = ['abuseio.scart.reporting'];
+
     public $implement = [
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\FormController'    ];
@@ -32,6 +35,16 @@ class Reports extends scartController
             // disable AI attribute export
             $form->removeField('filter_type');
             $form->removeField('filter_section');
+        }
+
+        if (!Systemconfig::get('abuseio.scart::scheduler.createreports.anonymous',false)) {
+            $form->removeField('anonymous');
+            $form->removeField('sent_to_email');
+        }
+
+        if (!Systemconfig::get('abuseio.scart::scheduler.createreports.sendpolice',false)) {
+            $form->removeField('sendpolice');
+            $form->removeField('sent_to_email_police');
         }
 
         foreach ($fields AS $field) {

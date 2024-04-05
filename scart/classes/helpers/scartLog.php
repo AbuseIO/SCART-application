@@ -217,7 +217,7 @@ class scartLog {
 
     /**
      * SCART processes are memory intensive because of the handling of images (videos) data
-     * Monitoring is important for tuning environment.
+     * Monitoring of resources and avaliability is important for tuning environment.
      *
      */
 
@@ -329,7 +329,5 @@ class scartLog {
 
         return ['headers' => $headers,'lines' => $lines];
     }
-
-
 
 }

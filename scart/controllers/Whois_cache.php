@@ -6,6 +6,8 @@ use BackendMenu;
 
 class Whois_cache extends scartController
 {
+    public $requiredPermissions = ['abuseio.scart.whois'];
+
     public $implement = [
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\FormController'    ];

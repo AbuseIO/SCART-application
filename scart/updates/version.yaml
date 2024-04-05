@@ -22,7 +22,7 @@
     - 'Created table abuseio_scart_iccam_hotline'
     - create_abuseio_scart_iccam_hotline.php
 6.0.4:
-    - 'seeder_abuseio_scart_iccam_hotline'
+    - seeder_abuseio_scart_iccam_hotline
     - seeder604.php
 6.0.5:
     - 'Updated table abuseio_scart_grade_question'
@@ -75,3 +75,9 @@
 6.0.21:
     - 'Created table abuseio_scart_maintenance'
     - create_abuseio_scart_maintenance.php
+6.0.22:
+    - 'Updated table abuseio_scart_report'
+    - builder_table_update_abuseio_scart_report.php
+6.0.23:
+    - 'Updated table abuseio_scart_report'
+    - builder_table_update_abuseio_scart_report_3.php

@@ -42,7 +42,7 @@ class Report extends scartModel {
 
         $recs = Grade_status::orderBy('sortnr')->select('code','title','description')->get();
         // convert to [$code] -> $text
-        //$ret = array('*' => '* - all classifications');
+        $ret = [];
         foreach ($recs AS $rec) {
             $ret[$rec->code] = $rec->title . ' - ' . $rec->description;
         }
@@ -67,6 +67,16 @@ class Report extends scartModel {
             $hotlinecountry => $hotlinecountry.' - only in local country',
             'not'.$hotlinecountry => "not $hotlinecountry - outside (not in) local country",
         ];
+    }
+
+    public function getSentToEmailPoliceOptions($value,$formData) {
+
+        $recs = Abusecontact::where('police_contact',true)->orderBy('owner')->get();
+        $ret = [];
+        foreach ($recs AS $rec) {
+            $ret[$rec->abusecustom] = $rec->abusecustom;
+        }
+        return $ret;
     }
 
     public function getStatusCodeOptions($value,$formData) {
@@ -129,19 +139,8 @@ class Report extends scartModel {
 
         if ($this->filter_type == SCART_REPORT_TYPE_ATTRIBUTE) {
 
-            // force correct filters grade and status
-
-            $this->filter_grade = [];
-            $this->filter_status = [
-                ['filter_status' => SCART_STATUS_FIRST_POLICE],
-                ['filter_status' => SCART_STATUS_ABUSECONTACT_CHANGED],
-                ['filter_status' => SCART_STATUS_SCHEDULER_CHECKONLINE],
-                ['filter_status' => SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL],
-                ['filter_status' => SCART_STATUS_CLOSE_OFFLINE],
-                ['filter_status' => SCART_STATUS_CLOSE_OFFLINE_MANUAL],
-                ['filter_status' => SCART_STATUS_CLOSE],
-                ['filter_status' => SCART_STATUS_CLOSE_DOUBLE],
-            ];
+            // force all grade and status
+            $this->filter_grade = $this->filter_status = [];
 
         }
         //scartLog::logLine("filter_grade=" . print_r($this->filter_status,true));

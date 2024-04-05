@@ -42,6 +42,8 @@ class scartRealtimeCheckonline extends Command
             // testmode -> quicker spinning down
             $settings['min_diff_spindown'] = 5;
         }
+
+        // go running
         \abuseio\scart\classes\parallel\scartRealtimeCheckonline::run($settings);
 
     }

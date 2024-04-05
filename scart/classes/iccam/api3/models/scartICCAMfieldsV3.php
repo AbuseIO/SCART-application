@@ -40,6 +40,14 @@ class scartICCAMfieldsV3 {
             ->first();
         return ($iccamfield) ? $iccamfield->iccam_id : 0;
     }
+    // iccam id -> scart_code
+    public static function getICCAMactionID($ICCAMactionID) {
+
+        $iccamfield = Iccam_api_field::where('scart_field','actionID')
+            ->where('iccam_id',$ICCAMactionID)
+            ->first();
+        return ($iccamfield) ? $iccamfield->scart_code : 0;
+    }
     // scart_code -> iccam name
     public static function getActionName($actionID) {
 

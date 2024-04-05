@@ -5,7 +5,7 @@ namespace abuseio\scart\console;
 use Config;
 
 use Illuminate\Console\Command;
-use abuseio\scart\classes\mail\scartIMAPmail;
+use abuseio\scart\classes\mail\scartReadMail;
 use abuseio\scart\classes\mail\scartImportMailbox;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartMail;
@@ -35,63 +35,43 @@ class readMailTest extends Command
         scartLog::setEcho(true);
 
         $del = $this->option('delete');
-        $sub = $this->option('subject','');
-        $msgno = $this->option('msgno','');
 
-        scartLog::logLine("D-readMailTest:subject=$sub, msgno=$msgno delete=$del");
-        scartLog::logLine("D-readMailTest:use abuseio:readMailTest -d <msgno> -s <del_subject> -m <msgno>");
+        scartLog::logLine("D-readMailTest:delete=$del");
+        scartLog::logLine("D-readMailTest:use abuseio:readMailTest -d");
 
-        //The location of the mailbox.
-        $host =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host','');
-        if ($host=='') {
-            $this->error("IMAP config not set");
-            return;
-        }
-
-        $config = [
-            'host' =>  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host',''),
-            'port' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.port', ''),
-            'sslflag' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.sslflag', ''),
-            'username' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.username', ''),
-            'password' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.password', ''),
-        ];
-
-        scartIMAPmail::setConfig($config);
+        scartReadMail::init();
 
         // get all
-        $messages = scartIMAPmail::imapGetInboxMessages(0);
+        $messages = scartReadMail::getInboxMessages(10);
         if ($messages) {
 
-            scartLog::logLine("D-readMailTest; process " . count($messages) . ' messages from a total of ' . scartIMAPmail::imapLastMessageCount() );
+            scartLog::logLine("D-readMailTest; process " . count($messages) . ' messages');
 
             foreach($messages as $msg) {
 
-                $msg->subject = (isset($msg->subject)) ? $msg->subject : '';
-                $msg->body = scartIMAPmail::imapGetMessageBody($msg->msgno);
-                $bodylines = count(explode("\n", $msg->body));
+                $report = "message '{$msg->getSubject()}' (uid={$msg->getId()} from '{$msg->getFrom()}' arrived at '{$msg->getDate()}', with {$msg->getBodyLinesCount()} body lines";
+                scartLog::logLine("D-readImportMailbox; $report");
 
-                $report = "msgno=$msg->msgno; uid=$msg->uid; bodylines=$bodylines; subject '$msg->subject' from '$msg->from' arrived at '".date('Y-m-d H:i:s',$msg->udate)."' ";
-                scartLog::logLine("D-readMailTest; $report");
+                scartLog::logDump("D-BodyLines=",$msg->getBodyLines());
 
-                if (($sub!='' && strpos($msg->subject, $sub ) === 0) || ($msg->msgno == $msgno) ){
-
+                if ($del){
                     if ($del) {
-                        scartLog::logLine("D-Delete message msgno=$msg->msgno ");
-                        scartIMAPmail::imapDeleteMessage($msg->msgno);
+                        scartLog::logLine("D-Delete message ");
+                        $msg->delete();
                     } else {
-                        scartLog::logLine("D-Found message msgno=$msg->msgno ");
+                        scartLog::logLine("D-Found message ");
                     }
                 }
 
             }
 
-            scartIMAPmail::closeExpunge();
+            scartReadMail::close();
 
         } else {
             scartLog::logLine("D-No message(s)");
         }
 
-        //$this->info(str_replace("<br />\n",'',scartLog::returnLoglines()));
+        scartLog::logLine("D-End");
 
     }
 
@@ -110,9 +90,7 @@ class readMailTest extends Command
      */
     protected function getOptions() {
         return [
-            ['delete', 'd', InputOption::VALUE_NONE, 'Delete'],
-            ['subject', 's', InputOption::VALUE_OPTIONAL, 'Subject', ''],
-            ['msgno', 'm', InputOption::VALUE_OPTIONAL, 'Msgno', ''],
+            ['delete', 'd', InputOption::VALUE_OPTIONAL, 'Delete'],
         ];
     }
 

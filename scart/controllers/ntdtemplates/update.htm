@@ -16,6 +16,16 @@
         <div class="form-buttons">
             <div class="loading-indicator-container">
                 <button
+                    type="button"
+                    data-request="onTestNTD"
+                    data-request-data="recordId: <?= $recordId ?>, sendEmail: '<?= $sendEmail ?>'"
+                    data-load-indicator="Testing"
+                    data-request-confirm="Sent to '<?= $sendEmail ?>' a test NTD email?"
+                    class="btn btn-default">
+                    Test NTD email
+                </button>
+
+                <button
                     type="submit"
                     data-request="onSave"
                     data-request-data="redirect:0"

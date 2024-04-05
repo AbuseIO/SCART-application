@@ -7,6 +7,8 @@ use BackendMenu;
 
 class Grade_questions extends scartController
 {
+    public $requiredPermissions = ['abuseio.scart.grade_questions'];
+
     public $implement = [
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\FormController',
@@ -16,11 +18,6 @@ class Grade_questions extends scartController
     public $listConfig = 'config_list.yaml';
     public $formConfig = 'config_form.yaml';
     public $relationConfig = 'config_relation.yaml';
-
-    /**
-     * @var array Permissions required to view this page.
-     */
-    public $requiredPermissions = ['abuseio.scart.grade_questions'];
 
     public function __construct() {
         parent::__construct();

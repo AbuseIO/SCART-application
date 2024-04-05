@@ -22,7 +22,7 @@ class ScartGenericICCAMV3 {
     }
     protected function addLogline($logline) {
         $this->_loglines[] = $this->_status_timestamp . $logline;
-        scartLog::logLine("D-$logline");
+        scartLog::logLine("D-ScartGenericICCAMV3; (logline) $logline");
     }
     protected function returnLoglines() {
         return $this->_loglines;

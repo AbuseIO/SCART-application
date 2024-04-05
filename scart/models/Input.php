@@ -286,7 +286,7 @@ class Input extends scartModel
                 $fieldname = $extrafield->type.'_'.$extrafield->label;
 
                 // patch: skip always name from PWC AI module
-                if ($fieldname != 'PWCAI_Naam_afbeelding') {
+                if ($fieldname != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
 
                     if (scartAIanalyze::isActive() && $extrafield->type == SCART_INPUT_EXTRAFIELD_PWCAI) {
                         if ($extradata != '{') {
@@ -405,7 +405,7 @@ class Input extends scartModel
         // Validator::extend('URLvEOKM', URLnew::class);
 
         // always schema
-        $this->url = (strpos( $this->url, 'https://' ) !== false || strpos( $this->url, 'http://' ) !== false) ? $this->url : "https://".$this->url;
+        $this->url = (stripos ( $this->url, 'https://' ) !== false || stripos ( $this->url, 'http://' ) !== false) ? $this->url : "https://".$this->url;
 
         // check if valid
         if (filter_var($this->url, FILTER_VALIDATE_URL) === false) {

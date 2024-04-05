@@ -6,6 +6,7 @@ namespace abuseio\scart\classes\iccam\api3\classes\helpers;
 
 use abuseio\scart\classes\iccam\api3\models\Tokens;
 use abuseio\scart\classes\helpers\scartLog;
+use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\models\Systemconfig;
 use abuseio\scart\models\Token;
 use Winter\Storm\Network\Http;
@@ -29,6 +30,9 @@ class ICCAMAuthentication {
                 'password' => Systemconfig::get('abuseio.scart::iccam.apipass', ''),
             ]);
             if ($result) {
+
+                scartAlerts::alertAdminStatus('ICCAM_AUTHENTICATION',$calling, false);
+
                 if (self::$_debug) scartLog::logLine("D-ICCAMurl(login): data".print_r($result,true));
                 if (isset($result->bearerToken)) {
                     self::$_token = $result->bearerToken;
@@ -43,10 +47,19 @@ class ICCAMAuthentication {
                     sleep(self::$_delayafterlogin);
 
                 } else {
-                    scartLog::logLine("E-".$calling."ICCAMurl(login): no bearerToken received!?");
+                    $error = 'no bearerToken received';
+                    scartLog::logLine("E-".$calling."ICCAMurl(login): $error");
+                    scartAlerts::alertAdminStatus('ICCAM_AUTHENTICATION',$calling, true, $error, 3 );
                 }
+
+            } else {
+
+                $error = ICCAMcurl::getErrors();
+                scartAlerts::alertAdminStatus('ICCAM_AUTHENTICATION',$calling, true, $error, 3 );
+
             }
             self::$_loggedin = ($result !== false);
+
         } else {
             // To-Do: if errors then login=false
             //if (ICCAMcurl::hasErrors()) self::$_loggedin = false;

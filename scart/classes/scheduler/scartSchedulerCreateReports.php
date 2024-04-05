@@ -87,6 +87,42 @@ class scartSchedulerCreateReports extends scartScheduler {
                             // remove checksum
                             scartExport::delExportJob($report);
 
+                            // check if anoymous and sent email
+
+                            if (Systemconfig::get('abuseio.scart::scheduler.createreports.anonymous',false)) {
+
+                                if ($report->anonymous && $report->sent_to_email) {
+
+                                    $params = [
+                                        'reportname' => $report->title,
+                                        'status' => $report->status_code,
+                                        'status_at' => $report->status_at,
+                                        'number' => $report->number_of_records,
+                                    ];
+                                    scartLog::logLine("D-{$logname}; send report to email '$report->sent_to_email'");
+                                    scartMail::sendMail($report->sent_to_email,'abuseio.scart::mail.scheduler_sendreport',$params,'',$tmpfile);
+
+                                }
+
+                            }
+
+                            if (Systemconfig::get('abuseio.scart::scheduler.createreports.sendpolice',false)) {
+
+                                if ($report->sendpolice && $report->sent_to_email_police) {
+
+                                    $params = [
+                                        'reportname' => $report->title,
+                                        'status' => $report->status_code,
+                                        'status_at' => $report->status_at,
+                                        'number' => $report->number_of_records,
+                                    ];
+                                    scartLog::logLine("D-{$logname}; send report to POLICE email '$report->sent_to_email_police'");
+                                    scartMail::sendMail($report->sent_to_email_police,'abuseio.scart::mail.scheduler_sendreport',$params,'',$tmpfile);
+
+                                }
+
+                            }
+
                             // mail
                             $recepient =  Systemconfig::get('abuseio.scart::scheduler.createreports.recipient','');
                             if ($recepient) {
@@ -152,6 +188,15 @@ class scartSchedulerCreateReports extends scartScheduler {
 
     }
 
+
+    static private $_anonymousColumns = [
+        'url','url_host','url_referer','url_ip','url_hash',
+    ];
+
+    public static function getAnonymousColumns() {
+        return self::$_anonymousColumns;
+    }
+
     /*
      * Export url (report) data
      *
@@ -195,6 +240,14 @@ class scartSchedulerCreateReports extends scartScheduler {
                     'registrar_contact',
                     'grade_code',]
             );
+
+            // Check if anonymous
+            if ($report->anonymous) {
+                // remove anonymous
+                $columns = array_diff($columns,self::$_anonymousColumns);
+                // reindex
+                $columns = array_values($columns);
+            }
 
             $headerrow = implode(SCART_EXPORT_CSV_DELIMIT,$columns);
 
@@ -311,6 +364,10 @@ class scartSchedulerCreateReports extends scartScheduler {
                 $row = '';
                 foreach ($columns AS $column) {
                     if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
+
+
+
+
                     $row .= (isset($record->$column)? $record->$column : '');
                 }
                 $data[] = $row;
@@ -367,7 +424,7 @@ class scartSchedulerCreateReports extends scartScheduler {
             $extracolumns = [];
             $extrafields = Input_extrafield::where('type',SCART_INPUT_EXTRAFIELD_PWCAI)->select('label')->distinct()->get();
             foreach ($extrafields as $extrafield) {
-                if ($extrafield->label != 'Naam_afbeelding') {
+                if ($extrafield->label != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
                     $extracolumns[] = $extrafield->label;
                     $extracolumns[] = $extrafield->label . ' (correction)';
                 }
@@ -387,7 +444,7 @@ class scartSchedulerCreateReports extends scartScheduler {
                 }
                 $extrafields = Input_extrafield::where('input_id',$record->id)->where('type',SCART_INPUT_EXTRAFIELD_PWCAI)->get();
                 foreach ($extrafields as $extrafield) {
-                    if ($extrafield->label != 'Naam_afbeelding') {
+                    if ($extrafield->label != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
                         if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
                         $row .= $extrafield->value;
                         if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
