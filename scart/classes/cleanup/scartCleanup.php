@@ -157,15 +157,17 @@ class scartCleanup {
 
             // 1: Orphan = (image/video url input without a (active) connection in input_parent)
 
-            $orphans = Db::select("SELECT id FROM ".SCART_INPUT_TABLE." WHERE url_type <> 'mainurl'
+            $orphans = Db::select("SELECT id FROM ".SCART_INPUT_TABLE."
+                 WHERE ".SCART_INPUT_TABLE.".url_type <> 'mainurl'
                  AND ".SCART_INPUT_TABLE.".deleted_at IS NULL
+                 AND ".SCART_INPUT_TABLE.".status_code = '".SCART_STATUS_GRADE."'
                  AND NOT EXISTS (SELECT 1 FROM ".SCART_INPUT_PARENT_TABLE." WHERE ".SCART_INPUT_PARENT_TABLE.".deleted_at IS NULL
-     		 	 AND ".SCART_INPUT_PARENT_TABLE.".input_id=".SCART_INPUT_TABLE.".id)");
+         		 	 AND ".SCART_INPUT_PARENT_TABLE.".input_id=".SCART_INPUT_TABLE.".id)") ;
             $orphanscnt = count($orphans);
 
             if ($orphanscnt > 0) {
 
-                scartLog::logLine("D-cleanupOrphan; found inputs without mainurl-input (orphans); count=$orphanscnt");
+                scartLog::logLine("D-cleanupOrphan; found inputs with status classify and without mainurl-input (orphans); count=$orphanscnt");
 
                 $startTime = microtime(true);
 
@@ -202,6 +204,7 @@ class scartCleanup {
         return $cnt;
     }
 
+    // OBSOLUTE -> done by cycle log system option
     public static function cleanupSystemlogs() {
 
         $systemlog = base_path() . SCART_SYSTEM_LOG_FILE . '.log';

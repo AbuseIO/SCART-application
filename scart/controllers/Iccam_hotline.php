@@ -6,6 +6,8 @@ use BackendMenu;
 
 class Iccam_hotline extends scartController
 {
+    public $requiredPermissions = ['abuseio.scart.system_config'];
+
     public $implement = [
         'Backend\Behaviors\ListController',
         'Backend\Behaviors\FormController'    ];

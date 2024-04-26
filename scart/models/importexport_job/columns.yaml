@@ -2,21 +2,24 @@ columns:
     interface:
         label: interface
         type: text
-    filenumber:
-        label: filenumber
-        type: text
-    reference:
-        label: reference
-        type: text
+        searchable: true
     action:
         label: action
         type: text
+        searchable: true
+    checksum:
+        label: checksum
+        type: text
+        searchable: true
     deleted_at:
         label: 'status time'
         type: datetime
+        searchable: true
     status:
         label: status
         type: text
+        searchable: true
     status_text:
         label: status_text
         type: text
+        searchable: true

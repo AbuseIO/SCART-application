@@ -85,7 +85,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
                             if ($reportId=='' || ($reportId != $iccamreport->reportId)) $reportId = $iccamreport->reportId;
 
-                            if (!scartICCAMinterface::alreadyICCAMreportID($reportId)) {
+                            //if (!scartICCAMinterface::alreadyICCAMreportID($reportId)) {
 
                                 // group by main report
                                 if (!isset($mainreports[$reportId])) {
@@ -94,18 +94,25 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                                     //scartLog::logDump("D-ScartImportICCAMV3; getReport($reportid)=",$mainreports[$reportid]);
                                 }
 
-                                // get (Save) all info from each contentitem
-                                if (!isset($mainreports[$reportId]->contentItems)) {
-                                    $mainreports[$reportId]->contentItems = [];
+                                // when interface error or ICCAM report gone, then $mainreports[$reportId] can be empty -> next time
+                                if (isset($mainreports[$reportId]->reportContents)) {
+
+                                    // get (Save) all info from each contentitem
+                                    if (!isset($mainreports[$reportId]->contentItems)) {
+                                        $mainreports[$reportId]->contentItems = [];
+                                    }
+
+                                    scartLog::logLine("D-ScartImportICCAMV3; add for processing reports[$reportId]->contentItems[$iccamreport->contentId] ");
+                                    $mainreports[$reportId]->contentItems[$iccamreport->contentId] =(new ScartICCAMapi())->getContent($iccamreport->contentId);
+
+                                } else {
+                                    unset($mainreports[$reportId]);
                                 }
 
-                                scartLog::logLine("D-ScartImportICCAMV3; add for processing reports[$reportId]->contentItems[$iccamreport->contentId] ");
-                                $mainreports[$reportId]->contentItems[$iccamreport->contentId] =(new ScartICCAMapi())->getContent($iccamreport->contentId);
-
-                            } else {
-                                // already imported -> skip
-                                scartLog::logLine("D-ScartImportICCAMV3; reportId=$reportId ALREADY in database - skip import");
-                            }
+                            //} else {
+                            //    // already imported -> skip
+                            //    scartLog::logLine("D-ScartImportICCAMV3; reportId=$reportId ALREADY in database - skip import");
+                            //}
 
                         }
 
@@ -175,7 +182,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
             /**
              * Note:
-             * in scartimrports we got a couple of content items belonging to a ICCAM report
+             * in scartimports we got a couple of content items belonging to a ICCAM report
              * In these content items the main content (isSourceUrl) is not always included
              * We need this, so we have to loop through the report->reportContents to get the main one
              *
@@ -183,41 +190,54 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
             $mainContentId = 0; $addgot = '?';
 
+            // Note: mainurl is not always included in reportRecord->contentItems
             $mainreport = (new ScartICCAMapi())->getReport($reportId);
+            if (isset($mainreport->reportContents)) {
 
-            foreach ($mainreport->reportContents as $reportContent) {
-                $contentReport = (new ScartICCAMapi())->getContent($reportContent->contentId);
-                if ($contentReport->url->isSourceUrl) {
-                    // we got 'm
-                    $mainContentId = $reportContent->contentId;
-                    $addgot = (isset($reportRecord->contentItems[$mainContentId])) ? 'got' : 'add';
-                    $reportRecord->contentItems[$mainContentId] = $contentReport;
-                    break;
-                }
-            }
-            scartLog::logLine("D-ScartImportICCAMV3; $addgot mainContentId for processing reports[$reportId]->contentItems[$mainContentId]");
-
-            if ($mainContentId) {
-                if (!scartICCAMinterface::alreadyICCAMreport($reportId,$mainContentId)) {
-
-                    $reportRecord->report_type = $type;
-
-                    // We got the main content id, so we can insert the Report with Content item(s)
-                    $loglines = $this->insertReport($reportId,$mainContentId,$reportRecord);
-                    if (count($loglines) > 0) {
-                        $reports[] = [
-                            'reportID' => $reportId,
-                            'loglines' => $loglines
-                        ];
+                foreach ($mainreport->reportContents as $reportContent) {
+                    $contentReport = (new ScartICCAMapi())->getContent($reportContent->contentId);
+                    if ($contentReport && $contentReport->url->isSourceUrl) {
+                        // we got 'm
+                        $mainContentId = $reportContent->contentId;
+                        $addgot = (isset($reportRecord->contentItems[$mainContentId])) ? 'got' : 'add';
+                        $reportRecord->contentItems[$mainContentId] = $contentReport;
+                        break;
                     }
-
-                } else {
-                    // already imported -> skip
-                    scartLog::logLine("D-ScartImportICCAMV3; (mainurl) reportId=$reportId (contentId=$mainContentId) ALREADY in database - skip import");
                 }
+                scartLog::logLine("D-ScartImportICCAMV3; $addgot mainContentId for processing reports[$reportId]->contentItems[$mainContentId]");
+
+                if ($mainContentId) {
+                    if (!scartICCAMinterface::alreadyICCAMreport($reportId,$mainContentId)) {
+
+                        $reportRecord->report_type = $type;
+
+                        // We got the main content id, so we can insert the Report with Content item(s)
+                        $loglines = $this->insertReport($reportId,$mainContentId,$reportRecord);
+                        if (count($loglines) > 0) {
+                            $reports[] = [
+                                'reportID' => $reportId,
+                                'loglines' => $loglines
+                            ];
+                        }
+
+                    } else {
+                        // already imported -> skip
+                        scartLog::logLine("D-ScartImportICCAMV3; (mainurl) reportId=$reportId (contentId=$mainContentId) ALREADY in database - skip import");
+
+                        // set reference in ICCAM
+                        $input = scartICCAMinterface::findICCAMreport($reportId,$mainContentId);
+                        if ($input) {
+                            $this->setSCARTreference($mainContentId,$input->filenumber);
+                        }
+
+                    }
+                } else {
+                    // we need main content item
+                    scartLog::logLine("W-ScartImportICCAMV3; (mainurl) reportId=$reportId; cannot find MAIN contentId - skip import");
+                }
+
             } else {
-                // we need main content item
-                scartLog::logLine("W-ScartImportICCAMV3; (mainurl) reportId=$reportId; cannot find MAIN contentId - skip import");
+                scartLog::logLine("W-ScartImportICCAMV3; empty result from getReports(); skip ");
             }
 
         }
@@ -234,140 +254,247 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
          * the SCART report will directly go to the CLASSIFY state
          * we (fill) the whois information and get the image(data)
          *
+         * if reports (contentitems) already exist in SCART, then they are reset to classify
+         * the analist can decide what to do with these reports
+         * may be online again, may be other content, may be not-found
+         *
+         * NOTE: WE HANDLE THE MAINURL FIRST BECAUSE:
+         * 1. we need the mainurl input_id
+         * 2. WHEN IN "RUNNING STATE" WE SKIP THE IMPORT OF THE MAINURL WITH ALL CONTENTITEMS
+         *
          */
 
-        // insert mainurl as content
+        $inputParentId = $delivered_items = 0;
+
         $contentItem = $reportRecord->contentItems[$mainContentId];
         if (Input::where('url', $contentItem->url->urlString)->count() == 0) {
 
             // analyze and create SCART input record
-            $maininput = $this->insertContent($reportId,$mainContentId,$contentItem,$reportRecord,0);
-
-            if ($maininput) {
+            if ($maininput = $this->insertContent($reportId,$mainContentId,$contentItem,$reportRecord,0)) {
 
                 $inputParentId = $maininput->id;
 
-                $delivered_items = 1;   // mainurl also counting
-                foreach ($reportRecord->contentItems as $contentItem) {
-                    if ($contentItem->contentId != $mainContentId) {
+                $this->setSCARTreference($mainContentId,$maininput->filenumber);
 
-                        // note: strange if here and already imported -> still validate
-                        if (!scartICCAMinterface::alreadyICCAMreport($reportId,$contentItem->contentId)) {
+                $this->addLogline("(main) filenumber=$maininput->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$mainContentId");
 
-                            if (Input::where('url', $contentItem->url->urlString)->count() == 0) {
-
-                                // get content and analyzed
-                                $input = $this->insertContent($reportId,$contentItem->contentId,$contentItem,$reportRecord,$inputParentId);
-
-                                if ($input) {
-
-                                    // set & mark status
-                                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Imported from ICCAM (v3); direct to classify");
-                                    $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
-                                    $input->save();
-
-                                    // Set our reference on existing ICCAM reports
-                                    scartLog::logLine("D-ScartImportICCAMV3; contentId=$contentItem->contentId set ICCAM hotline reference on $input->filenumber");
-                                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                                        'record_type' => class_basename($input),
-                                        'record_id' => $input->id,
-                                        'object_id' => $input->reference,
-                                        'action_id' => SCART_ICCAM_ACTION_SETHOTLINE,
-                                        'country' => '',                // hotline default
-                                        'reason' => '',
-                                    ]);
-
-                                    $delivered_items += 1;
-
-                                } else {
-                                    scartLog::logLine("W-ScartImportICCAMV3; error inserting contentId=$contentItem->contentId - skip");
-                                }
-
-                            } else {
-
-                                scartLog::logLine("W-ScartImportICCAMV3; (content item) url '".$contentItem->url->urlString."' ALREADY in SCART - add to this import");
-
-                                // url exists, other or none ICCAM reference
-
-                                // connect to this ICCAM report
-
-                                $input = Input::where('url', $contentItem->url->urlString)->first();
-
-                                $reference = scartICCAMinterface::setICCAMreportID($reportId,$contentItem->contentId);
-                                $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$input->reference,$reference,"Imported import from ICCAM (v3); direct to classify");
-                                $input->reference = $reference;
-
-                                $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Imported from ICCAM (v3); direct to classify");
-                                $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
-
-                                $input->addExtrafield(SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_CLASSIFICATION,'no');
-                                $input->grade_code = SCART_GRADE_UNSET;
-
-                                $input->save();
-
-                                // connect
-                                $this->connect2parent($input,$inputParentId);
-
-                                // do analyze input
-                                $this->analyzeICCAMinput($input);
-
-                                $delivered_items += 1;
-
-                            }
-                        } else {
-                            // only connect
-                            scartLog::logLine("D-ScartImportICCAMV3; (content) reportId=$reportId, contentId=$contentItem->contentId ALREADY imported");
-                            $input = scartICCAMinterface::findICCAMreport($reportId,$contentItem->contentId);
-                            $this->connect2parent($input,$inputParentId);
-                            $delivered_items += 1;
-                        }
-                    }
-                }
-                scartLog::logLine("D-ScartImportICCAMV3; found $delivered_items content item(s) for reportId=$reportId");
-                $maininput->delivered_items = $delivered_items;
-
-                // Next status -> can be AI_ANALYZE
-                $status_next = (scartAIanalyze::isActive()) ? SCART_STATUS_SCHEDULER_AI_ANALYZE : SCART_STATUS_GRADE;
-                $maininput->logHistory(SCART_INPUT_HISTORY_STATUS,$maininput->status_code,$status_next,"Imported from ICCAM (v3); next fase");
-                $maininput->status_code = $status_next;
-                $maininput->classify_status_code = SCART_STATUS_GRADE;
-                $maininput->save();
-                $this->addLogline("filenumber=$maininput->filenumber; Set (mainurl) status on:".$maininput->status_code);
-
-                // Set our reference on existing ICCAM reports
-                scartLog::logLine("D-ScartImportICCAMV3; contentId=$mainContentId, set ICCAM hotline reference on $maininput->filenumber");
-                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                    'record_type' => class_basename($maininput),
-                    'record_id' => $maininput->id,
-                    'object_id' => $maininput->reference,
-                    'action_id' => SCART_ICCAM_ACTION_SETHOTLINE,
-                    'country' => '',                // hotline default
-                    'reason' => '',
-                ]);
-
-                // special step when AI addon is active
-                if ($maininput->status_code == SCART_STATUS_SCHEDULER_AI_ANALYZE) {
-                    $AIaddon = Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER);
-                    $this->addLogline("filenumber=$maininput->filenumber; push (mainurl) first to AI analyzer");
-                    scartSchedulerAnalyzeInput::pushRecordsAI($AIaddon, $maininput);
-                }
+                $delivered_items += 1;
 
             } else {
-                scartLog::logLine("E-ScartImportICCAMV3; cannot insert ICCAM mainurl !?!");
+                scartLog::logLine("W-ScartImportICCAMV3; error inserting (mainurl) contentId=$mainContentId - skip");
+
             }
 
         } else {
 
-            scartLog::logLine("W-ScartImportICCAMV3; (mainurl) url '".$contentItem->url->urlString."' ALREADY imported - skip import");
+            scartLog::logLine("W-ScartImportICCAMV3; (MAINURL) url '".$contentItem->url->urlString."' already in SCART");
 
-            // Note:
-            // May be report back to ICCAM the actions done in SCART?
-            // -> whatif long time ago?
-            // -> whatif no ICCAM reportID/contentID?
+            if ($maininput = Input::where('url', $contentItem->url->urlString)->first()) {
+                // Note: check in which state the SCRAT report is, don't mess with reports in a running state
+                $delivered_items = $this->connectNotRunning($reportId,$contentItem,$maininput,$inputParentId);
+            }
+
+        }
+
+        if ($inputParentId) {
+
+            foreach ($reportRecord->contentItems as $contentItem) {
+
+                if ($contentItem->contentId != $mainContentId) {
+
+                    $existingRecord = false;
+
+                    // note: imageurl (image) can already be imported
+                    if (!scartICCAMinterface::alreadyICCAMreport($reportId,$contentItem->contentId)) {
+
+                        if (Input::where('url', $contentItem->url->urlString)->count() == 0) {
+
+                            // get content and analyzed
+                            if ($input = $this->insertContent($reportId,$contentItem->contentId,$contentItem,$reportRecord,$inputParentId)) {
+
+                                // set & mark status
+                                $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Import from ICCAM; direct to classify");
+                                $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
+                                $input->save();
+
+                                $this->setSCARTreference($contentItem->contentId,$input->filenumber);
+
+                                $this->addLogline("filenumber=$input->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$contentItem->contentId");
+                                $delivered_items += 1;
+
+                            } else {
+                                scartLog::logLine("W-ScartImportICCAMV3; error inserting contentId=$contentItem->contentId - skip");
+                            }
+
+                        } else {
+
+                            scartLog::logLine("W-ScartImportICCAMV3; (content item) url '".$contentItem->url->urlString."' ALREADY in SCART - add to this import");
+
+                            $input = Input::where('url', $contentItem->url->urlString)->first();
+
+                            $existingRecord = true;
+
+                        }
+                    } else {
+
+                        scartLog::logLine("D-ScartImportICCAMV3; (content) reportId=$reportId, contentId=$contentItem->contentId ALREADY imported");
+
+                        $input = scartICCAMinterface::findICCAMreport($reportId,$contentItem->contentId);
+
+                        $existingRecord = true;
+
+                    }
+
+                    if ($existingRecord && $input) {
+
+                        $delivered_items += $this->connectNotRunning($reportId,$contentItem,$input,$inputParentId);
+
+                    }
+
+                }
+
+            }
+            scartLog::logLine("D-ScartImportICCAMV3; found $delivered_items content item(s) for reportId=$reportId");
+
+            $maininput->delivered_items = $delivered_items;
+
+            // Next status -> can be AI_ANALYZE
+            $status_next = (scartAIanalyze::isActive()) ? SCART_STATUS_SCHEDULER_AI_ANALYZE : SCART_STATUS_GRADE;
+            if ($maininput->status_code != $status_next) {
+                $maininput->logHistory(SCART_INPUT_HISTORY_STATUS,$maininput->status_code,$status_next,"Import from ICCAM; next fase");
+                $maininput->status_code = $status_next;
+            }
+            $maininput->save();
+
+            // special step when AI addon is active
+            if ($maininput->status_code == SCART_STATUS_SCHEDULER_AI_ANALYZE) {
+                $AIaddon = Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER);
+                $this->addLogline("filenumber=$maininput->filenumber; (MAINURL) push first to AI analyzer");
+                scartSchedulerAnalyzeInput::pushRecordsAI($AIaddon, $maininput);
+            }
 
         }
 
         return $this->returnLoglines();
+    }
+
+    /**
+     * Handle SCART exisiting report depending on the running state.
+     *
+     * @param $reportId
+     * @param $contentItem
+     * @param $input
+     * @param $inputParentId    if 0 then mainurl
+     * @return int
+     */
+
+    private function connectNotRunning($reportId,$contentItem,$input,&$inputParentId) {
+
+        $mainurltxt = ($inputParentId==0) ? '(MAINURL)' : '';
+
+        if ($this->inRunningState($input->status_code)) {
+
+            // mainurl in "running state with ICCAM action to do" -> if we switch ICCAM reference here, action for old ICCAM reference are lost (!)
+            scartLog::logLine("W-ScartImportICCAMV3; $mainurltxt filenumber '$input->filenumber' has status '$input->status_code' - in running state so ignore as new import");
+
+            $this->addLogline("filenumber=$input->filenumber; $mainurltxt SCART report in running state; ignore as new import");
+            $add_delivered = 0;
+
+        } else {
+
+            scartLog::logLine("D-ScartImportICCAMV3; $mainurltxt filenumber '$input->filenumber' has status '$input->status_code' - import and overwrite existing ICCAM reference");
+
+            if ($inputParentId == 0) $inputParentId = $input->id;
+
+            $this->connectAsNewImport($reportId,$contentItem,$input);
+
+            $this->connect2parent($input,$inputParentId);
+
+            $this->analyzeICCAMinput($input);
+
+            $this->addLogline("filenumber=$input->filenumber; $mainurltxt ICCAM reference; ReportId=$reportId, ContentId=$contentItem->contentId");
+            $add_delivered = 1;
+
+        }
+
+        // set ICCAM reference to this SCART report
+        $this->setSCARTreference($contentItem->contentId,$input->filenumber);
+
+        return $add_delivered;
+    }
+
+    /**
+     * Return true when report is in running state
+     *
+     * @param $status_code
+     * @return bool
+     */
+    private function inRunningState($status_code) {
+
+        return (in_array($status_code,
+            [SCART_STATUS_SCHEDULER_CHECKONLINE,
+                SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,
+                SCART_STATUS_ABUSECONTACT_CHANGED,
+                SCART_STATUS_FIRST_POLICE]));
+    }
+
+    /**
+     * connect exisiting (double url) item
+     *
+     * @param $reportId
+     * @param $contentItem
+     * @param $input
+     */
+    private function connectAsNewImport($reportId,$contentItem,$input) {
+
+        $reference = scartICCAMinterface::setICCAMreportID($reportId,$contentItem->contentId);
+        if ($reference != $input->reference) {
+            $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$input->reference,$reference,"Import from ICCAM; set new reference");
+            $input->reference = $reference;
+        }
+        $input->addExtrafield(SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_CLASSIFICATION,'no');
+
+        if ($input->status_code != SCART_STATUS_GRADE) {
+            $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Import from ICCAM; direct to classify");
+        }
+        // reset classify_status_code (always)
+        $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
+        // new received_at
+        $input->received_at = date('Y-m-d H:i:s',strtotime($contentItem->countryAssignmentDate));
+        // ICCAM source
+        $input->source_code = SCART_ICCAM_IMPORT_SOURCE_CODE_ICCAM;
+        // remove old analyst
+        $input->workuser_id = 0;
+        // remove old classification
+        Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$input->id)->delete();
+        $input->grade_code = SCART_GRADE_UNSET;
+
+        $input->save();
+
+    }
+
+    /**
+     * Find specific contentId in ICCAM report items based on url
+     *
+     * @param $record
+     * @return string
+     */
+    private function getICCAMcontentId($reportId,$url) {
+
+        $contentId = '';
+        if ($reportId) {
+            $report = (new ScartICCAMapi())->getReport($reportId);
+            if (isset($report->reportContents) && count($report->reportContents) > 0) {
+                foreach ($report->reportContents as $reportContent) {
+                    if ($reportContent->urlString == $url) {
+                        $contentId = $reportContent->contentId;
+                        break;
+                    }
+                }
+            }
+        }
+        scartLog::logLine("D-ScartImportICCAMV3; got contentId '$contentId' based on reporId=$reportId and url=$url");
+        return $contentId;
     }
 
     private function insertContent($reportId,$contentId,$contentItem,$reportGeneral,$inputParentId) {
@@ -506,15 +633,9 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 $input->save();
             }
 
-            if ($inputParentId == 0) {
-                // fill current as parent if not set
-                $inputParentId = $input->id;
-            }
-
-            // connect
+            if ($inputParentId == 0) $inputParentId = $input->id;
             $this->connect2parent($input,$inputParentId);
 
-            // do analyze input
             $this->analyzeICCAMinput($input);
 
         } catch (\Exception $err) {
@@ -631,9 +752,9 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
                     $imagedata = $image;
                     $imagedata['hash'] = $hash;
+                    $imagetype = 'image/video';
 
                     if ($input->url_type != SCART_URL_TYPE_MAINURL) {
-                        $imagetype = 'image/video';
                         break;
                     }
 
@@ -706,7 +827,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 $input->logText("Could not find image/video/screenshot");
                 $this->addLogline("filenumber=$input->filenumber; image not found (?)");
 
-                // To-Do: here unavailable back to ICCAM and skip this input
+                // send here action SCART_ICCAM_ACTION_CU to ICCAM? -> done by workflow CLASSIFY + analyst gives NOT FOUND
 
             }
 
@@ -717,6 +838,28 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         }
 
+    }
+
+    /**
+     * set SCART reference in ICCAM hotline reference field
+     *
+     * @param $contentId
+     * @param $filenumber
+     */
+    private function setSCARTreference($contentId,$filenumber) {
+
+        //Direct action here so import is optimized
+
+        //ICCAMcurl::setDebug(true);
+        $scartreference = $filenumber.'_'.date('YmdHi');
+        $this->addPosts([
+            'contentId' => $contentId,
+            // make always unique
+            'scartreference' => $scartreference,
+        ]);
+        scartLog::logLine("D-ScartImportICCAMV3; contentId=$contentId; set ICCAM hotline reference on $scartreference");
+        $result = (new ScartICCAMapi())->putContentHotlineReference($contentId, $scartreference);
+        //ICCAMcurl::setDebug(false);
     }
 
     /**

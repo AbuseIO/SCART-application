@@ -153,7 +153,7 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
 
                 scartLog::logLine("D-scheduleAnalyseInput [$cnt]; filenumber=$input->filenumber, url=$input->url, received_at=$input->received_at, status=$input->status_code, warning=$warning ");
 
-                // STEP-3; push records to AI analyze if AI active and input set on classify (grade)
+                // STEP-3; push records to AI analyze if AI active and input set on AI analyze
 
                 if ($AIaddon && $input->status_code == SCART_STATUS_SCHEDULER_AI_ANALYZE) {
 
@@ -221,16 +221,18 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
         $job_inputs = [];
 
         $count = Input::where('status_code',SCART_STATUS_SCHEDULER_AI_ANALYZE)
+            ->where('url_type',SCART_URL_TYPE_MAINURL)
             ->count();
-        scartLog::logLine("D-scheduleAnalyseInput; process minutes=$scheduler_process_minutes; total records to check AI analyzer: $count");
 
         $maxmins = $scheduler_process_minutes * 60;  // get seconds
         $curtime = microtime(true);
         $endtime = $curtime + $maxmins;
 
+        scartLog::logLine("D-scheduleAnalyseInput; process minutes=$scheduler_process_minutes; total MAINURL records to check AI analyzer=$count; ");
+
         // find all input(s) with status=AI_ANALYZE
-        // and with last update more then 15 minute ago -> give AI module time to process
-        $beforetime = date('Y-m-d H:i:s',strtotime("-15 minutes"));
+        // and with last update more then 5 minute ago -> give AI module time to process
+        $beforetime = date('Y-m-d H:i:s',strtotime("-5 minutes"));
         $input = Input::where('status_code',SCART_STATUS_SCHEDULER_AI_ANALYZE)
             ->where('url_type',SCART_URL_TYPE_MAINURL)
             ->where('updated_at','<=',$beforetime)
@@ -426,8 +428,11 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
 
             if ($result) {
 
+                $skipfields = ['id',SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding];
                 foreach ($result AS $name => $value) {
-                    $record->addExtrafield( SCART_INPUT_EXTRAFIELD_PWCAI,$name,$value);
+                    if (!in_array($name,$skipfields)) {
+                        $record->addExtrafield( SCART_INPUT_EXTRAFIELD_PWCAI,$name,$value);
+                    }
                 }
                 $logtext = "add AI analyze results (attributes); number of attributes=".count($result);
                 scartLog::logLine("D-scheduleAnalyseInput; filenumber=$record->filenumber; $logtext");

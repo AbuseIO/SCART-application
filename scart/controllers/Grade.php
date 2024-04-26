@@ -427,12 +427,19 @@ class Grade extends scartController
 
         if (scartAIanalyze::isActive()) {
 
-            // hardcoded AI attributes
-            $filter_attributes = [
-                'Naaktheid_in_foto' => 'Naaktheid_in_foto',
-                'Bevat_gezicht_in_leeftijdscategorie_0-15' => 'Bevat_gezicht_in_leeftijdscategorie_0-15',
-                'Bevat_gezicht_in_leeftijdscategorie_15-20' => 'Bevat_gezicht_in_leeftijdscategorie_15-20'
-            ];
+            // dynamic AI attributes
+            $filter_attributes = [];
+            $labels = Input_extrafield::where('type',SCART_INPUT_EXTRAFIELD_PWCAI)->select('label')->distinct()->get();
+            foreach ($labels as $label) {
+                if ($label->label != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
+                    $filterlabel = str_replace('_',' ',$label->label);
+                    $filterlabel = ucfirst($filterlabel);
+                    $filter_attributes[$label->label] = $filterlabel;
+                }
+            }
+            if (empty($filter_attributes)) {
+                $filter_attributes['notyet'] = 'No AI attributes field(s) yet';
+            }
             $filter->addScopes([
                 'attributes' => [
                     'label' => 'attributes',
@@ -2393,7 +2400,7 @@ class Grade extends scartController
             foreach ($extrafields as $extrafield) {
                 if ($extrafield->type == SCART_INPUT_EXTRAFIELD_PWCAI) {
                     $fieldname = $extrafield->type . '_' . $extrafield->label;
-                    if ($fieldname != 'PWCAI_Naam_afbeelding') {
+                    if ($fieldname != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
                         $correction = input($fieldname);
                         if ($extradata != '{') {
                             $extradata .= ',';

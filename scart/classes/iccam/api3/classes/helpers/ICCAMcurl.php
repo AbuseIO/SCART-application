@@ -139,8 +139,7 @@ class ICCAMcurl {
                     $errors = '(unknown); http_code=' . $info['http_code'];
                     scartLog::logDump("W-ICCAMurl; $errors; result=", $result);
                 }
-                $error = print_r($errors,true);
-                self::$_curlerrortext = $error;
+                self::$_curlerrortext = self::error2string($errors);
 
                 // set  error
                 $result = false;
@@ -177,48 +176,15 @@ class ICCAMcurl {
             // ICCAM interface sometimes not available -> inform admin with one time message (after retry count)
 
             if (empty($error)) $error = curl_getinfo(self::$_channel);
-            scartLog::logDump("W-ICCAMurl; Error: ",$error);
-
-            $sendalert = scartUsers::getGeneralOption('ICCAM_CURL_ERROR');
-            if (empty($sendalert)) $sendalert = 1;
-            $sendalert = intval($sendalert) + 1;
-            // check retry country
-            if ($sendalert == self::$_curlerrorretry) {
-                // (ONE TIME) send admin CURL error
-                $params = [
-                    'reportname' => 'ICCAM INTERFACE ERROR; retry count=' . $sendalert,
-                    'report_lines' => [
-                        "CURL_ERROR=" . print_r($error, true)
-                    ]
-                ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-            }
-            scartUsers::setGeneralOption('ICCAM_CURL_ERROR', $sendalert);
-
-            scartLog::logLine("W-ICCAMur; error retry count: $sendalert");
+            scartAlerts::alertAdminStatus('ICCAM_CURL_ERROR','ICCAMurl', true, $error, self::$_curlerrorretry);
 
         } elseif (!self::$_curlerror)  {
 
-            //scartLog::logLine("D-ICCAMurl (send); result=".print_r($result,true));
+            scartAlerts::alertAdminStatus('ICCAM_CURL_ERROR','ICCAMurl', false);
 
+            //scartLog::logLine("D-ICCAMurl (send); result=".print_r($result,true));
             if ($result) {
                 $result = json_decode($result);
-            }
-
-            $sendalert = scartUsers::getGeneralOption('ICCAM_CURL_ERROR');
-            if ($sendalert!='') {
-                // Reset if error was set
-                if (intval($sendalert) >= self::$_curlerrorretry) {
-                    // (ONE TIME) send admin reset error
-                    $params = [
-                        'reportname' => 'ICCAM CURL IS WORKING (AGAIN); retry count='. $sendalert,
-                        'report_lines' => [
-                            "NO CURL_ERROR"
-                        ]
-                    ];
-                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-                }
-                scartUsers::setGeneralOption('ICCAM_CURL_ERROR', '');
             }
 
         }
@@ -234,7 +200,26 @@ class ICCAMcurl {
     }
 
     public static function getErrors() {
-        return (self::$_curlerrortext);
+
+        return self::$_curlerrortext;
+    }
+
+    static function error2string($errors) {
+
+        $errorstring = $errors;
+        if (!is_string($errorstring)) {
+            if (is_object($errorstring)) {
+                // ICCAM error object
+                $errors = (array) $errorstring;
+                $errorstring = '';
+                foreach ($errors as $errorcode => $errorarr) {
+                    $errorstring .=(($errorstring) ? ', ' : '') . "[ICCAM $errorcode] ".(is_array($errorarr) ? implode(',',$errorarr) : print_r($errorarr,true));
+                }
+            } else {
+                $errorstring = print_r($errors,true);
+            }
+        }
+        return $errorstring;
     }
 
     /**

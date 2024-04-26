@@ -107,8 +107,6 @@ define ('SCART_ABUSECONTACT_NOTSET_DEFAULT_NUMBER', '99999');
 define ('SCART_NTD_REGISTRAR_INTERVAL', '5');
 
 define('SCART_ABUSECONTACT_OWNER_EMPTY', '(OWNER EMPTY?!)');
-//define('SCART_ABUSECONTACT_TYPE_PROVIDER', 'provider');
-//define('SCART_ABUSECONTACT_TYPE_DOMAIN_OWNER', 'domain_owner');
 
 define ('SCART_NTD_STATUS_INIT','init');
 define ('SCART_NTD_STATUS_GROUPING','grouping');
@@ -181,6 +179,7 @@ define('SCART_INTERFACE_EXPORTREPORT_ACTION','export_report');
 
 define('SCART_INTERFACE_ICCAM','iccam');
 define('SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT','iccam_exportreport');
+define('SCART_INTERFACE_ICCAM_ACTION_EXPORTASSESSMENT','iccam_exportassessment');
 define('SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION','iccam_exportaction');
 define('SCART_INTERFACE_ICCAM_ACTION_IMPORTLAST','iccam_importlast');
 define('SCART_INTERFACE_ICCAM_ACTION_IMPORTLASTDATE','iccam_importlastdate');
@@ -221,6 +220,7 @@ define('SCART_ADDON_TYPE_NTDAPI','ntd_api');
 
 define('SCART_INPUT_EXTRAFIELD_ICCAM','ICCAM');
 define('SCART_INPUT_EXTRAFIELD_PWCAI','PWCAI');
+define('SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding','naam_afbeelding');
 
 define('SCART_INPUT_EXTRAFIELD_ICCAM_CLASSIFICATION','classify');
 define('SCART_INPUT_EXTRAFIELD_ICCAM_HOTLINEID','HotlineID');
@@ -258,3 +258,4 @@ define('SCART_VERIFICATION_DONE','done');
 define('SCART_VERIFICATION_VALIDATE','validate');
 define('SCART_VERIFICATION_FAILED','verified_failed');
 
+define('SCART_SCHEDULER_MAX_RUNNING_SECS',3600);    // one hour

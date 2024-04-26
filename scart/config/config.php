@@ -13,7 +13,7 @@ return [
 
     'release' => [
         'version' => '6.5',
-        'build' => 'Build 10',
+        'build' => 'Build 18',
         'title' => env('APP_TITLE', 'Sexual Child Abuse Reporter Tool (SCART)'),
     ],
 
@@ -128,11 +128,20 @@ return [
             'debug_mode' => env('SCHEDULER_READIMPORT_DEBUG', true),
             'audittrail_mode' => false,
             'readmailbox' => [
-                'host' => env('SCHEDULER_READIMPORT_HOST', ''),
-                'port' => env('SCHEDULER_READIMPORT_PORT', ''),
-                'sslflag' => env('SCHEDULER_READIMPORT_SSLFLAG', ''),
-                'username' => env('SCHEDULER_READIMPORT_USERNAME', ''),
-                'password' => env('SCHEDULER_READIMPORT_PASSWORD', ''),
+                'mode' => env('SCHEDULER_READIMPORT_MAILBOX_MODE', ''),
+                'imap' => [
+                    'host' => env('SCHEDULER_READIMPORT_HOST', ''),
+                    'port' => env('SCHEDULER_READIMPORT_PORT', ''),
+                    'sslflag' => env('SCHEDULER_READIMPORT_SSLFLAG', ''),
+                    'username' => env('SCHEDULER_READIMPORT_USERNAME', ''),
+                    'password' => env('SCHEDULER_READIMPORT_PASSWORD', ''),
+                ],
+                'm356' => [
+                    'tenantId' => env('SCHEDULER_READIMPORT_M365_tenantId', ''),
+                    'appId' => env('SCHEDULER_READIMPORT_M365_appId', ''),
+                    'clientSecret' => env('SCHEDULER_READIMPORT_M365_clientSecret', ''),
+                    'principal' => env('SCHEDULER_READIMPORT_M365_principal', ''),
+                ]
             ],
             'iccam_active' => env('SCHEDULER_IMPORTEXPORT_ICCAM_ACTIVE', false),    // default no ICCAM
         ],
@@ -141,6 +150,7 @@ return [
             'debug_mode' => env('SCHEDULER_CLEANUP_DEBUG', true),
             'audittrail_mode' => false,
             'grade_status_timeout' => env('SCHEDULER_GRADE_STATUS_TIMEOUT', 24),    // hours
+            'closed_retention' => env('SCHEDULER_CLEANUP_CLOSED_RETENTION', ''),    // if filled then strtotime offset
         ],
         'sendalerts' => [
             'active' => env('SCHEDULER_SENDALERTS_ACTIVE', true),
@@ -160,6 +170,8 @@ return [
             'debug_mode' => env('SCHEDULER_CREATEREPORT_DEBUG', true),
             'take' => env('SCHEDULER_CREATEREPORT_TAKE', true),
             'recipient' => env('SCHEDULER_CREATEREPORT_RECIPIENT', ''),                // recipient
+            'anonymous' => env('SCHEDULER_CREATEREPORT_ANONYMOUS', false),
+            'sendpolice' => env('SCHEDULER_CREATEREPORT_SENDPOLICE', false),
         ],
         // default OFF
         'archive' => [

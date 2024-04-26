@@ -278,60 +278,22 @@ class scartCheckOnline {
                                     // check if error browser
                                     if ($browsererror = scartBrowser::getLasterror()) {
 
-                                        $browserretry = scartUsers::getGeneralOption('BROWSER_ERROR');
-                                        if (empty($browserretry)) $browserretry = 0;
-                                        $browserretry = intval($browserretry) + 1;
+                                        scartLog::logLine("W-scartCheckOnline; [$record->filenumber, $record->url] browser error=$browsererror - server/netwerk/image down");
 
-                                        scartLog::logLine("W-scartCheckOnline; [$record->filenumber, $record->url] [retry=$browserretry] browser error=$browsererror - server/netwerk/image down");
-
-                                        if ($browserretry == 3 || $browserretry % 12 == 0) {
-
-                                            // when al lot of browser errors after each other, then alert admin because the environment can also be broken
-
-                                            $params = [
-                                                'reportname' => "BROWSER ERROR report ",
-                                                'report_lines' => [
-                                                    'report time: ' . date('Y-m-d H:i:s'),
-                                                    "browser error: " . $browsererror,
-                                                    'task name: '.$taskname,
-                                                    'filenumber: ' . $record->filenumber,
-                                                    'host: ' . $record->url_host,
-                                                    'retry count: ' . $browserretry,
-                                                ]
-                                            ];
-                                            scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-                                        }
-
-                                        scartUsers::setGeneralOption('BROWSER_ERROR', $browserretry);
+                                        $error = [
+                                            "browser error: " . $browsererror,
+                                            'task name: '.$taskname,
+                                            'filenumber: ' . $record->filenumber,
+                                            'host: ' . $record->url_host,
+                                        ];
+                                        scartAlerts::alertAdminStatus('BROWSER_ERROR','scartCheckOnline', true, $error, 3, 12);
 
                                         // force no images
                                         $images = [];
 
                                     } else {
 
-                                        $browserretry = scartUsers::getGeneralOption('BROWSER_ERROR');
-                                        if (empty($browserretry)) $browserretry = 0;
-                                        if ($browserretry > 2) {
-
-                                            scartLog::logLine("D-scartCheckOnline; browser available again; sendalert=$browserretry");
-
-                                            $params = [
-                                                'reportname' => "BROWSER RESTORE report ",
-                                                'report_lines' => [
-                                                    'report time: ' . date('Y-m-d H:i:s'),
-                                                    "browser restore (running again)",
-                                                    'task name: '.$taskname,
-                                                    'filenumber: ' . $record->filenumber,
-                                                    'host: ' . $record->url_host,
-                                                    "retry count; $browserretry",
-                                                ]
-                                            ];
-                                            scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-                                        }
-
-                                        scartUsers::setGeneralOption('BROWSER_ERROR', '');
+                                        scartAlerts::alertAdminStatus('BROWSER_ERROR','scartCheckOnline', false);
 
                                     }
 
@@ -743,10 +705,7 @@ class scartCheckOnline {
 
             if (scartICCAMinterface::isActive()) {
 
-
                 // ONLY WHEN EXISTING RECORD IN ICCAM -> timing is important
-                // -> because when export ICCAM is quicker then this checkonline, then
-
 
                 if ($reportId = scartICCAMinterface::getICCAMreportID($record->reference)) {
 

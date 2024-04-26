@@ -10,11 +10,11 @@ class scartAIanalyze {
 
     public static function isActive() {
 
-        $active = false;
-        if (Systemconfig::get('abuseio.scart::AIanalyze.active',false)) {
+        $active = Systemconfig::get('abuseio.scart::AIanalyze.active',false);
+        if ($active) {
             $AIaddon = Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER);
             $active = ($AIaddon!='');
-            if (!$active) scartLog::logLine("W-scartAIanalyze; active but NO addon set?!");
+            if (!$active) scartLog::logLine("W-scartAIanalyze; active but NO addon set?! - switch AI off");
         }
         return $active;
     }

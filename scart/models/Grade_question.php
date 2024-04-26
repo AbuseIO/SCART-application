@@ -189,7 +189,7 @@ class Grade_question extends scartModel {
         ];
     }
 
-    //** get & set classification (grade) answer **/
+    //** get & set classification SCART_GRADE_QUESTION_GROUP_ILLEGAL (grade) answer **/
 
     public static function getGradeAnswer($map,$record) {
 
@@ -248,6 +248,34 @@ class Grade_question extends scartModel {
                 ['url_type',$url_type],
                 ['iccam_field','<>', ''],
             ])->get();
+    }
+
+    // ** SPECIAL NOT_ILLEGAL NOT_FOUND REASON QUESTION**
+
+    private static $_reasonQuestionId=0;
+    public static function isNotIllegalNotFound($input_id) {
+
+        $answer = '';
+        if (self::$_reasonQuestionId == 0) {
+            $reason = Grade_question::where('questiongroup',SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL)
+                ->where('url_type',SCART_URL_TYPE_MAINURL)
+                ->where('name','reason')
+                ->first();
+            if ($reason) {
+                self::$_reasonQuestionId = $reason->id;
+            } else {
+                scartLog::logLine("E-CANNOT FIND NOT-ILLEGAL REASON QUESTION!?");
+            }
+        }
+        if (self::$_reasonQuestionId) {
+            $answer = Grade_answer::where('record_type','input')
+                ->where('record_id',$input_id)
+                ->where('grade_question_id',self::$_reasonQuestionId)
+                ->first();
+            $answer =  ($answer) ? unserialize($answer->answer) : '';
+        }
+        // Note: option must be set
+        return (is_array($answer) ? in_array('NF',$answer) : false);
     }
 
 }

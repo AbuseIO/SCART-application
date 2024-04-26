@@ -66,6 +66,8 @@ class scartSchedulerSendAlerts extends scartScheduler {
                 $moderealtime = ($mode == SCART_CHECKNTD_MODE_REALTIME);
                 if ($moderealtime) {
 
+                    // Note: check if also useful for mode=CRON
+
                     scartLog::logLine("D-schedulerSendAlerts; check if realtime checkonline is running okay");
 
                     // -1- behide workload
@@ -202,31 +204,6 @@ class scartSchedulerSendAlerts extends scartScheduler {
                         scartUsers::setGeneralOption('REALTIME_OLD_CHECKONLINELOCK', $sendalert);
 
                     }
-
-                    /*
-                    else {
-
-                        $sendalert = scartUsers::getGeneralOption('REALTIME_OLD_CHECKONLINELOCK');
-
-                        if ($sendalert >= $check_online_every) {
-
-                            scartLog::logLine("D-Sent alert checkonline-lock old is over");
-
-                            // (ONE TIME) send admin warning over
-                            $params = [
-                                'reportname' => 'REALTIME CHECKONLINE-LOCK NOT TO OLD ANYMORE',
-                                'report_lines' => [
-                                    "No lock older then : $old",
-                                ]
-                            ];
-                            scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-                            scartUsers::setGeneralOption('REALTIME_OLD_CHECKONLINELOCK', '');
-
-                        }
-
-                    }
-                    */
 
                 }
 

@@ -33,51 +33,13 @@ class scartRIPEdb extends scartCURLcalls {
 
         if (self::hasError()) {
 
-            $sendalert = scartUsers::getGeneralOption('RIPE_CURL_ERROR');
-            if (empty($sendalert)) $sendalert = 0;
-            $sendalert = intval($sendalert) + 1;
-
-            scartLog::logLine("W-scartRIPEdb.getCurl; retrycount=$sendalert; error calling $url: " . self::getError() );
-
-            // RIPE interface sometimes not available -> inform admin with one time message (after retry count)
-
-            if ($sendalert == self::$_errorretry) {
-                // (ONE TIME) send admin CURL error
-                $params = [
-                    'reportname' => 'RIPE INTERFACE ERROR; retry count: ' . $sendalert,
-                    'report_lines' => [
-                        "CURL_ERROR=" . self::getError()
-                    ]
-                ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-            }
-            scartUsers::setGeneralOption('RIPE_CURL_ERROR', $sendalert);
-
+            $error = self::getError();
+            scartAlerts::alertAdminStatus('RIPE_CURL_ERROR','scartRIPEdb.getCurl', true, $error, 3 );
 
         } else {
 
             if (self::$_debug) scartLog::logLine("D-scartRIPEdb.getCurl; calling $url: response: " . print_r($response,true) );
-
-            // Reset if RIPE interface is available again -> inform admin with one time message
-
-            $sendalert = scartUsers::getGeneralOption('RIPE_CURL_ERROR');
-            if ($sendalert != '') {
-
-                // reset when finished
-                scartLog::logLine("D-scartRIPEdb.getCurl; reset retrycount=$sendalert" );
-
-                if (intval($sendalert) >= self::$_errorretry) {
-                    // (ONE TIME) send admin reset error
-                    $params = [
-                        'reportname' => 'RIPE INTERFACE IS WORKING (AGAIN); after number of calls: '. $sendalert,
-                        'report_lines' => [
-                            "NO CURL_ERROR"
-                        ]
-                    ];
-                    scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-                }
-                scartUsers::setGeneralOption('RIPE_CURL_ERROR', '');
-            }
+            scartAlerts::alertAdminStatus('RIPE_CURL_ERROR','scartRIPEdb.getCurl', false);
 
         }
 

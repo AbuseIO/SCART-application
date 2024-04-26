@@ -21,6 +21,10 @@ namespace abuseio\scart\addon;
  * 1. IS FOUND: https://imagetwist.com/cgi-bin/zapi.cgi?check=h6yr1fwq90es
  * 2. NOT FOUND: https://imagetwist.com/cgi-bin/zapi.cgi?check=okc1s0wet2j2
  *
+ * 2023/11
+ * - updated with last API PWC AI
+ * - seperated call for status and image prediction
+ *
  * Class imagetwistCheckonline
  * @package abuseio\scart\addon
  */
@@ -32,8 +36,8 @@ use abuseio\scart\classes\browse\scartCURLcalls;
 class pwcAIanalyzer {
 
     static $_pushurl = 'http://{host}/predict';
-    static $_pollurl = 'http://{host}/poll_database';
-    static $_polllist = 'http://{host}/poll_database_list';
+    static $_statusurl = 'http://{host}/get_image_status_by_id';
+    static $_predictionurl = 'http://{host}/get_image_prediction_by_id';
     static $_lasterror = '';
     static $_curltimeout = 60;
 
@@ -46,6 +50,7 @@ class pwcAIanalyzer {
         '101' => 'id not found',
         '102' => 'no valid image data',
         '103' => 'can not process image',
+        '104' => 'can not process image',
     ];
 
     public static function init() {
@@ -158,41 +163,52 @@ class pwcAIanalyzer {
             if ($action) {
 
                 if ($action=='push') {
+
                     $poststring = http_build_query($post);
                     $result = self::callPwcAI(self::$_pushurl,$poststring);
-                    // @TO-DO; action=polls -> POST ids
+
                 } elseif ($action=='poll') {
+
+                    // Example: http://localhost:5051/get_image_status_by_id?id=N0000007693
+
                     $poststring = urlencode($post);
-                    $url = self::$_pollurl . '?id=' . $poststring;
+                    $url = self::$_statusurl. '?id=' . $poststring;
                     $result = self::callPwcAI($url);
 
-                    if (isset($result->Result_code)) {
-                        if ($result->Result_code === SELF::$_resultsuccess) {
+                    if (isset($result->status_id)) {
+                        if ($result->status_id === SELF::$_resultsuccess) {
 
-                            if (isset($result->Attributes)) {
-                                $result = (array) $result->Attributes;
+                            // Example: http://localhost:5051/get_image_prediction_by_id?id=N0000007693
+
+                            $url = self::$_predictionurl. '?id=' . $poststring;
+                            $result = self::callPwcAI($url);
+
+                            if ($result) {
+                                scartLog::logLine("D-PWCAIanalyzer; AI analyze ready ");
+                                $result = (array) $result;
                             } else {
                                 scartLog::logLine("W-PWCAIanalyzer; empty AI analyze results?!?");
                                 $result = [];
                             }
 
-                        } elseif ($result->Result_code === SELF::$_resultnotready) {
-                            scartLog::logLine("D-PWCAIanalyzer; AI analyze not yet ready: result_code=" . $result->Result_code );
+                        } elseif ($result->status_id === SELF::$_resultnotready) {
+                            scartLog::logLine("D-PWCAIanalyzer; AI analyze not yet ready: result_code=" . $result->status );
                             $result = false;
                         } else {
-                            self::$_lasterror = (isset(SELF::$_resultcodes[$result->Result_code]))?SELF::$_resultcodes[$result->Result_code]:'unknown result code!?';
+                            self::$_lasterror = (isset(SELF::$_resultcodes[$result->status_id]))?SELF::$_resultcodes[$result->status_id]:'unknown result code!?';
                             scartLog::logLine("W-PWCAIanalyzer; AI analyze can not process: " . self::$_lasterror );
                             $result = false;
                         }
+
                     } else {
+
                         self::$_lasterror = 'no valid results from poll!?!';
                         scartLog::logLine("W-PWCAIanalyzer; ".self::$_lasterror);
+                        scartLog::logDump("D-PWCAIanalyzer; result=",$result);
                         $result = false;
+
                     }
 
-                } elseif ($action=='list') {
-                    $url = self::$_polllist;
-                    $result = self::callPwcAI($url);
                 }
 
             } else {

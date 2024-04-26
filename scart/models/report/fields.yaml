@@ -32,6 +32,38 @@ fields:
 
 tabs:
     fields:
+
+        anonymous:
+            label: 'Make anonymous'
+            span: left
+            type: checkbox
+            tab: filters
+        sendpolice:
+            label: 'Send police'
+            span: right
+            type: checkbox
+            tab: filters
+        sent_to_email:
+            label: 'Send to e-mail'
+            span: left
+            type: email
+            comment: '(only works when anoymous is set - the report will be sent as attachment to the email address)'
+            tab: filters
+            trigger:
+                action: show
+                field: anonymous
+                condition: checked
+        sent_to_email_police:
+            label: 'Send to police e-mail'
+            span: right
+            type: dropdown
+            comment: '(only works when send police is set - the report will be sent as attachment to the email address)'
+            tab: filters
+            trigger:
+                action: show
+                field: sendpolice
+                condition: checked
+
         filter_start:
             label: From
             mode: date

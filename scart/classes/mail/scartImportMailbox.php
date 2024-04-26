@@ -17,52 +17,34 @@ class scartImportMailbox {
 
     public static function isActive() {
         // host must be set
-        $host =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host','');
-        return ($host!='');
+        $mode =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.mode','');
+        // on this  moment imap and m356 is supported
+        return in_array($mode,['imap','m356']);
     }
 
     public static function importMailbox() {
 
         try {
 
-            $host =  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host','');
-            if ($host!='') {
+            if (self::isActive()) {
 
-                $reports = self::readImportMailbox([
-                    'host' =>  Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.host',''),
-                    'port' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.port', ''),
-                    'sslflag' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.sslflag', ''),
-                    'username' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.username', ''),
-                    'password' => Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.password', ''),
-                ]);
+                $reports = self::readImportMailbox();
 
                 if (count($reports) > 0) {
 
                     // report JOB
 
-                    $cnt = 0;
-
-                    $params = [
-                        'reports' => $reports,
-                    ];
+                    $params = ['reports' => $reports];
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO,'abuseio.scart::mail.scheduler_import_mailbox', $params);
-
                     foreach ($reports AS $report) {
-
                         // report to sender (from)
-                        $params = [
-                            'report' => $report,
-                        ];
-                        $to = scartIMAPmail::parseRfc822($report['from']);
-                        if ($to) {
+                        $params = ['report' => $report];
+                        if ($to = scartReadMail::parseRfc822($report['from'])) {
                             scartLog::logLine("D-importMailbox; send reply to: $to");
                             scartMail::sendMail($to, 'abuseio.scart::mail.scheduler_import_mailbox_reply', $params);
                         } else {
                             scartLog::logLine('D-importMailbox; cannot reply; no valid FROM address found in: ' . $report['from']);
                         }
-
-                        $cnt += 1;
-
                     }
 
                 }
@@ -77,41 +59,10 @@ class scartImportMailbox {
 
     }
 
-    static function checkConvertBody($body) {
-
-        // try to convert it into printable chars
-        try {
-            $body = quoted_printable_decode($body);
-        } catch (\Exception $err) {
-            scartLog::logLine("W-checkConvertBody; error quoted_printable_decode: ".$err->getMessage());
-        }
-        //scartLog::logDump("D-processBodylines; checkConvertBody=",$body);
-
-        // check if not TEXT ASCII format
-        if (strpos($body,'=0D=0A')!==false) {
-            scartLog::logLine("D-checkConvertBody; type=0D0A");
-            // first combi \n\r
-            $body = str_replace(["=\n", "=\r", "=\n\r"], '', $body);
-            // then only cr or lf
-            $body = str_replace(["\r", "\n"], '', $body);
-            // then split
-            $bodylines = explode("=0D=0A", $body);
-        } else {
-            scartLog::logLine("D-checkConvertBody; type=plain text");
-            // split on crlf
-            $bodylines = explode("\n", $body);
-        }
-        return $bodylines;
-    }
-
     public static function processBodylines($msg,$source,$status_code) {
 
-        $loglines = [];
-        $cnt = 0;
-
-        //scartLog::logDump("D-processBodylines; dump msg=",$msg);
-
-        $bodylines = self::checkConvertBody($msg->body);
+        $loglines = []; $cnt = 0;
+        $bodylines = $msg->getBodyLines();
 
         foreach ($bodylines AS $bodyline) {
 
@@ -137,7 +88,7 @@ class scartImportMailbox {
                             $referer = (count($arrline) >= 2) ? $arrline[1] : '';
                             if ($referer) {
                                 if (!filter_var($referer, FILTER_VALIDATE_URL)) {
-                                    $reportline = "failed: referer not a valid url; line=$bodyline";
+                                    $reportline = "failed: referer '$referer' not a valid url; line=$bodyline";
                                     $url = '';
                                 }
                             }
@@ -151,9 +102,9 @@ class scartImportMailbox {
 
                             if ($url) {
 
-                                $reportline = "import input ($url) success";
+                                $reportline = "import url '$url' success";
 
-                                scartLog::logLine("D-processBodylines got; url=$url, referer=$referer; generate INPUT record");
+                                scartLog::logLine("D-processBodylines got url '$url', referer '$referer'; generate INPUT record");
 
                                 try {
 
@@ -189,14 +140,14 @@ class scartImportMailbox {
                             }
 
                         } else {
-                            $reportline = "double: input ($url) already in database";
+                            $reportline = "double: url '$url' already in database";
                         }
 
                         $cnt += 1;
 
                     } else {
                         // skip
-                        $reportline = "failed: url not valid; line=$bodyline";
+                        $reportline = "failed: url '$url' not valid; line=$bodyline";
                     }
 
                 }
@@ -240,7 +191,7 @@ class scartImportMailbox {
         scartLog::logLine("D-readImportMailbox; processInputSource");
 
         // get source
-        $source = trim(substr($msg->subject, strlen(SCART_MAILBOX_IMPORT_INPUT_SOURCE)));
+        $source = trim(substr($msg->getSubject(), strlen(SCART_MAILBOX_IMPORT_INPUT_SOURCE)));
 
         if ($source) {
 
@@ -266,7 +217,7 @@ class scartImportMailbox {
 
         } else {
 
-            $loglines[] = "Import email with subject '$msg->subject' - cannot find SOURCE ";
+            $loglines[] = "Import email with subject '{$msg->getSubject()}' - cannot find SOURCE ";
 
         }
 
@@ -278,8 +229,7 @@ class scartImportMailbox {
     public static function processICCAMsetActionClose($msg,$actionID) {
 
         $loglines = []; $cnt = 0;
-
-        $bodylines = explode("\n", $msg->body);
+        $bodylines = $msg->getBodyLines();
         foreach ($bodylines AS $bodyline) {
 
             $reportline = '';
@@ -371,11 +321,8 @@ class scartImportMailbox {
 
     public static function processERTreadICCAM($msg) {
 
-        $loglines = [];
-        $cnt = 0;
-
-        $bodylines = explode("\n", $msg->body);
-
+        $loglines = []; $cnt = 0;
+        $bodylines = $msg->getBodyLines();
         foreach ($bodylines AS $bodyline) {
 
             $reportline = '';
@@ -508,8 +455,7 @@ class scartImportMailbox {
 
     public static function processSetMaintenance($msg) {
 
-        $bodylines = self::checkConvertBody($msg->body);
-
+        $bodylines = $msg->getBodyLines();
         scartLog::logDump("D-body=",$bodylines);
 
         $fields = ['module','start','end','note'];
@@ -537,54 +483,48 @@ class scartImportMailbox {
         return [$logline];
     }
 
-    public static function readImportMailbox($config) {
+    public static function readImportMailbox() {
 
         $reports = [];
 
-        scartIMAPmail::setConfig($config);
+        scartReadMail::init();
 
         // note; read max 10 messages in one time
-        $messages = scartIMAPmail::imapGetInboxMessages();
+        $messages = scartReadMail::getInboxMessages();
         if ($messages) {
 
             $adminreport = [];
 
-            scartLog::logLine("D-readImportMailbox; process " . count($messages) . ' messages from a total of ' . scartIMAPmail::imapLastMessageCount() );
+            scartLog::logLine("D-readImportMailbox; process " . count($messages) . ' messages');
 
             foreach($messages as $msg) {
 
                 $delmsg = true;
 
-                // check if the adress is added to the whitelist
-                scartLog::logLine("D-readImportMailbox; check whitelist of '$msg->from'");
-                if (!Whitelist::emailIsWhitelisted($msg->from)) {
+                $from = $msg->getFrom();
 
-                    scartLog::logLine("W-readImportMailbox; NOT IN whitelist: from='$msg->from'");
+                // check if the adress is added to the whitelist
+                scartLog::logLine("D-readImportMailbox; check whitelist of '$from'");
+                if (!Whitelist::emailIsWhitelisted($from)) {
+                    scartLog::logLine("W-readImportMailbox; NOT IN whitelist: from='$from'");
                     //scartAlerts::insertAlert(SCART_ALERT_LEVEL_WARNING, 'abuseio.scart::mail.whitelist_notfound_abusecontact', [
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN, 'abuseio.scart::mail.whitelist_notfound_abusecontact', [
-                        'from'      => $msg->from,
-                        'subject'   => (isset($msg->subject)) ? $msg->subject : '',
-                        'uid'       => $msg->uid,
-                        //'bodylines' => count(explode("\n", $msg->body)),
-                        'date'      => date('Y-m-d H:i:s',$msg->udate)
+                        'from'      => $from,
+                        'subject'   => $msg->getSubject(),
+                        'uid'       => $msg->getId(),
+                        'date'      => $msg->getDate(),
                     ]);
 
                     // skip processing
 
                 } else {
 
-                    // get subject and body
-                    $msg->subject = (isset($msg->subject)) ? $msg->subject : '';
-                    $msg->body = scartIMAPmail::imapGetMessageBody($msg->msgno);
-                    $bodycount = count(explode("\n", $msg->body));
-
-                    $report = "message '$msg->subject' (uid=$msg->uid) from '$msg->from' arrived at '".date('Y-m-d H:i:s',$msg->udate)."', with $bodycount body lines";
+                    $report = "message '{$msg->getSubject()}' (uid={$msg->getId()} from '{$msg->getFrom()}' arrived at '{$msg->getDate()}', with {$msg->getBodyLinesCount()} body lines";
                     scartLog::logLine("D-readImportMailbox; $report");
 
                     /**
                      * checksum check -> some messages takes such a time (hours), the IMAP interface is gone so the DELETE is not working
                      * the message is then looping
-                     *
                      * use abuseio_scart_importexport_job
                      *
                      */
@@ -595,50 +535,51 @@ class scartImportMailbox {
 
                         // check if correct SUBJECT
 
-                        if (strpos($msg->subject, SCART_MAILBOX_IMPORT_INPUT_SOURCE ) === 0) {
+                        if (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_INPUT_SOURCE ) === 0) {
 
                             $loglines = self::processInputSource($msg);
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_WEBSITE_INPUTS ) === 0) {
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_WEBSITE_INPUTS ) === 0) {
 
                             $loglines = self::processWEBSITEinput($msg);
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_ICCAM_INPUTS ) === 0){
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_ICCAM_INPUTS ) === 0){
 
                             // OBSOLUTE
                             //$loglines = self::processERTreadICCAM($msg);
                             $loglines = ["DISABLED (OBSOLUTE) ICCAM REPORTID IMPORT OPTION"];
 
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_HOTLINE_INPUTS ) === 0) {
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_HOTLINE_INPUTS ) === 0) {
 
                             $loglines = self::processHotlineInput($msg);
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_CONTENT_REMOVED ) === 0) {
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_CONTENT_REMOVED ) === 0) {
 
                             $loglines = self::processICCAMsetActionClose($msg,SCART_ICCAM_ACTION_CR);
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_CONTENT_UNAVAILABLE ) === 0) {
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_CONTENT_UNAVAILABLE ) === 0) {
 
                             $loglines = self::processICCAMsetActionClose($msg,SCART_ICCAM_ACTION_CU);
 
-                        } elseif (strpos($msg->subject, SCART_MAILBOX_IMPORT_SET_MAINTENANCE ) === 0) {
+                        } elseif (strpos($msg->getSubject(), SCART_MAILBOX_IMPORT_SET_MAINTENANCE ) === 0) {
 
                             $adminreport = self::processSetMaintenance($msg);
 
                         } else {
 
-                            scartLog::logLine("D-readImportMailbox; wrong message subject format: " . $msg->subject );
-                            $loglines[] = "CANNOT process this message, WRONG subject format";
+                            $logline = "CANNOT process this message, WRONG subject format '{$msg->getSubject()}'";
+                            scartLog::logLine("D-readImportMailbox; $logline" );
+                            $loglines[] = $logline;
 
                         }
 
                         if (count($loglines) > 0) {
                             $reports[] = [
-                                'from' => $msg->from,
-                                'subject' => $msg->subject,
-                                'arrived' => date('Y-m-d H:i:s',$msg->udate),
-                                'loglines' => $loglines
+                                'from' => $msg->getFrom(),
+                                'subject' => $msg->getSubject(),
+                                'arrived' => $msg->getDate(),
+                                'loglines' => $loglines,
                             ];
                         }
 
@@ -652,8 +593,8 @@ class scartImportMailbox {
                             // skip -> still working
                             $delmsg = false;
                         } else {
-                            // try delete again...
-                            scartLog::logLine("W-readImportMailbox; message already delete; msgno=$msg->msgno, uid=$msg->uid - try again");
+                            // delete again...
+                            scartLog::logLine("W-readImportMailbox; message already delete; subject={$msg->getSubject()} - try again");
                         }
 
                     }
@@ -661,8 +602,8 @@ class scartImportMailbox {
                 }
 
                 if ($delmsg) {
-                    scartLog::logLine("D-readImportMailbox; delete processed message; msgno=$msg->msgno, uid=$msg->uid");
-                    scartIMAPmail::imapDeleteMessage($msg->msgno);
+                    scartLog::logLine("D-readImportMailbox; delete processed message; subject={$msg->getSubject()} ");
+                    $msg->delete();
                     SELF::delImportmail($msg);
                 }
 
@@ -680,18 +621,17 @@ class scartImportMailbox {
             }
 
         } else {
-            scartLog::logLine("D-readImportMailbox; no messages in INBOX");
+            scartLog::logLine("D-readImportMailbox; no messages in (".scartReadMail::getMode().") INBOX");
         }
 
-        scartIMAPmail::closeExpunge();
+        scartReadMail::close();
 
         return $reports;
     }
 
     static function getImportmailChecksum($msg) {
         // unique checksum each import mail
-        // uid is more unique then udate
-        return md5($msg->subject . $msg->from . $msg->uid );
+        return md5($msg->getSubject() . $msg->getFrom() . $msg->getId() );
     }
 
     /**
@@ -716,10 +656,10 @@ class scartImportMailbox {
 
             // data for reference
             $data = [
-                'subject' => $msg->subject,
-                'uid' => $msg->uid,
-                'from' => $msg->from,
-                'arrived' => date('Y-m-d H:i:s',$msg->udate),
+                'subject' => $msg->getSubject(),
+                'uid' => $msg->getId(),
+                'from' => $msg->getFrom(),
+                'arrived' => $msg->getDate(),
             ];
 
             $export = new ImportExport_job();

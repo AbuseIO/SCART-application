@@ -2,6 +2,7 @@
 namespace abuseio\scart\classes\scheduler;
 
 use abuseio\scart\classes\parallel\scartRealtimeMonitor;
+use abuseio\scart\Models\Input_history;
 use Config;
 
 use Db;
@@ -59,12 +60,12 @@ class scartSchedulerCleanup extends scartScheduler {
                 // -4- Log orphans
                 scartLog::logLine("D-".SELF::$logname."; check orphans");
                 $orphancnt = scartCleanup::cleanupOrphan();
-                $report_lines[] = "Orphan cleanup count: " . $orphancnt;
+                $report_lines[] = "Orphan count: " . $orphancnt;
 
                 // -5- Cleanup whois cache
                 scartLog::logLine("D-".SELF::$logname."; cleanup whois cache");
                 $whoiscleaned = scartCleanup::cleanupWhoisCache();
-                $report_lines[] = "Whosi cleanup count: " . $whoiscleaned;
+                $report_lines[] = "WhoIs cleanup count: " . $whoiscleaned;
 
                 // -6- set day behind to cleanup reports from last day who are missing because of  different timezones (hotlines)
                 if (Systemconfig::get('abuseio.scart::scheduler.importexport.iccam_active', false)) {
@@ -97,10 +98,10 @@ class scartSchedulerCleanup extends scartScheduler {
 
                     $realtimests = scartRealtimeMonitor::realtimeStatus();
 
-                    $report_lines = [];
+                    $realtime_report_lines = [];
                     foreach ($realtimests AS $sts) {
                         $warning = ($sts['icon'] ? ' ('.$sts['icon'].')' : '');
-                        $report_lines[] = $sts['status'].': '.$sts['count']." $warning";
+                        $realtime_report_lines[] = $sts['status'].': '.$sts['count']." $warning";
                     }
 
                     //Artisan::call('abuseio:monitorRealtime');
@@ -109,14 +110,54 @@ class scartSchedulerCleanup extends scartScheduler {
 
                     $params = [
                         'reportname' => 'Realtime worker status',
-                        'report_lines' => $report_lines
+                        'report_lines' => $realtime_report_lines
                     ];
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
 
                 }
 
-                // ** report
+                if ($closedRetention = Systemconfig::get('abuseio.scart::scheduler.cleanup.closed_retention', '')) {
+
+                    scartLog::logLine("D-".SELF::$logname."; make reports fields anonymous with CLOSED retention of '$closedRetention'");
+
+                    // status_code IN ['close','close_offline','close_double']
+                    // updated_at = status_code set = retention offset
+
+                    $closed = ['close','close_offline','close_double'];
+                    $anonymousFields = scartSchedulerCreateReports::getAnonymousColumns();
+                    $closedRetention = @date('Y-m-d H:i:s',strtotime(date('Y-m-d H:i:s')." $closedRetention"));
+
+                    if ($closedRetention) {
+
+                        $inputs = Input::whereIn('status_code',$closed)->where('updated_at','<=',$closedRetention)->get();
+
+                        $cnt = $inputs->count();
+                        scartLog::logLine("D-".SELF::$logname."; found $cnt with CLOSED retention of '$closedRetention'");
+
+                        if ($cnt > 0) $report_lines[] = "Retention ($closedRetention) cleanup count: $cnt (NOT YET)";
+
+                        foreach ($inputs AS $input) {
+
+                            // fill with unique dummy
+                            $update = array_fill_keys($anonymousFields,'anonymous-'.$input->id);
+                            scartLog::logDump("D-".SELF::$logname."; DO NOTHING; found id={$input->id}, status={$input->status_code}, updated_at={$input->updated_at}; update=",$update);
+
+                            //Db::table(SCART_INPUT_TABLE)->where('id',$input->id)->update($update);
+                            //Log::where('record_type',SCART_INPUT_TABLE)->where('record_id', $input->id)->delete();
+                            //Input_history::where('input_id',$input->id)->delete();
+
+                        }
+
+                    } else {
+                        scartLog::logLine("W-".SELF::$logname."; wrong retention value '$closedRetention'!?! ");
+                    }
+
+                }
+
+
+                    // ** report
                 if (count($job_records) > 0 || $scrapecleaned > 0  || $cleanlog) {
+
                     $params = [
                         'job_inputs' => $job_records,
                         'scrapecleaned' => $scrapecleaned,

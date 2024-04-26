@@ -6,7 +6,7 @@ use BackendMenu;
 
 class Input_source extends scartController
 {
-    public $requiredPermissions = ['abuseio.scart.startpage'];
+    public $requiredPermissions = ['abuseio.scart.sources'];
 
     public $implement = [
         'Backend\Behaviors\ListController',

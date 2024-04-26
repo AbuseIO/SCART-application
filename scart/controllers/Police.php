@@ -76,42 +76,48 @@ class Police extends scartController
                 $record = Input::find($check);
                 if ($record) {
 
-                    // check if ICCAM active (for this record)
-
-                    if (scartICCAMinterface::isActive()) {
-                        if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
-                            // get hoster
-                            $abusecontact = Abusecontact::find($record->host_abusecontact_id);
-                            if ($abusecontact) {
-                                $country = $abusecontact->abusecountry;
-                                // check if hoster local
-                                if (scartGrade::isLocal($country)) {
-                                    // local -> then content removed (CR)
-                                    $action = SCART_ICCAM_ACTION_CR;
-                                    $reason = 'ContentNotFound';
-                                } else {
-                                    // not local -> content moved (MO)
-                                    $action = SCART_ICCAM_ACTION_MO;
-                                    $reason = 'SCART content moved to '.$country;
-                                }
-                                $record->logText("POLICE function set CLOSE; inform ICCAM about '$reason'");
-                                scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
-                                    'record_type' => class_basename($record),
-                                    'record_id' => $record->id,
-                                    'object_id' => $record->reference,
-                                    'action_id' => $action,
-                                    'country' => $country,
-                                    'reason' => $reason,
-                                ]);
-                            }
-                        }
-                    }
-
-                    scartLog::logLine("D-Filenumber=$record->filenumber, url=$record->url, set on $record->status_code");
                     // log old/new for history
                     $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE,"Close by analist in POLICE function");
                     $record->status_code = SCART_STATUS_CLOSE;
                     $record->save();
+                    $record->logText("Manual set on $record->status_code");
+
+                    scartLog::logLine("D-Filenumber=$record->filenumber, grade=$record->grade_code, url=$record->url, set on $record->status_code");
+
+                    if ($record->grade_code == SCART_GRADE_ILLEGAL) {
+
+                        // check if ICCAM active (for this record)
+
+                        if (scartICCAMinterface::isActive()) {
+                            if (scartICCAMinterface::hasICCAMreportID($record->reference)) {
+                                // get hoster
+                                $abusecontact = Abusecontact::find($record->host_abusecontact_id);
+                                if ($abusecontact) {
+                                    $country = $abusecontact->abusecountry;
+                                    // check if hoster local
+                                    if (scartGrade::isLocal($country)) {
+                                        // local -> then content removed (CR)
+                                        $action = SCART_ICCAM_ACTION_CR;
+                                        $reason = 'ContentNotFound';
+                                    } else {
+                                        // not local -> content moved (MO)
+                                        $action = SCART_ICCAM_ACTION_MO;
+                                        $reason = 'SCART content moved to '.$country;
+                                    }
+                                    $record->logText("POLICE function set CLOSE illegal content; inform ICCAM about '$reason'");
+                                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION,[
+                                        'record_type' => class_basename($record),
+                                        'record_id' => $record->id,
+                                        'object_id' => $record->reference,
+                                        'action_id' => $action,
+                                        'country' => $country,
+                                        'reason' => $reason,
+                                    ]);
+                                }
+                            }
+                        }
+
+                    }
 
                 }
             }

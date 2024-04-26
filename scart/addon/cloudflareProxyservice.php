@@ -155,52 +155,12 @@ class cloudflareProxyservice {
         if (!$error && $success = SELF::handleCloudflareResponse($result)) {
 
             scartLog::logLine("D-cloudflareProxyservice; return IP=".SELF::$_lastrealIP.", message=" . SELF::$_lastmessage );
-
-            $cloudflareretry = scartUsers::getGeneralOption('CLOUDFLARE_ERROR');
-            if (empty($cloudflareretry)) $cloudflareretry = 0;
-            if ($cloudflareretry > 2) {
-
-                scartLog::logLine("D-cloudflareProxyservice; cloudflare available again; retry=$cloudflareretry");
-
-                $params = [
-                    'reportname' => "CLOUDFLARE RESTORE report ",
-                    'report_lines' => [
-                        'report time: ' . date('Y-m-d H:i:s'),
-                        "cloudflare restore (running again)",
-                        "retry count; $cloudflareretry",
-                    ]
-                ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-                scartUsers::setGeneralOption('CLOUDFLARE_ERROR', '');
-            }
+            scartAlerts::alertAdminStatus('CLOUDFLARE_ERROR','cloudflareProxyservice', false);
 
         } else {
 
             $errortxt = ($error) ? scartCURLcalls::getError() : SELF::$_lastmessage;
-
-            $cloudflareretry = scartUsers::getGeneralOption('CLOUDFLARE_ERROR');
-            if (empty($cloudflareretry)) $cloudflareretry = 0;
-            $cloudflareretry = intval($cloudflareretry) + 1;
-
-            scartLog::logLine("W-cloudflareProxyservice; [retry=$cloudflareretry] error '$errortxt' - server/netwerk/image down!?");
-
-            if ($cloudflareretry == 3 || $cloudflareretry % 12 == 0) {
-
-                $params = [
-                    'reportname' => "CLOUDFLARE ERROR report ",
-                    'report_lines' => [
-                        'report time: ' . date('Y-m-d H:i:s'),
-                        "error: " . $errortxt,
-                        'url: ' . $url,
-                        'retry count: ' . $cloudflareretry,
-                    ]
-                ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-            }
-
-            scartUsers::setGeneralOption('CLOUDFLARE_ERROR', $cloudflareretry);
+            scartAlerts::alertAdminStatus('CLOUDFLARE_ERROR','cloudflareProxyservice', true, $errortxt, 3, 12);
 
         }
 

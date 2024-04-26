@@ -61,40 +61,44 @@ class Plugin extends PluginBase {
 
     public function register() {
 
+        // runtime tools
         $this->registerConsoleCommand('abuseio.analyzeInputs', 'abuseio\scart\console\analyzeInputs');
-        $this->registerConsoleCommand('abuseio.iccamApi', 'abuseio\scart\console\iccamApi');
+        $this->registerConsoleCommand('abuseio.monitorMemory', 'abuseio\scart\console\monitorMemory');
+        $this->registerConsoleCommand('abuseio.monitorRealtime', 'abuseio\scart\console\monitorRealtime');
+        $this->registerConsoleCommand('abuseio.setMaintenance', 'abuseio\scart\console\setMaintenance');
+        $this->registerConsoleCommand('abuseio.scartRealtimeCheckonline', 'abuseio\scart\console\scartRealtimeCheckonline');
+        $this->registerConsoleCommand('abuseio.conver2seeder', 'abuseio\scart\console\convert2seeder');
+        $this->registerConsoleCommand('abuseio.langImportExport', 'abuseio\scart\console\langImportExport');
+
+        // testing
         $this->registerConsoleCommand('abuseio.exportClassified', 'abuseio\scart\console\exportClassified');
         $this->registerConsoleCommand('abuseio.whoisTest', 'abuseio\scart\console\whoisTest');
         $this->registerConsoleCommand('abuseio.sendMailTest', 'abuseio\scart\console\sendMailTest');
         $this->registerConsoleCommand('abuseio.readMailTest', 'abuseio\scart\console\readMailTest');
+        $this->registerConsoleCommand('abuseio.readMail365Test', 'abuseio\scart\console\readMail365Test');
         $this->registerConsoleCommand('abuseio.Getwhois', 'abuseio\scart\console\Getwhois');
         $this->registerConsoleCommand('abuseio.dashboardReset', 'abuseio\scart\console\dashboardReset');
         $this->registerConsoleCommand('abuseio.sendCustomNTD', 'abuseio\scart\console\sendCustomNTD');
         $this->registerConsoleCommand('abuseio.doArchive', 'abuseio\scart\console\doArchive');
         $this->registerConsoleCommand('abuseio.checkHASH', 'abuseio\scart\console\checkHASH');
-        $this->registerConsoleCommand('abuseio.iccamLoadDirect', 'abuseio\scart\console\iccamLoadDirect');
         $this->registerConsoleCommand('abuseio.testDragon', 'abuseio\scart\console\testDragon');
         $this->registerConsoleCommand('abuseio.testUpdateWhois', 'abuseio\scart\console\testUpdateWhois');
         $this->registerConsoleCommand('abuseio.testAddon', 'abuseio\scart\console\testAddon');
         $this->registerConsoleCommand('abuseio.testAI', 'abuseio\scart\console\testAI');
-        $this->registerConsoleCommand('abuseio.iccamReadBack', 'abuseio\scart\console\iccamReadBack');
         $this->registerConsoleCommand('abuseio.testMailview', 'abuseio\scart\console\testMailview');
         $this->registerConsoleCommand('abuseio.testLog', 'abuseio\scart\console\testLog');
-
-        $this->registerConsoleCommand('abuseio.conver2seeder', 'abuseio\scart\console\convert2seeder');
-        $this->registerConsoleCommand('abuseio.langImportExport', 'abuseio\scart\console\langImportExport');
-
         $this->registerConsoleCommand('abuseio.testPooling', 'abuseio\scart\console\testPooling');
-        $this->registerConsoleCommand('abuseio.scartRealtimeCheckonline', 'abuseio\scart\console\scartRealtimeCheckonline');
-        $this->registerConsoleCommand('abuseio.monitorMemory', 'abuseio\scart\console\monitorMemory');
-        $this->registerConsoleCommand('abuseio.monitorRealtime', 'abuseio\scart\console\monitorRealtime');
-        $this->registerConsoleCommand('abuseio.analyzeTUDELFT', 'abuseio\scart\console\analyzeTUDELFT');
-        $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
-        $this->registerConsoleCommand('abuseio.setMaintenance', 'abuseio\scart\console\setMaintenance');
-        $this->registerConsoleCommand('abuseio.iccamApi3', 'abuseio\scart\console\iccamApi3');
         $this->registerConsoleCommand('abuseio.testChrome', 'abuseio\scart\console\testChrome');
+        $this->registerConsoleCommand('abuseio.testSendNTD', 'abuseio\scart\console\testSendNTD');
+        $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
 
+        // ICCAM
+        $this->registerConsoleCommand('abuseio.iccamApi', 'abuseio\scart\console\iccamApi');
+        $this->registerConsoleCommand('abuseio.iccamApi3', 'abuseio\scart\console\iccamApi3');
+        $this->registerConsoleCommand('abuseio.iccamLoadDirect', 'abuseio\scart\console\iccamLoadDirect');
+        $this->registerConsoleCommand('abuseio.iccamReadBack', 'abuseio\scart\console\iccamReadBack');
         $this->registerConsoleCommand('abuseio.checkICCAMexport', 'abuseio\scart\console\checkICCAMexport');
+        $this->registerConsoleCommand('abuseio.checkAndCorrectICCAM', 'abuseio\scart\console\checkAndCorrectICCAM');
 
     }
 

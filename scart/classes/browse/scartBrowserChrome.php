@@ -162,13 +162,13 @@ class scartBrowserChrome extends scartBrowser {
                 'document.documentElement.offsetHeight'];
             $pageHeigth = 0;
             foreach ($heightVars as $heightVar) {
-                // some javascript vars may not be available - skip error
                 try {
                     $heigth = $page->evaluate($heightVar)->getReturnValue();
                     if ($heigth > $pageHeigth) $pageHeigth = $heigth;
                 } catch (\Exception $err) {
-                    SELF::$_lasterror = $err->getMessage();
-                    scartLog::logLine("W-scartBrowserChrome.getImageScreenshot: cannot get '$heightVar'; error: ".$err->getMessage());
+                    // some javascript vars may not be available - skip error
+                    //SELF::$_lasterror = $err->getMessage();
+                    //scartLog::logLine("W-scartBrowserChrome.getImageScreenshot: cannot get '$heightVar'; error: ".$err->getMessage());
                 }
             }
 
@@ -465,7 +465,13 @@ class scartBrowserChrome extends scartBrowser {
 
                                 $resource = (object) $resource;
 
-                                scartLog::logLine("D-scartBrowserChrome.getImages; got resource; type=$resource->type, mimeType=$resource->mimeType, url=$resource->url");
+                                if (substr($resource->url,0,5) == 'data:') {
+                                    $urlres = '(base64 data) '.substr($resource->url,0,60).'..';
+                                } else {
+                                    $urlres = $resource->url;
+                                }
+
+                                scartLog::logLine("D-scartBrowserChrome.getImages; got resource; type=$resource->type, mimeType=$resource->mimeType, url=$urlres");
 
                                 // if image and supported mimeType and NOT datauRI
                                 if ($resource->type == 'Image' && in_array($resource->mimeType,self::$_imageMimeTypes) && !scartBrowser::isDataURI($resource->url)) {

@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\scheduler;
 
+use abuseio\scart\classes\mail\scartAlerts;
 use Config;
 use BackendMenu;
 use BackendAuth;
@@ -112,7 +113,7 @@ class scartScheduler {
             scartLog::logLine('D-'.SELF::$logname.' [job_name='.SELF::$jobName.']; executing time=' . $execution_time . ' secs');
         }
 
-        scartLog::logMemory(SELF::$logname);
+        scartLog::logMemory(SELF::$logname.' [job_name='.SELF::$jobName.']');
 
         if (scartLog::hasError()) {
             scartLog::errorMail(SELF::$logname."; error(s) found");
@@ -122,43 +123,53 @@ class scartScheduler {
         // mark not active
         scartUsers::setGeneralOption(SELF::$logname,0);
 
+        // check if other scheduler(s) running to long
+        self::checkSchedulerRunningTime();
+
         // keep loggedin
 
     }
 
-    // ** OBSOLUTE** //
+    /**
+     * For each scheduler the active (running) state is memorized in the user option table
+     * Use the last update time to check if NOT active for more then the SCART_SCHEDULER_MAX_RUNNING_SECS
+     * If so, warn (alert) the admin.
+     * Ignore when in maintenance
+     *
+     */
+    public static function checkSchedulerRunningTime($debug=false) {
 
-    public static function acquireBlock($key) {
-
-        // not working
-        return true;
-
-        $semaphore = sem_get($key, 1, 0666, 1);
-        if ($semaphore) {
-            $set = sem_acquire($semaphore,true);
-            if ($set) {
-                scartLog::logLine("D-".SELF::$logname."; semaphore set");
-            } else {
-                scartLog::logLine("W-".SELF::$logname."; semaphore already set");
+        if (!Systemconfig::get('abuseio.scart::maintenance.mode',false)) {
+            // important schedulers
+            $schedulers = [
+                'schedulerAnalyzeInput' => 'scrape',
+                'schedulerCreateReports' => 'createreports',
+                'schedulerImportExport' => 'importexport',
+                'schedulerSendAlerts' => 'sendalerts',
+                'schedulerSendNTD' => 'sendntd',
+                'schedulerCheckOnline' => 'checkntd',
+            ];
+            foreach ($schedulers as $scheduler => $configname) {
+                // only if active
+                if (Systemconfig::get('abuseio.scart::scheduler.'.$configname.'.active',true)) {
+                    if ($scheduler == 'schedulerCheckOnline' && (Systemconfig::get('abuseio.scart::scheduler.checkntd.mode',SCART_CHECKNTD_MODE_CRON)==SCART_CHECKNTD_MODE_REALTIME)) {
+                        $scheduler = 'schedulerRealtimeCheckonline';
+                    }
+                    $scheduleroption = User_options::where('user_id',0)->where('name',$scheduler)->first();
+                    // check updated_at timestamp as
+                    $runningsecs = ($scheduleroption) ? (time() - strtotime($scheduleroption->updated_at)) : 0;
+                    if ($debug) scartLog::logLine("D-$scheduler; last update $runningsecs secs ago");
+                    if ($runningsecs > SCART_SCHEDULER_MAX_RUNNING_SECS) {
+                        // alert the admin somewhere each (~) half hour about this state
+                        $alertcount = count($schedulers) * 30;
+                        scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',true, "$scheduler is NOT active for more then $runningsecs secs!?", 3, $alertcount);
+                    } else {
+                        scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',false);
+                    }
+                } else {
+                    if ($debug) scartLog::logLine("D-$scheduler not active");
+                }
             }
-        } else {
-            // continue
-            $set = true;
-            scartLog::logLine("W-".SELF::$logname."; error set semaphore");
-        }
-        return $set;
-    }
-
-    public static function releaseBlock($key) {
-
-        return true;
-
-
-        try {
-            $semaphore = sem_get($key, 1, 0666, 1);
-            sem_release($semaphore);
-        } catch (\Exception $err) {
-            scartLog::logLine("E-Schedule exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
         }
     }
 
