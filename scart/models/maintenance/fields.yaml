@@ -3,6 +3,7 @@ fields:
         label: Module
         span: auto
         type: dropdown
+        default: 'ICCAM'
         options:
             'ALL': 'SCARt maintenance (for users offline)'
             'ICCAM': 'ICCAM interface offline'

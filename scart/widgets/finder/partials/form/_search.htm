@@ -7,7 +7,7 @@ Finder
 
 
 <div class="modal-body">
-    <form class="form-elements" role="form"
+    <form class="form-elements" name="searchform" role="form"
         data-request="onSearchScart"
         data-request-loading="#loading_input">
 
@@ -18,39 +18,45 @@ Finder
         <!-- Drop down -->
         <div class="form-group dropdown-field span-left">
             <label>Field</label>
-            <?php
-                if (isset($finderconfig->Finder['searchfilters']['fields'])) {
-                    echo $this->makePartial('form/options', ['options' => $finderconfig->Finder['searchfilters']['fields']]);
-            }
-            ?>
+            <?php if (isset($finderconfig->Finder['searchfilters']['fields'])) {
+                echo $this->makePartial('form/options', ['options' => $finderconfig->Finder['searchfilters']['fields'],'selected' => $searchtype]);
+            } ?>
         </div>
 
-        <div class="form-group span-right is-required">
+        <div class="form-group span-right">
             <label>Search</label>
-            <input type="text" name="criteria" value="" class="form-control form-control-lg" />
-        </div>
-
-
-
-        <!-- Checkbox List -->
-
-        <div class="xtrafilters" style="display: none">
-            <div class="form-group checkboxlist-field span-right is-required">
-                <?php
-             if (isset($finderconfig->Finder['searchfilters']['types'])) {
-               // $this->makePartial('form/dropdown', ['types' => $finderconfig->Finder['searchfilters']['types']]);
-                }
-                ?>
-            </div>
+            <input type="text" name="criteria" value="<?= $searchvalue ?>" class="form-control form-control-lg search-required" />
         </div>
 
         <br>
-        <button type="submit" class="btn btn-primary">Find</button>
-<!--        <span onclick="$('.xtrafilters').toggle(1, function(){-->
-<!--            $('.find.btn.btn-info.oc-icon-plus').toggleClass('oc-icon-minus btn-danger');-->
-<!--        });" class="find btn btn-info oc-icon-plus">filters</span>-->
+        <button type="submit" class="btn btn-primary onsave">Find</button>
+
+        <?php if ($archiveActive): ?>
+            &nbsp;&nbsp;<input type="checkbox" <?= $searcharchive ?> id="archiveActive" name="archiveActive" value="1"  />
+            <label for="archiveActive">Archive database</label>
+        <?php endif ?>
 
     </form>
+
+    <script type="text/javascript">
+        $('.onsave').click(function(event) {
+            var valid=true;
+            $('.search-required').each(function() {
+                if ($(this).val()=='') {
+                    valid=false;
+                }
+            });
+            if (!valid) {
+                $.oc.flashMsg({
+                    'text': 'Search value not filled',
+                    'class': 'error',
+                    'interval': 3
+                });
+                event.stopPropagation();
+            }
+            return valid;
+        });
+    </script>
 
     <div style="height:50px;"></div>
 

@@ -14,7 +14,15 @@ class V6DropIfExists extends Migration
 
         $databasename = env('DB_DATABASE', '');
         if ($databasename) {
-            $tables = Db::select("show tables like 'abuseio_scart_%' ");
+
+            $tables = array_filter(
+                Schema::getAllTables(),
+                static function ($table) {
+                    $fieldname = 'Tables_in_'.env('DB_DATABASE');
+                    return (strpos($table->{$fieldname},'abuseio_scart_') !== false);
+                }
+            );
+
             foreach ($tables AS $table) {
                 foreach ($table AS $fld => $val) {
                     Log::debug("D-Drop $fld=$val");

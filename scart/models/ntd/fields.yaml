@@ -29,7 +29,7 @@ tabs:
         msg_subject:
             label: subject
             span: full
-            readOnly: 1
+            readOnly: true
             type: text
             tab: Message
         msg_body:
@@ -37,8 +37,9 @@ tabs:
             label: body
             span: full
             size: gaint
-            readOnly: 1
+            readOnly: true
             type: richeditor
+            cssClass: previewtable
             tab: Message
         logs:
             span: full

@@ -6,6 +6,7 @@ define ('SCART_AUDIT_TABLE' , 'abuseio_scart_audittrail');
 define ('SCART_INPUT_TABLE' , 'abuseio_scart_input');
 define ('SCART_INPUT_PARENT_TABLE' , 'abuseio_scart_input_parent');
 define ('SCART_INPUT_SELECTED_TABLE' , 'abuseio_scart_input_selected');
+define ('SCART_INPUT_EXTRA_TABLE' , 'abuseio_scart_input_extrafield');
 define ('SCART_NTD_TABLE' , 'abuseio_scart_ntd');
 define ('SCART_NTD_URL_TABLE' , 'abuseio_scart_ntd_url');
 define ('SCART_SCRAPE_CACHE_TABLE' , 'abuseio_scart_scrape_cache');
@@ -42,6 +43,8 @@ define ('SCART_STATUS_WORKING', 'work');
 define ('SCART_STATUS_AI_ANALYZE', 'ai_analyze');
 define ('SCART_STATUS_GRADE', 'grade');
 define ('SCART_STATUS_FIRST_POLICE', 'first_police');
+define ('SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL', 'first_police_checkonline_manual');
+define ('SCART_STATUS_DIRECT_POLICE', 'direct_police');
 define ('SCART_STATUS_ABUSECONTACT_CHANGED', 'abusecontact_changed');
 define ('SCART_STATUS_SCHEDULER_CHECKONLINE', 'scheduler_checkonline');
 define ('SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL', 'scheduler_checkonline_manual');
@@ -136,26 +139,40 @@ define ('SCART_CLASSIFY_VIEWTYPE_LIST','LIST');
 
 define('SCART_EXPORT_CSV_DELIMIT',';');
 
-define ('SCART_MAILBOX_IMPORT_INPUT_SOURCE', 'ERT-INPUT-SOURCE');
 define ('SCART_MAILBOX_IMPORT_WEBSITE_INPUTS', 'ERT-INPUT');
+define ('SCART_MAILBOX_IMPORT_WEBSITE_INPUTS_2', 'SCART-INPUT');
+define ('SCART_MAILBOX_IMPORT_INPUT_SOURCE', 'ERT-INPUT-SOURCE');
+define ('SCART_MAILBOX_IMPORT_INPUT_SOURCE_2', 'SCART-INPUT-SOURCE');
 define ('SCART_MAILBOX_IMPORT_CONTENT_REMOVED', 'ERT-CONTENTREMOVED');
+define ('SCART_MAILBOX_IMPORT_CONTENT_REMOVED_2', 'SCART-CONTENTREMOVED');
 define ('SCART_MAILBOX_IMPORT_CONTENT_UNAVAILABLE', 'ERT-CONTENTUNAVAILABLE');
+define ('SCART_MAILBOX_IMPORT_CONTENT_UNAVAILABLE_2', 'SCART-CONTENTUNAVAILABLE');
+define ('SCART_MAILBOX_IMPORT_CLOSE_DOUBLE', 'SCART-CLOSEDOUBLE');
 define ('SCART_MAILBOX_IMPORT_ICCAM_INPUTS', 'ERT-ICCAM-INPUT');
 define ('SCART_MAILBOX_IMPORT_HOTLINE_INPUTS', 'ERT-HOTLINE-INPUT');
 define ('SCART_MAILBOX_IMPORT_SET_MAINTENANCE', 'SET_MAINTENANCE');
 
 define ('SCART_MAILBOX_IMPORT_SOURCE_CODE_WEBFORM', 'webform');
-define ('SCART_MAILBOX_IMPORT_TYPE_CODE_WEBSITE', 'website');
 define ('SCART_MAILBOX_IMPORT_SOURCE_CODE_HOTLINE', 'analyst');
+define ('SCART_MAILBOX_IMPORT_TYPE_CODE_WEBSITE', 'website');
 
 define ('SCART_ICCAM_IMPORT_SOURCE_CODE_ICCAM', 'iccam');
 define ('SCART_ICCAM_IMPORT_TYPE_CODE_ICCAM', 'notdetermined');
+define ('SCART_ICCAM_ERROR_statusToBeActioned', 'ICCAMstatusToBeActioned');
+define ('SCART_ICCAM_ERROR_statusCompleted', 'ICCAMstatusCompleted');
+define ('SCART_ICCAM_ERROR_alreadyFinalAction', 'ICCAMalreadyFinalAction');
+define ('SCART_ICCAM_ERROR_notStateForAssessments', 'ICCAMnotStateForAssessments');
+define ('SCART_ICCAM_ERROR_notRightPhaseForActions', 'ICCAMnotRightPhaseForActions');
+define ('SCART_ICCAM_ERROR_tokenExpired', 'ICCAMtokenExpired');
+define ('SCART_ICCAM_ERROR_tokenUnknown', 'ICCAMtokenUnknown');
+define ('SCART_ICCAM_ERROR_unknown', 'ICCAMunknown');
 
 define ('SCART_IMPORTEXPORT_STATUS_EXPORT', 'export');
 define ('SCART_IMPORTEXPORT_STATUS_IMPORTED', 'imported');
 define ('SCART_IMPORTEXPORT_STATUS_SUCCESS', 'success');
 define ('SCART_IMPORTEXPORT_STATUS_SKIP', 'skip');
 define ('SCART_IMPORTEXPORT_STATUS_ERROR', 'error');
+define ('SCART_IMPORTEXPORT_STATUS_ERROR_RETRY_TIME', 3 * 3600);       // secs
 
 define('SCART_RULE_TYPE_WHOIS_FILLED','whois_filled_by_rules');
 define('SCART_RULE_TYPE_NONOTSCRAPE','do_not_scrape');
@@ -221,10 +238,14 @@ define('SCART_ADDON_TYPE_NTDAPI','ntd_api');
 define('SCART_INPUT_EXTRAFIELD_ICCAM','ICCAM');
 define('SCART_INPUT_EXTRAFIELD_PWCAI','PWCAI');
 define('SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding','naam_afbeelding');
+define('SCART_INPUT_EXTRAFIELD_WEBFORM','import_webform');
+define('SCART_INPUT_EXTRAFIELD_WEBFORM_SUBJECT','webform_subject');
 
 define('SCART_INPUT_EXTRAFIELD_ICCAM_CLASSIFICATION','classify');
 define('SCART_INPUT_EXTRAFIELD_ICCAM_HOTLINEID','HotlineID');
 define('SCART_INPUT_EXTRAFIELD_ICCAM_ANALYST','Analyst');
+define('SCART_INPUT_EXTRAFIELD_ICCAM_USERNAME','Username');
+define('SCART_INPUT_EXTRAFIELD_ICCAM_PASSWORD','Password');
 
 define('SCART_NTD_TYPE_EMAIL','email');
 define('SCART_NTD_TYPE_API','api');
@@ -237,8 +258,6 @@ define('SCART_INPUT_HISTORY_IP','IP');
 define('SCART_INPUT_HISTORY_HOSTER','HOSTER');
 define('SCART_INPUT_HISTORY_GRADE','CLASSIFY');
 define('SCART_INPUT_HISTORY_ICCAM','ICCAM');
-
-define('SCART_MAX_TIME_AI_ANALYZE',(4 * 60 * 60));  // 4 hour
 
 define('SCART_NTD_TYPE_UNKNOWN','unknown');
 define('SCART_NTD_ABUSECONTACT_TYPE_POLICE','police');
@@ -259,3 +278,14 @@ define('SCART_VERIFICATION_VALIDATE','validate');
 define('SCART_VERIFICATION_FAILED','verified_failed');
 
 define('SCART_SCHEDULER_MAX_RUNNING_SECS',3600);    // one hour
+
+define('SCART_IMPORT_WEBFORM_URL','input.url');
+//define('SCART_IMPORT_WEBFORM_URLS','input.urls');
+define('SCART_IMPORT_WEBFORM_REFERER','input.referer');
+define('SCART_IMPORT_WEBFORM_NOTE','input.note');
+define('SCART_IMPORT_WEBFORM_NTD_NOTE','input.ntd_note');
+define('SCART_IMPORT_WEBFORM_IMAGE','(content image)');
+define('SCART_IMPORT_WEBFORM_ATTRIBUTE','(extra attribute)');
+
+define('SCART_FINDER_FILTERS','finder_filters');
+

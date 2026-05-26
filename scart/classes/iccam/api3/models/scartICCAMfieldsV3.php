@@ -1,6 +1,4 @@
-<?php
-
-namespace abuseio\scart\classes\iccam\api3\models;
+<?php namespace abuseio\scart\classes\iccam\api3\models;
 
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\Controllers\Grade;
@@ -121,9 +119,7 @@ class scartICCAMfieldsV3 {
         $options = Iccam_api_field::where('scart_field','ClassificationID')->get();
         $ret = [];
         foreach ($options as $option) {
-            if ($option->scart_code != 'IG') {
-                $ret[$option->scart_code] = $option->iccam_name;
-            }
+            $ret[$option->scart_code] = $option->iccam_name;
         }
         return $ret;
     }
@@ -310,6 +306,8 @@ class scartICCAMfieldsV3 {
         return $ID;
     }
 
+    public static $NotCategorised = 1;
+
     // IsVirtual
     public static $IsVirtualMapV2 = [
         false => 'No',
@@ -330,7 +328,8 @@ class scartICCAMfieldsV3 {
         $iccamfield = Iccam_api_field::where('scart_field','IsVirtual')
             ->where('scart_code',$answer)
             ->first();
-        return ($iccamfield) ? $iccamfield->iccam_id : 0;
+        //
+        return ($iccamfield) ? $iccamfield->iccam_id : self::$NotCategorised;
     }
 
     // IsChildModeling
@@ -353,7 +352,7 @@ class scartICCAMfieldsV3 {
         $iccamfield = Iccam_api_field::where('scart_field','IsChildModeling')
             ->where('scart_code',$answer)
             ->first();
-        return ($iccamfield) ? $iccamfield->iccam_id : 0;
+        return ($iccamfield) ? $iccamfield->iccam_id : self::$NotCategorised;
     }
 
     // IsUserGC
@@ -376,7 +375,7 @@ class scartICCAMfieldsV3 {
         $iccamfield = Iccam_api_field::where('scart_field','IsUserGC')
             ->where('scart_code',$answer)
             ->first();
-        return ($iccamfield) ? $iccamfield->iccam_id : 0;
+        return ($iccamfield) ? $iccamfield->iccam_id : self::$NotCategorised;
     }
 
 

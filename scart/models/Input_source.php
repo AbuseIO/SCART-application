@@ -1,8 +1,10 @@
 <?php namespace abuseio\scart\models;
 
 use abuseio\scart\classes\base\scartModel;
+use abuseio\scart\classes\helpers\scartLog;
 use Flash;
-use October\Rain\Exception\ApplicationException;
+use Winter\Storm\Exception\ApplicationException;
+use Winter\Storm\Exception\ValidationException;
 
 /**
  * Model
@@ -51,12 +53,37 @@ class Input_source extends scartModel {
         $cnt = Input::where('source_code',$this->code)->count();
 
         if ($cnt != 0) {
-            throw new ApplicationException("There are $cnt input record(s) with '$this->code' source - cannot delete");
+            throw new ValidationException(['source code used' => "There are $cnt input record(s) with '$this->code' source - cannot delete"]);
         }
 
         return ($cnt ==0);
 
     }
 
+    public static function getSourcecode($source) {
+
+        return str_replace(' ','_',$source);
+    }
+
+    public static function checkInsertCode($source) {
+
+        $sourcecode = self::getSourcecode($source);
+        $rec = Input_source::where('code','=',$sourcecode)->first();
+        if (!$rec) {
+            $maxsortnr = Input_source::max('sortnr');
+            $rec = new Input_source();
+            $rec->sortnr = ($maxsortnr) ? ($maxsortnr + 1) : 1;
+            $rec->lang = 'en';
+            $rec->code = $sourcecode;
+            $rec->title = $source;
+            $rec->description = $source;
+            $rec->save();
+            $new = true;
+            scartLog::logLine("D-Insert new source='$source', code=$sourcecode");
+        } else {
+            $new = false;
+        }
+        return $new;
+    }
 
 }

@@ -21,7 +21,7 @@ fields:
         label: 'ICCAM (interface) active'
         type: switch
         span: auto
-    scheduler-importexport-iccam_active:
+    scheduler-import-iccam_active:
         label: 'Import/export ICCAM (interface) active'
         type: switch
         span: auto

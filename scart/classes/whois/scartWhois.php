@@ -124,6 +124,8 @@ class scartWhois  {
 
                 try {
 
+                    scartLog::logLine("D-scartWhois.lookupDomain; host=$host");
+
                     $result = [
                         'status_success' => true,
                         'status_text' => 'Load from WHOIS cache',
@@ -705,5 +707,19 @@ class scartWhois  {
         return $jsraw;
     }
 
+
+    public static function getDestinationUrl($url) {
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $out = curl_exec($ch);
+        $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        curl_close($ch);
+        scartLog::logDump("D-curl_getinfo=",$url);
+        return $url;
+    }
 
 }

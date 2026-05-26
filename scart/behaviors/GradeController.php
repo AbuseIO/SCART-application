@@ -99,7 +99,7 @@ class GradeController extends \Winter\Storm\Extension\ExtensionBase
     public function getGradeQuestions($questiongroup, $workuser_id, $single, $rec)
     {
 
-        // When input is a relation of this model..
+        // When input is a relation of this model
         $input = (!$this->config->InputIsMain) ? $rec->input : $rec;
 
         if ($single) {
@@ -361,8 +361,8 @@ class GradeController extends \Winter\Storm\Extension\ExtensionBase
 
                     if ($inp=='' && $recordtype == SCART_INPUT_TYPE_VERIFY) {
                         // all fields are required -> flash if empty!
-                        Flash::error('Question '.$grade->label.' must be filled');
-                        return 0;
+                        //Flash::error('Question '.$grade->label.' must be filled');
+                        //return 0;
                     }
 
                     $ans = Grade_answer::where('record_type', $recordtype)

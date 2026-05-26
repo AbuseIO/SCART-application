@@ -23,7 +23,7 @@ class ScartICCAMapi {
     //\\//\\       Basic Entities      //\\//\\
 
     /**
-     * @param string $id
+     * @param string $iddocke
      * @return bool|mixed|string
      */
     public function getCountries($id = '')
@@ -229,7 +229,7 @@ class ScartICCAMapi {
     }
 
     public function postReport($reportData) {
-        return  $this->send('POST', 'rest/reports',$reportData);
+        return  $this->send('POST', 'rest/Reports',$reportData);
     }
     public function putReportCommerciality($reportId, $commerciality) {
         return  $this->send('PUT', 'rest/Reports/'.$reportId.'/source-url/commerciality?commerciality='.$commerciality);

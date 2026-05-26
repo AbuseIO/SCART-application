@@ -1,3 +1,3 @@
-url;reason;IP;firstseen;lastseen
-{lines}{url};{reason};{url_ip};{firstseen_at};{lastseen_at}
+"url";"reason";"IP";"firstseen";"lastseen"
+{lines}"{url}";"{ntd_note}";"{url_ip}";"{firstseen_at}";"{lastseen_at}"
 {/lines}

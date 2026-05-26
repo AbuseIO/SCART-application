@@ -25,11 +25,11 @@
                         <td><?= $question->label ?></td>
                         <td>
                             <?php
-                            $string = implode(", ", $question->value);
+                            $string = (is_array($question->value)) ? implode(", ", $question->value) : $question->value;
                             echo (!empty($string)) ? $string : '-';
                             ?>
                         </td>
-                                
+
                     <?php
                         if($counter % 2 === 0 || count($questions) == $counter) { ?>
                         </tr>

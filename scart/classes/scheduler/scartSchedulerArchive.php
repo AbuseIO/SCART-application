@@ -32,26 +32,41 @@ class scartSchedulerArchive extends scartScheduler {
 
             $job_records= [];
 
-            $archive_connection =  Systemconfig::get('abuseio.scart::scheduler.archive.database_connection','');
-            $archive_time =  Systemconfig::get('abuseio.scart::scheduler.archive.archive_time',7);
+            if (scartArchive::isActiveValid()) {
 
-            if ($archive_connection) {
+                // base is year before current year; so at 1-jan one year, at 31-dec almost two years
 
-                scartLog::logLine("D-".SELF::$logname."; archive_time: $archive_time days ") ;
+                $archive_time = Systemconfig::get('abuseio.scart::scheduler.archive.archive_time_offset','-1 years');
+                $before = date('Y-01-01 00:00:00', strtotime("$archive_time"));
+                scartLog::logLine("D-".SELF::$logname."; archive_time=$archive_time, before time=$before") ;
 
-                scartScheduler::setMinMemory('4G');
+                scartScheduler::setMinMemory('8G');
 
-                $only_delete = Systemconfig::get('abuseio.scart::scheduler.archive.only_delete',false);
+                // archive records
+                $job_records = scartArchive::archiveRecords($before);
 
-                // archive deleted records
-                $job_records = scartArchive::archiveDeletedRecords($archive_connection,$archive_time,$only_delete);
+                if (Systemconfig::get('abuseio.scart::scheduler.archive.archive_audittrail',false)) {
+                    // archive audittrail records
+                    $job_records = array_merge($job_records, scartArchive::archiveAudittrail($before));
+                }
 
-                // archive audittrail
-                $job_records = array_merge($job_records, scartArchive::archiveAudittrail($archive_connection,$archive_time,$only_delete) );
+                // @TO-DO; may be also do retention with the data with the archive database?
+                // Note: if retention is running in the Cleanup scheduler, then records are already anomized in the realtime database before archiving
+
+//                if ($closedRetention = Systemconfig::get('abuseio.scart::scheduler.cleanup.closed_retention', '')) {
+//                    scartLog::logLine("D-".SELF::$logname."; make reports fields anonymous with CLOSED retention of '$closedRetention'");
+//                    $report_lines[] = scartCleanup::cleanupRetention($closedRetention,SELF::$logname,$job_records);
+//                }
 
             } else {
 
-                scartLog::logLine("E-No archive connection set!?");
+                $status = 'No archive connection set - cannot be active';
+                scartLog::logLine("D-".SELF::$logname."; $status");
+                $job_records[] = [
+                    'tablename' => '(no table)',
+                    'count' => 0,
+                    'status' => $status,
+                ];
 
             }
             // ** report
@@ -60,9 +75,8 @@ class scartSchedulerArchive extends scartScheduler {
                 $params = [
                     'job_records' => $job_records,
                 ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO,'abuseio.scart::mail.scheduler_archive', $params);
+                //scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO,'abuseio.scart::mail.scheduler_archive', $params);
                 scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.scheduler_archive', $params);
-
             }
 
         }

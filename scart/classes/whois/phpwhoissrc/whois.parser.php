@@ -649,6 +649,8 @@ foreach ($array AS $key => $val)
 //		while (list($match,$field) = each($items))
         foreach ($items AS $match => $field)
 			{
+            if (!is_string($val)) continue;
+
 			$pos = strpos(strtolower($val),$match);
 
 			if ($pos === false) continue;

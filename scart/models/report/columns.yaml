@@ -42,3 +42,7 @@ columns:
         type: datetime
         searchable: true
         sortable: true
+    archivedatabase:
+        label: 'Archive database'
+        type: switch
+        sortable: true

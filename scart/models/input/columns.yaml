@@ -7,6 +7,7 @@ columns:
         label: input
         type: text
         searchable: true
+        select: "LEFT(url,80)"
     delivered_items:
         label: 'found images'
         type: text
@@ -51,6 +52,8 @@ columns:
     updated_at:
         label: 'last update'
         type: datetime
+        format: 'Y-m-d H:i:s'
     received_at:
         label: received
         type: datetime
+        format: 'Y-m-d H:i:s'

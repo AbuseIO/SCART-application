@@ -15,6 +15,7 @@
  *
  */
 
+use abuseio\scart\classes\mail\scartReadMailM356;
 use Config;
 
 use Illuminate\Console\Command;
@@ -98,6 +99,50 @@ class readMail365Test extends Command
 
         scartLog::logLine("D-readMail365Test; startup");
 
+        $maxcount = 3;
+        scartLog::logLine("D-readMail365Test; get $maxcount messages...");
+
+        $read356 = new scartReadMailM356();
+
+        $read356::init();
+
+        $msgs = $read356::getInboxMessages($maxcount);
+
+        foreach ($msgs as $msg) {
+
+            scartLog::logLine("D-Message; From: {$msg->getFrom()}, subject: {$msg->getSubject()}, received at: {$msg->getDate()}");
+
+            $attachments = $msg->getAttachments();
+
+            if (!empty($attachments)) {
+
+                foreach ($attachments as $attachment) {
+
+                    $attachment = (object) $attachment;
+
+                    scartLog::logLine("D-_attachment; filename: {$attachment->filename}, contentType: {$attachment->contentType} ");
+                    // test for importWebform -> XML attachment
+                    $parts = pathinfo($attachment->filename);
+                    $isXML = (strtolower($parts['extension']) == 'xml');
+                    if ($isXML) {
+                        scartLog::logDump("D_xml dump: ",$attachment);
+                    }
+                }
+
+            }
+
+        }
+
+
+
+
+
+
+        exit();
+
+
+//========
+
         $tokenRequestContext = new ClientCredentialContext(
             env('SCHEDULER_READIMPORT_M365_tenantId', ''),
             env('SCHEDULER_READIMPORT_M365_appId', ''),
@@ -122,7 +167,7 @@ class readMail365Test extends Command
 
         scartLog::logLine("D-readMail365Test; get messages");
 
-        $maxcount = 10;
+        $maxcount = 3;
 
         try {
 
@@ -134,16 +179,23 @@ class readMail365Test extends Command
             $requestConfig = new MessagesRequestBuilderGetRequestConfiguration($query);
             */
 
+            // request $maxmsgs message from the inbox (folder)
+            $requestConfig = new \Microsoft\Graph\Generated\Users\Item\MailFolders\Item\Messages\MessagesRequestBuilderGetRequestConfiguration(
+                queryParameters: MessagesRequestBuilderGetRequestConfiguration::createQueryParameters(
+                    top: $maxcount
+                )
+            );
+
+
             $userContext = $graphServiceClient->users()->byUserId(env('SCHEDULER_READIMPORT_M365_principal', ''));
 
             $messages = $userContext
                 ->mailFolders()
                 ->byMailFolderId('inbox')
                 ->messages()
-                ->get()
-// filter messages -> only working without mailFolder filter above -> not needed, we move all processed messages to deleteditems
-//                ->get($requestConfig)
+                ->get($requestConfig)
                 ->wait();
+
             //scartLog::logDump("D-Messages=",$messages);
 
             if ($messages) {
@@ -154,11 +206,19 @@ class readMail365Test extends Command
 
                 foreach ($messages->getValue() as $message) {
 
-                    scartLog::logLine("D-sSubject: {$message->getSubject()}, Received at: {$message->getReceivedDateTime()->format(DateTimeInterface::RFC2822)}");
+                    scartLog::logLine("D-Subject: {$message->getSubject()}, Received at: {$message->getReceivedDateTime()->format(DateTimeInterface::RFC2822)}");
 
-                    scartLog::logDump("D-body content-type=".print_r($message->getBody()->getContentType(),true).", body=",$message->getBody()->getContent());
+                    //scartLog::logDump("D-body content-type=".print_r($message->getBody()->getContentType(),true).", body=",$message->getBody()->getContent());
+
+                    // check get message!
+
+
+
 
                     break;
+
+
+
 
                     scartLog::logLine("D-readMail365Test; delete message");
                     $result = $userContext
@@ -167,6 +227,10 @@ class readMail365Test extends Command
                         ->delete()
                         ->wait();
                     break;
+
+
+
+
 
                     $requestBody = new MovePostRequestBody();
                     $requestBody->setDestinationId('deleteditems');

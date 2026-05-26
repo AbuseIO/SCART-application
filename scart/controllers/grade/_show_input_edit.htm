@@ -1,5 +1,5 @@
 
-<form class="form-elements" role="form">
+<form class="form-elements form" role="form" enctype="multipart/form-data" >
 
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -10,11 +10,44 @@
     <?php } ?>
 </div>
 <div class="modal-body">
+
     <div class="row">
         <div class="col-xs-12" >
             <?= $inputWidget->render() ?>
         </div>
     </div>
+
+    <?php if ($single && $add_edit_media) { ?>
+    <div class="row">
+        <div class="col-xs-12" >
+            <?= Form::label('mediafile', 'Upload media file'); ?>
+            <?= Form::file('mediafile', [ 'class' => 'btn btn-sm btn-secondary wn-icon-upload', ]); ?>
+        </div>
+    </div>
+    <?php } ?>
+
+    <?php if ($single && $extra_webform_inputs) { ?>
+    <?php foreach ($extra_webform_inputs as $extra_webform_input) { ?>
+        <?php if (!$extra_webform_input->webform_protected) { ?>
+        <br />
+        <div class="row">
+            <div class="col-xs-12" >
+                <?= Form::label($extra_webform_input->label,$extra_webform_input->label); ?>
+            </div>
+        </div>
+        <div  class="row">
+            <div class="col-xs-12" >
+                <?php if ($extra_webform_input->webform_type == 'text') { ?>
+                    <?= Form::textarea($extra_webform_input->label, $extra_webform_input->value,[ 'disabled' => 'true', 'class' => 'form-control field-textarea']); ?>
+                <?php } else { ?>
+                    <?= Form::text($extra_webform_input->label, $extra_webform_input->value,[ 'disabled' => 'true', 'class' => 'form-control field-text']); ?>
+                <?php } ?>
+            </div>
+        </div>
+        <?php } ?>
+    <?php } ?>
+    <?php } ?>
+
 </div>
 <div class="modal-footer">
 
@@ -26,16 +59,40 @@
                     data-request="onInputEditSave"
                     data-request-data="'single': '<?= $single; ?>','record_id': '<?= $record_id; ?>','workuser_id': '<?= $workuser_id; ?>' "
                     data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading_input"
                     data-dismiss="modal"
                     data-hotkey="ctrl+enter, cmd+enter"
+                    data-request-files=""
                     class="btn btn-primary">
                 <?= e(trans('backend::lang.form.save')) ?>
             </button>
             <span class="btn-text">
                 <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('backend::lang.form.close')) ?></a>
             </span>
+
+            <?php if ($single && !$mainurltype) { ?>
+            <button
+                type="button"
+                class="oc-icon-trash-o btn-icon danger pull-left"
+                title="delete this input"
+                data-request="onInputDelete"
+                data-request-data="'single': '<?= $single; ?>','record_id': '<?= $record_id; ?>','workuser_id': '<?= $workuser_id; ?>' "
+                data-request-loading="#loading_input"
+                data-request-files=""
+                data-request-confirm="<?= e(trans('backend::lang.form.confirm_delete')) ?>">
+            </button>
+            <?php } ?>
+
         </div>
     </div>
 </div>
+
+    <script type="application/javascript">
+
+        // $('.control-popup').click(function() {
+        //     $('.modal').trigger('close.oc.popup');
+        // });
+
+    </script>
 
 </form>

@@ -58,7 +58,7 @@ class scartUsers {
     }
 
     public static function getId() {
-       return BackendAuth::getUser()->id;
+       return (BackendAuth::getUser()) ? BackendAuth::getUser()->id : 0;
     }
 
     public static function getUser() {

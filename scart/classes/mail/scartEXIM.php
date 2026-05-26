@@ -130,7 +130,7 @@ class scartEXIM {
 
         } else {
 
-            scartLog::logLine("W-getMTAstatus: warning mail logfile NOT set (disabled) - always SCART_NTD_STATUS_SENT_SUCCES");
+            scartLog::logLine("D-getMTAstatus: no check of mail logfile - always SCART_NTD_STATUS_SENT_SUCCES");
             $status = SCART_NTD_STATUS_SENT_SUCCES;
 
         }

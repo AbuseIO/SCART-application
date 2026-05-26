@@ -215,18 +215,20 @@ class scartAlerts {
             $retry = scartUsers::getGeneralOption($alertReference);
             if (empty($retry)) $retry = 0;
 
+            $alertError = (!is_string($alertError) ? print_r($alertError,true) : $alertError );
+
             if ($alertSignal) {
 
                 $retry += 1;
 
                 scartLog::logDump("W-$alertLogService; [retry=$retry] error: ",$alertError);
-                if ($retry == 3 || $retry % $alertResignal == 0) {
+                if ($retry == $alertFirstSignal || $retry % $alertResignal == 0) {
 
                     $params = [
                         'reportname' => "$alertLogService ERROR report ",
                         'report_lines' => [
                             'report time: ' . date('Y-m-d H:i:s'),
-                            "error: " . print_r($alertError,true),
+                            "error: $alertError",
                             'retry count: ' . $retry,
                         ]
                     ];
@@ -237,7 +239,7 @@ class scartAlerts {
 
             } else {
 
-                if ($retry > 2) {
+                if ($retry > $alertFirstSignal) {
 
                     scartLog::logLine("D-$alertLogService; [retry=$retry] error state is over");
 
@@ -245,7 +247,7 @@ class scartAlerts {
                         'reportname' => "$alertLogService RESTORE ",
                         'report_lines' => [
                             'report time: ' . date('Y-m-d H:i:s'),
-                            "Error state is over",
+                            "Error state is over". (($alertError)?": $alertError":''),
                             "retry count; $retry",
                         ]
                     ];

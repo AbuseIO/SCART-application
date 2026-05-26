@@ -6,6 +6,11 @@ fields:
         select: created_at
         type: text
         readOnly: true
+    url_referer:
+        label: 'referer'
+        span: full
+        readOnly: true
+        required: false
 
 
 

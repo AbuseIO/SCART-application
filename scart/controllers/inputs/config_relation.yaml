@@ -30,7 +30,16 @@ items:
     toolbarButtons: create
     showSorting: false
     showSearching: true
-    recordsPerPage: 5
+    recordsPerPage: 10
   manage:
     form: $/abuseio/scart/models/input/fields_items.yaml
     list: $/abuseio/scart/models/input/columns_items.yaml
+extrafields:
+    label: extrafields
+    modelClass: abuseio\scart\models\Input_extrafield
+    readOnly: true
+    view:
+        list: $/abuseio/scart/models/input_extrafield/columns.yaml
+        customViewPath: '$/abuseio/scart/controllers/inputs/extrafieldlist'
+        showSorting: false
+        recordsPerPage: 10

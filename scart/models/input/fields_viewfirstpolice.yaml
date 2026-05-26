@@ -1,0 +1,100 @@
+fields:
+    url:
+        label: url
+        span: left
+        type: text
+        readOnly: true
+    filenumber:
+        label: 'internal reference'
+        span: storm
+        readOnly: true
+        type: text
+        cssClass: p-l-lg col-sm-3
+    reference:
+        label: 'external reference'
+        span: storm
+        readOnly: true
+        required: 0
+        type: text
+        cssClass: col-sm-3
+    status_code:
+        label: status
+        span: left
+        required: true
+        type: dropdown
+        readOnly: true
+    grade_code:
+        label: classification
+        span: right
+        required: true
+        type: dropdown
+        readOnly: true
+    police_reason:
+        label: Reason
+        span: left
+        type: text
+        readOnly: true
+    url_referer:
+        label: Referrer
+        span: right
+        type: text
+        readOnly: true
+
+tabs:
+    fields:
+        url_host:
+            tab: WhoIs
+            label: host
+            span: left
+            type: text
+            readOnly: true
+        url_ip:
+            tab: WhoIs
+            label: IP
+            span: right
+            type: text
+            readOnly: true
+        hoster[owner]:
+            tab: WhoIs
+            label: Hoster
+            span: left
+            type: text
+            readOnly: true
+        hoster[abusecountry]:
+            tab: WhoIs
+            label: 'Hoster country'
+            span: right
+            type: text
+            readOnly: true
+        note:
+            tab: Notes
+            size: small
+            span: full
+            type: textarea
+        ntd_note:
+            tab: Notes
+            label: 'NTD note'
+            size: small
+            span: full
+            type: textarea
+        extrafields:
+            span: full
+            path: input_extrafields
+            context: preview
+            type: partial
+            tab: Extrafields
+            readOnly: true
+        logs:
+            span: full
+            path: input_logs
+            context: preview
+            type: partial
+            tab: Logging
+            readOnly: true
+        history:
+            span: full
+            path: input_history
+            context: preview
+            type: partial
+            tab: History
+            readOnly: true

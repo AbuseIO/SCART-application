@@ -22,4 +22,5 @@ columns:
     updated_at:
         label: last update
         type: datetime
+        format: 'Y-m-d H:i:s'
 

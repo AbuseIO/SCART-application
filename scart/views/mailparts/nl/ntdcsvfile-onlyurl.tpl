@@ -1,3 +1,3 @@
-url;notitie
-{lines}{url};{reason}
+"url";"notitie"
+{lines}"{url}";"{ntd_note}"
 {/lines}

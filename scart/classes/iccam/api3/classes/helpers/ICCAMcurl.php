@@ -19,10 +19,11 @@ class ICCAMcurl {
     private static $_urlroot = '';
     private static $_cookie = '';
     private static $_token = '';
-    private static $_curltimeout = 10;
+    private static $_curltimeout = 30;              // timeout in secs
 
     private static $_curlerror = false;             // ICCAM error
     private static $_curlerrortext = '';            // ICCAM error text
+    private static $_curlerrorarr = [];             // ICCAM error array
     private static $_curlerrorretry = 3;            // number of times before alert admin
     private static $_curlerroroffline = false;      // error status offline
 
@@ -43,14 +44,16 @@ class ICCAMcurl {
 
     public static function init($url) {
 
-        if (self::$_debug) scartLog::logLine("D-ICCAMurl (init)");
+        if (self::$_debug) scartLog::logDump("D-ICCAMurl (init) ");
+        //if (self::$_debug) scartLog::logDump("D-ICCAMurl (init); iccam config: ",Systemconfig::get('abuseio.scart::iccam'));
 
         // needed for ICCAM, else 'hanging'
         //curl_reset(self::$_channel);
 
         // set needed defaults for ICCAM
         curl_setopt(self::$_channel, CURLOPT_URL, $url);
-        curl_setopt(self::$_channel, CURLOPT_PORT, '443');
+        curl_setopt(self::$_channel, CURLOPT_PORT, Systemconfig::get('abuseio.scart::iccam.urlport', '443'));
+
         curl_setopt(self::$_channel, CURLOPT_CAINFO, Systemconfig::get('abuseio.scart::iccam.cacert', ''));
         curl_setopt(self::$_channel, CURLOPT_SSLCERT, Systemconfig::get('abuseio.scart::iccam.sslcert', ''));
         curl_setopt(self::$_channel, CURLOPT_SSLCERTPASSWD, Systemconfig::get('abuseio.scart::iccam.sslcertpw', ''));
@@ -113,12 +116,16 @@ class ICCAMcurl {
         // start always positive
         self::$_curlerror = self::$_curlerroroffline =false;
         self::$_curlerrortext = '';
+        self::$_curlerrorarr = [];
 
         $result = curl_exec(self::$_channel);
         if (self::$_debug) scartLog::logDump("D-ICCAMurl (call_curl); result=",$result);
 
         // check always also http return code
         $info = curl_getinfo(self::$_channel);
+//        if (self::$_debug) scartLog::logDump("D-ICCAMurl (info); ",$info);
+//        if (self::$_debug) scartLog::logDump("D-ICCAMurl (error); ",curl_error(self::$_channel));
+
         if (isset($info['http_code'])) {
             if (self::$_debug) scartLog::logDump("D-ICCAMurl (call_curl); http_code=",$info['http_code']);
             // if ERROR then log error and skip transaction - if tmp error then log error and retry transaction (offline status)
@@ -135,11 +142,15 @@ class ICCAMcurl {
                 $result = @json_decode($result);
                 if (isset($result->errors)) {
                     $errors = $result->errors;
+                    // var_export($errors,true)
                 } else {
                     $errors = '(unknown); http_code=' . $info['http_code'];
                     scartLog::logDump("W-ICCAMurl; $errors; result=", $result);
                 }
+                //scartLog::logDump("D-ICCAMurl (call_curl); http code errors=",$result);
+
                 self::$_curlerrortext = self::error2string($errors);
+                self::$_curlerrorarr = self::error2array($errors);
 
                 // set  error
                 $result = false;
@@ -152,6 +163,9 @@ class ICCAMcurl {
                 $error = "not valid http code: ".$info['http_code'].", text: ".self::httpCodeToText($info['http_code']);
                 scartLog::logLine("W-ICCAMurl; $error");
                 self::$_curlerrortext = $error;
+                self::$_curlerrorarr = [
+                    ['invalid http code' => $error]
+                ];
 
                 // get error object returned by ICCAM
                 $result = @json_decode($result);
@@ -164,9 +178,11 @@ class ICCAMcurl {
 
             // offline - retry
             self::$_curlerroroffline = true;
-            $error = "CURL ERROR (no): ".curl_errno(self::$_channel);
-            scartLog::logLine("W-ICCAMurl; $error");
+            $error = "CURL OFFLINE ERROR (no): ".curl_errno(self::$_channel);
             self::$_curlerrortext = $error;
+            self::$_curlerrorarr = [
+                ['offline' => $error]
+            ];
 
             $result = false;
         }
@@ -188,6 +204,11 @@ class ICCAMcurl {
             }
 
         }
+
+        if (self::$_curlerrortext) {
+            scartLog::logLine("W-ICCAMurl; error found: ".self::$_curlerrortext);
+        }
+
         return $result;
     }
 
@@ -204,22 +225,53 @@ class ICCAMcurl {
         return self::$_curlerrortext;
     }
 
+    public static function getErrorsArr() {
+
+        return self::$_curlerrorarr;
+    }
+    public static function resetErrors() {
+
+        self::$_curlerror = false;
+        self::$_curlerrorarr = [];
+        self::$_curlerrortext = '';
+        self::$_curlerroroffline = false;
+    }
+
     static function error2string($errors) {
 
-        $errorstring = $errors;
-        if (!is_string($errorstring)) {
-            if (is_object($errorstring)) {
-                // ICCAM error object
-                $errors = (array) $errorstring;
-                $errorstring = '';
-                foreach ($errors as $errorcode => $errorarr) {
-                    $errorstring .=(($errorstring) ? ', ' : '') . "[ICCAM $errorcode] ".(is_array($errorarr) ? implode(',',$errorarr) : print_r($errorarr,true));
-                }
-            } else {
-                $errorstring = print_r($errors,true);
+        if (is_object($errors)) {
+            // ICCAM error object
+            $errors = (array) $errors;
+            $errorstring = '';
+            foreach ($errors as $errorcode => $errorvalue) {
+                //scartLog::logDump("D-ICCAMurl error2string; errorcode=$errorcode, value=",$errorvalue);
+                $errorstring .=(($errorstring) ? ', ' : '') . "[ICCAM $errorcode] ".(is_array($errorvalue) ? implode('#',$errorvalue) : print_r($errorvalue,true));
             }
+        } else {
+            $errorstring = print_r($errors,true);
         }
         return $errorstring;
+    }
+
+    static function error2array($errors) {
+
+        $errorarray = [];
+        if (is_object($errors)) {
+            // ICCAM error object
+            $errors = (array) $errors;
+            foreach ($errors as $errorcode => $errorvalue) {
+                $errorarray[] = [
+                    'code' => $errorcode,
+                    'string' => (is_array($errorvalue) ? implode('#',$errorvalue) : print_r($errorvalue,true)),
+                ];
+            }
+        } else {
+            $errorarray[] = [
+                'code' => 'Unknown error',
+                'string' => print_r($errors,true)
+            ];
+        }
+        return $errorarray;
     }
 
     /**

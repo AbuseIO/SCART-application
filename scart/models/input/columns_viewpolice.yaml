@@ -3,6 +3,12 @@ columns:
         label: filenumber
         type: text
         searchable: true
+    status_code:
+        label: status
+        type: text
+        relation: inputStatus
+        select: title
+        searchable: true
     reference:
         label: 'external reference'
         type: text
@@ -11,17 +17,16 @@ columns:
         label: url
         type: text
         searchable: true
+    note:
+        label: memo
+        type: partial
+        path: show_memo
+        searchable: true
     police_reason:
         label: reason
         type: text
         searchable: false
         sortable: false
-    status_code:
-        label: status
-        type: text
-        relation: inputStatus
-        select: title
-        searchable: true
     grade_code:
         label: classification
         type: text
@@ -31,7 +36,9 @@ columns:
     firstseen_at:
         label: first seen
         type: datetime
+        format: 'Y-m-d H:i:s'
     lastseen_at:
         label: last seen
         type: datetime
+        format: 'Y-m-d H:i:s'
 

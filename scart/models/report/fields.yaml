@@ -32,7 +32,11 @@ fields:
 
 tabs:
     fields:
-
+        archivedatabase:
+            label: 'Use archive database'
+            span: full
+            type: checkbox
+            tab: filters
         anonymous:
             label: 'Make anonymous'
             span: left

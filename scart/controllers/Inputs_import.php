@@ -75,40 +75,34 @@ class Inputs_import extends scartController
 
                         if (scartBrowser::validateURL($url)) {
 
-                            $input = Input::where('url',$url)->where('deleted_at',null)->first();
-                            if ($input=='') {
+                            // Note: allow duplicated URLs
 
-                                $input = new Input();
-                                $input->url = $url;
-                                $input->url_type = SCART_URL_TYPE_MAINURL;
-                                $input->url_referer = $referer;
-                                $input->reference = $reference;
-                                $input->workuser_id = $model->workuser_id;
-                                if ($workuser) {
-                                    $input->workuser_id = scartUsers::getWorkuserId($workuser);
-                                    if ($input->workuser_id == 0) {
-                                        $results .= "$linecnt: W-Workuser with email '$workuser' NOT found" . PHP_EOL;
-                                        $input->workuser_id = $model->workuser_id;
-                                    }
+                            $input = new Input();
+                            $input->url = $url;
+                            $input->url_type = SCART_URL_TYPE_MAINURL;
+                            $input->url_referer = $referer;
+                            $input->reference = $reference;
+                            $input->workuser_id = $model->workuser_id;
+                            if ($workuser) {
+                                $input->workuser_id = scartUsers::getWorkuserId($workuser);
+                                if ($input->workuser_id == 0) {
+                                    $results .= "$linecnt: W-Workuser with email '$workuser' NOT found" . PHP_EOL;
+                                    $input->workuser_id = $model->workuser_id;
                                 }
-                                $input->url = $url;
-                                $input->status_code = SCART_STATUS_SCHEDULER_SCRAPE;
-                                $input->source_code = $source;
-                                $input->type_code = $type;
-                                $input->save();
-
-                                $input->logText('Imported');
-
-                                // log old/new for history
-                                $input->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_SCHEDULER_SCRAPE,'Inputs import');
-
-                                $results .= "$linecnt: I-Imported '$row'; status=" . SCART_STATUS_SCHEDULER_SCRAPE . ", source='$source', type=$type" . PHP_EOL;
-                                $impcnt += 1;
-
-                            } else {
-                                $results .= "$linecnt: W-url '$row' already in database" . PHP_EOL;
-
                             }
+                            $input->url = $url;
+                            $input->status_code = SCART_STATUS_SCHEDULER_SCRAPE;
+                            $input->source_code = $source;
+                            $input->type_code = $type;
+                            $input->save();
+
+                            $input->logText('Imported');
+
+                            // log old/new for history
+                            $input->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_SCHEDULER_SCRAPE,'Inputs import');
+
+                            $results .= "$linecnt: I-Imported '$row'; status=" . SCART_STATUS_SCHEDULER_SCRAPE . ", source='$source', type=$type" . PHP_EOL;
+                            $impcnt += 1;
 
                         } else {
                             $results .= "$linecnt: E-Error; not a valid url: '$row' " . " (format: http[s]://<domain>/<page>)" . PHP_EOL;
@@ -140,6 +134,5 @@ class Inputs_import extends scartController
         }
 
     }
-
 
 }

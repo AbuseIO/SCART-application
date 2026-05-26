@@ -330,4 +330,12 @@ class scartLog {
         return ['headers' => $headers,'lines' => $lines];
     }
 
+    public static function logSQL($text,$sql) {
+
+        $qry = str_replace(array('?'), array('\'%s\''), $sql->toSql());
+        $qry = vsprintf($qry, $sql->getBindings());
+        self::logLine($text.$qry);
+        return $qry;
+    }
+
 }

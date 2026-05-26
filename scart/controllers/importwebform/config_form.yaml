@@ -1,0 +1,10 @@
+name: ImportWebform
+form: $/abuseio/scart/models/importwebform/fields.yaml
+modelClass: abuseio\scart\Models\ImportWebform
+defaultRedirect: abuseio/scart/importwebform
+create:
+    redirect: 'abuseio/scart/importwebform/update/:id'
+    redirectClose: abuseio/scart/importwebform
+update:
+    redirect: abuseio/scart/importwebform
+    redirectClose: abuseio/scart/importwebform

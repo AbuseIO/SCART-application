@@ -19,5 +19,13 @@ class scartAIanalyze {
         return $active;
     }
 
+    public static function validAIinput($input) {
+
+        $webformonly = Systemconfig::get('abuseio.scart::AIanalyze.only_webform_input',true);
+        $result = (!$webformonly || ($webformonly && ($input->source_code == SCART_SOURCE_CODE_WEBFORM)));
+        scartLog::logDump("D-validAIinput(source_code={$input->source_code},webformonly=$webformonly)=result=$result");
+        return $result;
+    }
+
 
 }

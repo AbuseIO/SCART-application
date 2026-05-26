@@ -11,7 +11,7 @@ fields:
     received_at:
         label: 'received'
         span: right
-        type: text
+        type: datepicker
         readOnly: true
     filenumber:
         label: 'filenumber'

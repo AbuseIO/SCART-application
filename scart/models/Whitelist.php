@@ -1,5 +1,6 @@
 <?php namespace abuseio\scart\Models;
 
+use abuseio\scart\classes\helpers\scartLog;
 use Model;
 
 /**
@@ -33,6 +34,7 @@ class Whitelist extends Model
         if (is_array($email)) {
             $email = reset($email);
         }
-        return Whitelist::where('email', '=', $email)->count() > 0;
+        scartLog::logLine("D-emailIsWhitelisted; email=$email");
+        return Whitelist::where('email', 'LIKE', $email.'%')->count() > 0;
     }
 }

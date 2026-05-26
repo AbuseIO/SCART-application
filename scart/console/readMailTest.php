@@ -2,6 +2,7 @@
 
 namespace abuseio\scart\console;
 
+use abuseio\scart\Models\ImportWebform;
 use Config;
 
 use Illuminate\Console\Command;
@@ -36,8 +37,10 @@ class readMailTest extends Command
 
         $del = $this->option('delete');
 
-        scartLog::logLine("D-readMailTest:delete=$del");
-        scartLog::logLine("D-readMailTest:use abuseio:readMailTest -d");
+        scartLog::logLine("D-readMailTest; delete=$del");
+        if (!$del) {
+            scartLog::logLine("D-readMailTest; use abuseio:readMailTest -d del");
+        }
 
         scartReadMail::init();
 
@@ -52,15 +55,24 @@ class readMailTest extends Command
                 $report = "message '{$msg->getSubject()}' (uid={$msg->getId()} from '{$msg->getFrom()}' arrived at '{$msg->getDate()}', with {$msg->getBodyLinesCount()} body lines";
                 scartLog::logLine("D-readImportMailbox; $report");
 
-                scartLog::logDump("D-BodyLines=",$msg->getBodyLines());
+                if (ImportWebform::importWebformSubject($msg->getSubject())) {
+
+                    scartLog::logDump("D-readMailTest; import webform subject!");
+
+                    $loglines = ImportWebform::importWebformMessage($msg);
+
+                    scartLog::logDump("D-readMailTest; loglines=",$loglines);
+
+
+                } else {
+
+                    scartLog::logDump("D-readMailTest; bodyLines=",$msg->getBodyLines());
+
+                }
 
                 if ($del){
-                    if ($del) {
-                        scartLog::logLine("D-Delete message ");
-                        $msg->delete();
-                    } else {
-                        scartLog::logLine("D-Found message ");
-                    }
+                    scartLog::logLine("D-readMailTest; delete message ");
+                    $msg->delete();
                 }
 
             }
@@ -68,10 +80,10 @@ class readMailTest extends Command
             scartReadMail::close();
 
         } else {
-            scartLog::logLine("D-No message(s)");
+            scartLog::logLine("D-readMailTest; no message(s)");
         }
 
-        scartLog::logLine("D-End");
+        scartLog::logLine("D-readMailTest; end");
 
     }
 

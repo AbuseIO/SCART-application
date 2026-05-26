@@ -1,11 +1,13 @@
 <?php namespace abuseio\scart\Controllers;
 
+use abuseio\scart\classes\mail\scartSendNTD;
 use Flash;
 use abuseio\scart\classes\base\scartController;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\models\Ntd;
 use abuseio\scart\models\Ntd_status;
 use BackendMenu;
+use Illuminate\Support\Facades\Redirect;
 
 class Ntds extends scartController {
 
@@ -26,14 +28,6 @@ class Ntds extends scartController {
     public function __construct() {
         parent::__construct();
         BackendMenu::setContext('abuseio.scart', 'NTD');
-    }
-
-    // filter LIST
-    public function listExtendQuery($query) {
-/*
-//            ->join('abuseio_scart_ntd','abuseio_scart_ntd.id','=','abuseio_scart_ntd_url.ntd_id')
-            ->whereIn('abuseio_scart_ntd.status_code',[SCART_NTD_STATUS_QUEUED,SCART_NTD_STATUS_SENT_FAILED,SCART_NTD_STATUS_SENT_SUCCES]);
-*/
     }
 
     /**
@@ -58,19 +52,18 @@ class Ntds extends scartController {
                 'type' => 'group',
                 'conditions' => 'status_code in (:filtered)',
                 'options' => $options,
-                'default' => [
-                    SCART_NTD_STATUS_QUEUED => $options[SCART_NTD_STATUS_QUEUED],
-                    SCART_NTD_STATUS_SENT_SUCCES => $options[SCART_NTD_STATUS_SENT_SUCCES],
-                    SCART_NTD_STATUS_SENT_FAILED => $options[SCART_NTD_STATUS_SENT_FAILED],
-                    SCART_NTD_STATUS_SENT_API_SUCCES => $options[SCART_NTD_STATUS_SENT_API_SUCCES],
-                    SCART_NTD_STATUS_SENT_API_FAILED => $options[SCART_NTD_STATUS_SENT_API_FAILED],
-                ],
+// confusing defaults -> new defaults not set
+//                'default' => [
+//                    SCART_NTD_STATUS_QUEUED => $options[SCART_NTD_STATUS_QUEUED],
+//                    SCART_NTD_STATUS_SENT_SUCCES => $options[SCART_NTD_STATUS_SENT_SUCCES],
+//                    SCART_NTD_STATUS_SENT_FAILED => $options[SCART_NTD_STATUS_SENT_FAILED],
+//                    SCART_NTD_STATUS_SENT_API_SUCCES => $options[SCART_NTD_STATUS_SENT_API_SUCCES],
+//                    SCART_NTD_STATUS_SENT_API_FAILED => $options[SCART_NTD_STATUS_SENT_API_FAILED],
+//                ],
             ],
         ]);
 
     }
-
-
 
     public function onSelectedClose() {
 
@@ -95,11 +88,17 @@ class Ntds extends scartController {
         $ntd = Ntd::where('id',$ntd_id)
             ->first();
         if ($ntd) {
-            if (in_array($ntd->status_code,[SCART_NTD_STATUS_SENT_FAILED,SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_QUEUED])) {
+            if (in_array($ntd->status_code,[
+                SCART_NTD_STATUS_SENT_FAILED,
+                SCART_NTD_STATUS_SENT_SUCCES,
+                SCART_NTD_STATUS_SENT_API_SUCCES,
+                SCART_NTD_STATUS_SENT_API_FAILED])) {
 
-                // NOT YET -> TO-DO; in SendNTD make seperated code of sending NTD with error/warning response
+                $result = scartSendNTD::sendDirectNtd($ntd);
 
-                Flash::info('NTD resend NOT YET');
+                scartLog::logLine("D-onSendAgain; result=$result");
+
+                Flash::info($result);
 
             } else {
                 Flash::warning('NTD status is '.$ntd->status_code.'; cannot resend');
@@ -108,7 +107,7 @@ class Ntds extends scartController {
             Flash::warning('NTD not found!?');
         }
 
-        return ['show_result' => ''];
+        return Redirect::refresh();
     }
 
 }

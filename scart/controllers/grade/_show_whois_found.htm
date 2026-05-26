@@ -1,0 +1,51 @@
+
+<br />
+
+<form class="form-elements" role="form">
+
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-xs-12" >
+                <div class="row">
+                    <div class="col-xs-12" >
+
+                        <h4>WhoIs fields:</h4>
+                        <?php foreach ($whois AS $label => $value) { ?>
+                        <div class="row">
+                            <div class="col-xs-2">
+                                <?= $label ?>
+                            </div>
+                            <div class="col-xs-10" >
+                                <?= $value ?>
+                            </div>
+                        </div>
+                        <?php } ?>
+                        <br />
+
+                        <h4>WhoIs query raw output:</h4>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <?= $whoisraw ?>
+                            </div>
+                        </div>
+
+                        <br />
+                        <br />
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <br />
+        <div class="form-buttons">
+                <span class="btn-text">
+                    <a href="#" data-dismiss="modal" ><?= e(trans('backend::lang.form.close')) ?></a>
+                </span>
+            </div>
+        </div>
+    </div>
+
+</form>

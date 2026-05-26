@@ -6,7 +6,8 @@ columns:
         searchable: true
     received_at:
         label: received
-        type: text
+        type: datetime
+        format: 'Y-m-d H:i:s'
         width: 10%
         searchable: true
     status_code:

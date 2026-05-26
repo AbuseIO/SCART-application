@@ -35,11 +35,10 @@ See https://abuse.io
 ## System installation
 
 * install WinterCMS (https://wintercms.com/docs/setup/installation)
-* _(up and running wintercms installation with backend)_
 * cd <root-project>/plugins
 * git clone <repro> abuseio
-* cd <root-project>/
-* composer self-update --1 && composer update
+* cd ../
+* composer update
 * php artisan winter:up
   * _scart plugin running_
   * _scart settings for user logins_

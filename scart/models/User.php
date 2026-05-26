@@ -117,17 +117,7 @@ class User extends scartModel {
 
         } else {
 
-            $validator = Validator::make(
-                [$this->be_email],
-                [
-                    'be_email' => 'email|unique',
-                ],
-                [
-                    'unique' => 'The :attribute field must be unique',
-                ]
-            );
-
-            throw new ValidationException($validator);
+            throw new ValidationException(['email' => 'The email address must be unique']);
 
         }
 

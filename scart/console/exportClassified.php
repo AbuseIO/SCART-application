@@ -5,6 +5,7 @@ namespace abuseio\scart\console;
 use abuseio\scart\classes\helpers\scartLog;
 use Illuminate\Console\Command;
 use abuseio\scart\classes\scheduler\scartScheduler;
+use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use abuseio\scart\models\Grade_question;
@@ -24,6 +25,15 @@ class exportClassified extends Command
      */
     protected $description = 'exportClassified';
 
+    protected $signature = 'abuseio:exportClassified
+        {--tp|type= : classified | whois | all | ntd | ntdclosed }
+        {--f|from= : read from date, default current time}
+        {--t|to= : read number of records, default 20}
+        {--c|class= : illegal | not Illegal }
+        {--o|outputfile= : output file }
+        ';
+
+
     /**
      * Execute the console command.
      * @return void
@@ -42,8 +52,7 @@ class exportClassified extends Command
         if (empty($from)) $from = '2000-01-01';
         if (empty($to)) $to = '2999-01-01';
 
-
-        // log console options
+        $showhelp = false;
 
         scartLog::setEcho(true);
 
@@ -86,12 +95,19 @@ class exportClassified extends Command
             $lines = scartExport::exportNTDclosed($to);
             file_put_contents($outputfile, implode("\n", $lines) );
             $this->info("exportClassified; $type output in file '$outputfile' ");
+        } else {
+            $showhelp = true;
         }
 
         //if (scartLog::hasError()) $this->error(scartLog::returnLoglines());
 
-        // log console work done
-        $this->info("exportClassified; ". (count($lines) - 1) ." exported into file  '$outputfile' " );
+        if ($showhelp) {
+            Artisan::call('abuseio:exportClassified -h');
+            $this->info(Artisan::output());
+        } else {
+            // log console work done
+            $this->info("exportClassified; ". (count($lines) - 1) ." exported into file  '$outputfile' " );
+        }
 
     }
 
@@ -110,11 +126,11 @@ class exportClassified extends Command
      */
     protected function getOptions() {
         return [
-            ['type', 'tp', InputOption::VALUE_OPTIONAL, 'Type (classified,whois,all)', 'classified'],
+            ['type', 'tp', InputOption::VALUE_OPTIONAL, 'Type', ''],
             ['from', 'f', InputOption::VALUE_OPTIONAL, 'Date from', ''],
             ['to', 't', InputOption::VALUE_OPTIONAL, 'Date to', ''],
             ['class', 'c', InputOption::VALUE_OPTIONAL, 'Classification (illegal or not-illegal)', SCART_GRADE_QUESTION_GROUP_ILLEGAL],
-            ['outputfile', 'o', InputOption::VALUE_OPTIONAL, 'Classification', ''],
+            ['outputfile', 'o', InputOption::VALUE_OPTIONAL, 'Output file', ''],
         ];
     }
 

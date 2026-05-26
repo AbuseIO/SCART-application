@@ -1,6 +1,7 @@
 <?php
 namespace abuseio\scart\classes\iccam\api2;
 
+use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMcurl;
 use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\classes\iccam\api2\scartICCAMfields;
 use abuseio\scart\models\Grade_question;
@@ -74,7 +75,7 @@ class scartImportICCAM {
             } elseif (count($reports) == 0) {
 
                 if (scartICCAM::isOffline()) {
-                    scartLog::logLine("W-scartImportICCAM.importFromLastDate; ICCAM OFFLINE!?");
+                    scartLog::logLine("W-scartImportICCAM.importFromLastDate; ICCAM OFFLINE!?; error=" .  ICCAMcurl::getErrors());
                 }
 
             }
@@ -566,7 +567,7 @@ class scartImportICCAM {
             } else {
 
                 if (scartICCAM::isOffline()) {
-                    scartLog::logLine("W-scartImportICCAM; ICCAM OFFLINE!?");
+                    scartLog::logLine("W-scartImportICCAM; ICCAM OFFLINE!?; error=" . ICCAMcurl::getErrors());
                 }
 
             }

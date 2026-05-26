@@ -13,12 +13,14 @@ return [
 
     'release' => [
         'version' => '6.5',
-        'build' => 'Build 18',
+        'build' => 'Build 42',  // 2026/2/4; read also M356 attachments
         'title' => env('APP_TITLE', 'Sexual Child Abuse Reporter Tool (SCART)'),
     ],
 
     'maintenance' => [
         'mode' => env('MAINTENANCE_MODE', false),
+        // example: 'scrape;createreports;importexport;sendalerts;sendntd;checkntd'
+        'monitor_schedulers' => env('MONITOR_SCHEDULERS', ''),
     ],
 
     'whois' => [
@@ -41,6 +43,8 @@ return [
         'active' => env('AIANALYZE_ACTIVE', false),
         'show_correction' => env('AIANALYZE_SHOW_CORRECTION', true),            // show correction fields in Clasify image viewer
         'report_correction' => env('AIANALYZE_REPORT_CORRECTION', true),        // show report option for export AI attributes (correction)
+        'only_webform_input' => env('AIANALYZE_ONLY_WEBFORM_INPUT', true),      // default only webform input
+        'max_time_ai_analyze' => env('AIANALYZE_MAX_TIME_AI_ANALYZE', (4 * 3600)),     // default max time analyze
     ],
 
     // force env settings for own mailer
@@ -64,6 +68,7 @@ return [
         'viewtype_default' => env('CLASSIFY_VIEWTYPE_DEFAULT', SCART_CLASSIFY_VIEWTYPE_GRID),
         'hotline_country' => env('CLASSIFY_HOTLINE_COUNTRY', 'NL'),                          // classify country
         'detect_country' => env('CLASSIFY_DETECT_COUNTRY', 'nl,netherlands'),        // lowercase strings for detecting local country
+        'add_edit_media' => env('CLASSIFY_ADD_EDIT_MEDIA', false),        // lowercase strings for detecting local country
     ],
 
     'verify' => [
@@ -82,6 +87,7 @@ return [
     'options' => [
         'import_mail_direct_Scrape' => env('OPTION_IMPORT_MAIL_DIRECT_SCRAPE', false),  // if true then direct scrape, else status=open (manual action required)
         'own_work_default' => env('OPTION_OWN_WORK_DEFAULT', true),                // if true then UI own_work option default OFF
+        'lea_function' => env('OPTION_LEA_FUNCTION', false),                // support of LEA direct send function (POLICE menu)
     ],
 
     'scheduler' => [
@@ -110,7 +116,7 @@ return [
             'realtime_min_diff_spindown' => env('SCHEDULER_CHECKNTD_RT_MIN_SPINDOWN', 15),      // time in minutes before spinning down tasks
             'realtime_look_again' => env('SCHEDULER_CHECKNTD_RT_LOOK_AGAIN', 120),     // within (max) 120 mins check each record (url) again
             'realtime_memory_limit' => env('SCHEDULER_CHECKNTD_RT_MEMORY_LIMIT', '1G'),  // min memory
-            'realtime_max_wrokers' => env('SCHEDULER_CHECKNTD_RT_MAX_WORKERS', '8'),   // max concurrent workers - tuning with browser module
+            'realtime_reset_cache' => env('SCHEDULER_CHECKNTD_RT_RESET_CACHE', '100'), // number of records after local cache reset
         ],
         'sendntd' => [
             'active' => env('SCHEDULER_SENDNTD_ACTIVE', true),
@@ -123,9 +129,9 @@ return [
             'alt_email' => env('SCHEDULER_NTDSEND_ALT_EMAIL', ''),                   // [TEST-MODE] if filled, then all NTD will be send to this email address
             'bcc_email' => env('SCHEDULER_NTDSEND_BCC', ''),
         ],
-        'importexport' => [
-            'active' => env('SCHEDULER_READIMPORT_ACTIVE', true),
-            'debug_mode' => env('SCHEDULER_READIMPORT_DEBUG', true),
+        'import' => [
+            'active' => env('SCHEDULER_IMPORT_ACTIVE', true),
+            'debug_mode' => env('SCHEDULER_IMPORT_DEBUG', true),
             'audittrail_mode' => false,
             'readmailbox' => [
                 'mode' => env('SCHEDULER_READIMPORT_MAILBOX_MODE', ''),
@@ -135,6 +141,7 @@ return [
                     'sslflag' => env('SCHEDULER_READIMPORT_SSLFLAG', ''),
                     'username' => env('SCHEDULER_READIMPORT_USERNAME', ''),
                     'password' => env('SCHEDULER_READIMPORT_PASSWORD', ''),
+                    'quoted' => env('SCHEDULER_READIMPORT_QUOTED', true),
                 ],
                 'm356' => [
                     'tenantId' => env('SCHEDULER_READIMPORT_M365_tenantId', ''),
@@ -145,12 +152,20 @@ return [
             ],
             'iccam_active' => env('SCHEDULER_IMPORTEXPORT_ICCAM_ACTIVE', false),    // default no ICCAM
         ],
+        'export' => [
+            'active' => env('SCHEDULER_EXPORT_ACTIVE', true),
+            'debug_mode' => env('SCHEDULER_EXPORT_DEBUG', true),
+            'audittrail_mode' => false,
+            'iccam_active' => env('SCHEDULER_IMPORTEXPORT_ICCAM_ACTIVE', false),    // default no ICCAM
+        ],
         'cleanup' => [
             'active' => env('SCHEDULER_CLEANUP_ACTIVE', true),
             'debug_mode' => env('SCHEDULER_CLEANUP_DEBUG', true),
             'audittrail_mode' => false,
+            'memory_limit' => env('SCHEDULER_CLEANUP_MEMORY_LIMIT', '4G'),
             'grade_status_timeout' => env('SCHEDULER_GRADE_STATUS_TIMEOUT', 24),    // hours
-            'closed_retention' => env('SCHEDULER_CLEANUP_CLOSED_RETENTION', ''),    // if filled then strtotime offset
+            'closed_retention' => env('SCHEDULER_CLEANUP_CLOSED_RETENTION', ''),    // if filled then offset
+            'deleted_records' => env('SCHEDULER_CLEANUP_DELETED_RECORDS', '-1 week'),
         ],
         'sendalerts' => [
             'active' => env('SCHEDULER_SENDALERTS_ACTIVE', true),
@@ -172,15 +187,26 @@ return [
             'recipient' => env('SCHEDULER_CREATEREPORT_RECIPIENT', ''),                // recipient
             'anonymous' => env('SCHEDULER_CREATEREPORT_ANONYMOUS', false),
             'sendpolice' => env('SCHEDULER_CREATEREPORT_SENDPOLICE', false),
+            'extrafields' => env('SCHEDULER_CREATEREPORT_EXTRAFIELDS', false),
         ],
         // default OFF
         'archive' => [
             'active' => env('SCHEDULER_ARCHIVE_ACTIVE', false),
             'debug_mode' => env('SCHEDULER_ARCHIVE_DEBUG', true),
-            'audittrail_mode' => false,
-            'only_delete' => env('SCHEDULER_ARCHIVE_ONLY_DELETE', false),
-            'database_connection' => env('SCHEDULER_ARCHIVE_CONNECTION', 'eokm_archive'),
-            'archive_time' => env('SCHEDULER_ARCHIVE_TIME', '7'),                   // in days -> default archive when 1 week old
+            'audittrail_mode' => env('SCHEDULER_ARCHIVE_AUDITTRAIL', false),
+            'database_connection' => [
+                'driver' => 'mysql',
+                'engine' => 'InnoDB',
+                'strict' => false,
+                'database' => env('SCHEDULER_ARCHIVE_DB_DATABASE', 'winter'),
+                'host' => env('SCHEDULER_ARCHIVE_DB_HOST', '127.0.0.1'),
+                'port' => env('SCHEDULER_ARCHIVE_DB_PORT', '3306'),
+                'username' => env('SCHEDULER_ARCHIVE_DB_USERNAME', ''),
+                'password' => env('SCHEDULER_ARCHIVE_DB_PASSWORD', ''),
+            ],
+            'archive_time_offset' => env('SCHEDULER_ARCHIVE_TIME', '-1 years'),       // default is before 1 jan -1 year
+            'move_chunk_size' => env('SCHEDULER_ARCHIVE_MOVE_CHUNK_SIZE', ''),
+            'delete_chunk_size' => env('SCHEDULER_ARCHIVE_DELETE_CHUNK_SIZE', ''),
         ],
     ],
 
@@ -197,9 +223,10 @@ return [
 
     'iccam' => [
         'active' => env('ICCAM_ACTIVE', false),                                       // default no ICCAM
-        'version' => env('ICCAM_VERSION', 'v2'),                                      // ICCAM version
-        'hotlineid' => env('ICCAM_HOTLINEID', '43'),                                  // hotline ICCAM ID code
+        'version' => env('ICCAM_VERSION', 'v3'),                                      // ICCAM version
+        'hotlineid' => env('ICCAM_HOTLINEID', ''),                                    // hotline ICCAM ID code
         'urlroot' => env('ICCAM_URLROOT', ''),
+        'urlport' => env('ICCAM_URLPORT', '443'),
         'apiuser' => env('ICCAM_APIUSER', ''),
         'apipass' => env('ICCAM_APIPASS', ''),
         'cacert' => env('ICCAM_CACERT', ''),
@@ -210,7 +237,10 @@ return [
         'verifypeer' => env('ICCAM_VERIFYPEER', true),
         'cookie' => env('ICCAM_COOKIEFILE', ''),
         'readimportmax' => env('ICCAM_READIMPORTMAX', '500'),                         // import read max
+        'readimportperiod' => env('ICCAM_READIMPORTPERIODE', '30'),                   // import each X minute
         'exportmax' => env('ICCAM_EXPORTMAX', '20'),                                  // export max
+        'export_error_max_time' => env('ICCAM_EXPORT_ERROR_MAX_TIME', SCART_IMPORTEXPORT_STATUS_ERROR_RETRY_TIME),     // max time in error
+        'debug_mode' => env('ICCAM_DEBUG_MODE', false),
     ],
 
     'hashapi' => [

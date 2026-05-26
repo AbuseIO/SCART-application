@@ -91,33 +91,77 @@ class Report extends scartModel {
 
     public function getColumnOptions($value,$formData) {
 
-        return [
+        $columns = [
             'filenumber' => 'filenumber',
             'reference' => 'reference',
             'url' => 'url',
-            'url_host' => 'url_host',
-            'url_ip' => 'url_ip',
-            'url_type' => 'url_type',
-            'url_referer' => 'url_referer',
-            'received_at' => 'received_at',
-            'hashcheck_at' => 'hashcheck_at',
-            'hashcheck_return' => 'hashcheck_return',
-            'firstseen_at' => 'firstseen_at',
-            'lastseen_at' => 'lastseen_at',
-            'type_code' => 'type_code',
-            'police' => 'police',
-            'source_code' => 'source_code',
-            'status_code' => 'status_code',
+            'url_host' => 'host',
+            'url_ip' => 'ip',
+            'url_type' => 'url type',
+            'url_referer' => 'referer',
+            'received_at' => 'received time',
+            'hashcheck_at' => 'hashcheck done at',
+            'hashcheck_return' => 'on hashcheck server',
+            'firstseen_at' => 'firstseen',
+            'lastseen_at' => 'lastseen',
+            'type_code' => 'type',
+            'source_code' => 'source',
+            'status_code' => 'status',
             'note' => 'note',
+            'ntd_note' => 'NTD note',
+            // special dynamic added fields
+            'police' => 'first to police',
+            'lea' => 'send to lea',
+            'ntd' => 'NTD is send',
+            'ntd_at' => 'Last time NTD send',
         ];
+        if (Systemconfig::get('abuseio.scart::scheduler.createreports.extrafields',false)) {
+            // add extra fields
+            $extras = Input_extrafield::all()->unique('label')->values()->all();
+            foreach ($extras as $extra) {
+                if (!empty($extra->secondvalue) && ($webformfield = ImportWebformField::where('id',$extra->secondvalue)->first())) {
+                    if (!$webformfield->not_report) {
+                        $columns['extra_'.$extra->label] = 'Extra: '.$extra->label;
+                    }
+                } else {
+                    $columns['extra_'.$extra->label] = 'Extra: '.$extra->label;
+                }
+            }
+        }
+        //scartLog::logDump("D-getColumnDefaultOptions; ",$columns);
+        return $columns;
     }
 
     public function getColumnDefaultOptions() {
 
-        $columns = $this->getColumnOptions('','');
-        // note not default
-        unset($columns['note']);
-        return $columns;
+//        $columns = $this->getColumnOptions('','');
+//        // reset not defaults
+//        unset($columns['note']);
+//        unset($columns['lea']);
+//        unset($columns['ntd']);
+//        unset($columns['ntd_note']);
+//        unset($columns['ntd_at']);
+//        return $columns;
+//
+        return [
+            'filenumber' => 'filenumber',
+            'reference' => 'reference',
+            'url' => 'url',
+            'url_host' => 'host',
+            'url_ip' => 'ip',
+            'url_type' => 'url type',
+            'url_referer' => 'referer',
+            'received_at' => 'received time',
+            'hashcheck_at' => 'hashcheck done at',
+            'hashcheck_return' => 'on hashcheck server',
+            'firstseen_at' => 'firstseen',
+            'lastseen_at' => 'lastseen',
+            'type_code' => 'type',
+            'source_code' => 'source',
+            'status_code' => 'status',
+            'note' => 'note',
+            'ntd_note' => 'NTD note',
+        ];
     }
 
     public function filterFields ($fields, $context = null) {
@@ -127,7 +171,6 @@ class Report extends scartModel {
 
         parent::beforeCreate();
 
-        scartLog::logLine("D-beforeCreate");
         $this->status_code = SCART_STATUS_REPORT_CREATED;
         $this->status_at = date('Y-m-d H:i:s');
         $this->number_of_records = 0;

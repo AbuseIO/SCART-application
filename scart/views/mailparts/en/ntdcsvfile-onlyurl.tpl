@@ -1,3 +1,3 @@
-url;note
-{lines}{url};{reason}
+"url";"note"
+{lines}"{url}";"{ntd_note}"
 {/lines}

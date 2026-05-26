@@ -20,11 +20,11 @@ class scartReadMailImap {
 
     public static function init() {
 
-        self::$_host = Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.imap.host','');
-        self::$_port = Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.imap.port','');
-        self::$_sslflag = Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.imap.sslflag','/novalidate-cert');
-        self::$_username = Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.imap.username','');
-        self::$_password = Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.imap.password','');
+        self::$_host = Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.imap.host','');
+        self::$_port = Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.imap.port','');
+        self::$_sslflag = Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.imap.sslflag','/novalidate-cert');
+        self::$_username = Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.imap.username','');
+        self::$_password = Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.imap.password','');
     }
 
     /** IMAP CLIENT **/
@@ -83,16 +83,92 @@ class scartReadMailImap {
     }
 
 
-    public static function imapGetMessageBody($msg_numer) {
+    public static function imapGetMessageBody($msg_number) {
 
         if (SELF::$_client==null) SELF::imapInit();
         if (SELF::$_client!=null) {
+
             // body text part -> always 1
-            $body = imap_fetchbody (SELF::$_client, $msg_numer, 1);
+            $body = imap_fetchbody (SELF::$_client, $msg_number, 1);
+
         } else {
             $body = '';
         }
         return $body;
+    }
+
+    /**
+     * Return array with attachments with elements:
+     * - filename; name of the attachment
+     * - attachment; contents of the attachment
+     *
+     * @param $msg_number
+     * @return array
+     */
+    public static function imapGetAttachments($msg_number) {
+
+        $attachments = array();
+
+        if (SELF::$_client==null) SELF::imapInit();
+
+        if (SELF::$_client!=null) {
+
+            /* get mail structure */
+            $structure = imap_fetchstructure(SELF::$_client, $msg_number);
+
+            /* if any attachments found... */
+            if (isset($structure->parts) && ($cnt = count($structure->parts))) {
+
+                for ($i = 0; $i < $cnt; $i++) {
+
+                    $is_attachment = false;
+                    $attachments[$i] = array(
+                        'filename' => '',
+                        'attachment' => ''
+                    );
+
+                    if ($structure->parts[$i]->ifparameters) {
+                        foreach ($structure->parts[$i]->parameters as $object) {
+                            if (strtolower($object->attribute) == 'name') {
+                                $is_attachment = true;
+                                $attachments[$i]['filename'] = $object->value;
+                            }
+                        }
+                    }
+
+                    if ($structure->parts[$i]->ifdparameters) {
+                        foreach ($structure->parts[$i]->dparameters as $object) {
+                            if (strtolower($object->attribute) == 'filename') {
+                                $is_attachment = true;
+                                $attachments[$i]['filename'] = $object->value;
+                            }
+                        }
+                    }
+
+                    if ($is_attachment) {
+
+                        $attachments[$i]['attachment'] = imap_fetchbody(SELF::$_client, $msg_number, $i + 1);
+
+                        /* 3 = BASE64 encoding */
+                        if ($structure->parts[$i]->encoding == 3) {
+                            $attachments[$i]['attachment'] = base64_decode($attachments[$i]['attachment']);
+                        } /* 4 = QUOTED-PRINTABLE encoding */
+                        elseif ($structure->parts[$i]->encoding == 4) {
+                            $attachments[$i]['attachment'] = quoted_printable_decode($attachments[$i]['attachment']);
+                        }
+                    } else {
+                        // remove
+                        unset($attachments[$i]);
+                    }
+                }
+
+                // reset keys
+                $attachments = array_values($attachments);
+
+            }
+
+        }
+        return $attachments;
     }
 
     public static function imapDeleteMessage($msg_numer) {

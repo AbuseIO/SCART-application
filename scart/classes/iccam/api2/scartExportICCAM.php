@@ -32,6 +32,8 @@ class scartExportICCAM {
 
             foreach ($jobs AS $job) {
 
+                $job = (array) $job;
+
                 scartLog::logLine("D-scartExportICCAM; got job-id: ". $job['job_id'] .", action: " . $job['action'] . ", timestamp: " . $job['timestamp']);
 
                 $ICCAMreportID = '?';

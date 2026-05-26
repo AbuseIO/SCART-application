@@ -14,7 +14,7 @@ use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\online\scartAnalyzeInput;
 use abuseio\scart\classes\mail\scartAlerts;
 
-class scartSchedulerAnalyzeInput extends scartScheduler {
+class efaul;tscartSchedulerAnalyzeInput extends scartScheduler {
 
     /**
      * Schedule AnalyzeInput
@@ -47,9 +47,6 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
             $AIaddon = (scartAIanalyze::isActive()) ? Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER) : false;
 
             // Each scheduler time process available records within the scheduler_process_minutes
-
-            $scheduler_process_count = Systemconfig::get('abuseio.scart::scheduler.scrape.scheduler_process_count','');
-            if ($scheduler_process_count=='') $scheduler_process_count = Systemconfig::get('abuseio.scart::scheduler.scheduler_process_count',15);
 
             $scheduler_process_minutes = Systemconfig::get('reportertool.eokm::scheduler.scrape.scheduler_process_minutes','');
             if ($scheduler_process_minutes=='') $scheduler_process_minutes = 5;
@@ -107,7 +104,7 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
                             // next fase
 
                             // Note: prerelease AI; only for webform source
-                            if ($input->source_code == SCART_SOURCE_CODE_WEBFORM && $AIaddon) {
+                            if ($AIaddon && scartAIanalyze::validAIinput($input)) {
                                 $status_next = SCART_STATUS_SCHEDULER_AI_ANALYZE;
                             } else {
                                 $status_next = SCART_STATUS_GRADE;
@@ -231,8 +228,8 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
         scartLog::logLine("D-scheduleAnalyseInput; process minutes=$scheduler_process_minutes; total MAINURL records to check AI analyzer=$count; ");
 
         // find all input(s) with status=AI_ANALYZE
-        // and with last update more then 5 minute ago -> give AI module time to process
-        $beforetime = date('Y-m-d H:i:s',strtotime("-5 minutes"));
+        // and with last update more then X minute ago -> give AI module time to process
+        $beforetime = date('Y-m-d H:i:s',strtotime("-2 minutes"));
         $input = Input::where('status_code',SCART_STATUS_SCHEDULER_AI_ANALYZE)
             ->where('url_type',SCART_URL_TYPE_MAINURL)
             ->where('updated_at','<=',$beforetime)
@@ -240,7 +237,8 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
             ->first();
         while ($input && ($curtime <= $endtime)) {
 
-            // select all records (WITHOUT mainurl) with waiting status
+            // select all related records (WITHOUT mainurl) with waiting status
+
             $records = Input::join(SCART_INPUT_PARENT_TABLE, SCART_INPUT_PARENT_TABLE.'.input_id', '=', SCART_INPUT_TABLE.'.id')
                 ->where(SCART_INPUT_PARENT_TABLE.'.deleted_at',null)
                 ->where(SCART_INPUT_PARENT_TABLE.'.parent_id', $input->id)
@@ -464,11 +462,12 @@ class scartSchedulerAnalyzeInput extends scartScheduler {
 
                     $lasttime = strtotime($record->updated_at);
 
-                    // skip if timeout (2022/1/21; 4 hours)
-                    if (time() - $lasttime >= SCART_MAX_TIME_AI_ANALYZE) {
+                    // skip if timeout
+                    $max_time_ai_analyze = Systemconfig::get('abuseio.scart::AIanalyze.max_time_ai_analyze',(4 * 60 * 60));
+                    if ((time() - $lasttime) >= $max_time_ai_analyze) {
 
-                        $logtext = "timeout waiting for AI module - skip  AI";
-                        scartLog::logLine("E-scheduleAnalyseInput; filenumber=$record->filenumber; $logtext");
+                        $logtext = "timeout ($max_time_ai_analyze secs) waiting for AI module - source '{$record->source_code}' - skip  AI";
+                        scartLog::logLine("E-scheduleAnalyseInput; filenumber=$record->filenumber, ; $logtext");
 
                         // log old/new for history
                         $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_GRADE,ucfirst($logtext));

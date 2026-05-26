@@ -3,6 +3,8 @@ namespace abuseio\scart;
 
 use abuseio\scart\classes\rules\AlreadyHasFilter;
 use abuseio\scart\classes\rules\URLnew;
+use abuseio\scart\classes\scheduler\scartSchedulerExport;
+use abuseio\scart\classes\scheduler\scartSchedulerImport;
 use abuseio\scart\models\Input;
 use App;
 use Event;
@@ -32,7 +34,6 @@ use abuseio\scart\classes\scheduler\scartSchedulerSendAlerts;
 use abuseio\scart\classes\scheduler\scartSchedulerAnalyzeInput;
 use abuseio\scart\classes\scheduler\scartSchedulerCheckOnline;
 use abuseio\scart\classes\scheduler\scartSchedulerSendNTD;
-use abuseio\scart\classes\scheduler\scartSchedulerImportExport;
 use abuseio\scart\classes\scheduler\scartSchedulerArchive;
 use abuseio\scart\classes\scheduler\scartSchedulerCreateReports;
 use abuseio\scart\classes\scheduler\scartSchedulerUpdateWhois;
@@ -69,9 +70,12 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.scartRealtimeCheckonline', 'abuseio\scart\console\scartRealtimeCheckonline');
         $this->registerConsoleCommand('abuseio.conver2seeder', 'abuseio\scart\console\convert2seeder');
         $this->registerConsoleCommand('abuseio.langImportExport', 'abuseio\scart\console\langImportExport');
+        $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
+        $this->registerConsoleCommand('abuseio.correctArchived', 'abuseio\scart\console\correctArchived');
 
-        // testing
+        // export / testing / check
         $this->registerConsoleCommand('abuseio.exportClassified', 'abuseio\scart\console\exportClassified');
+        $this->registerConsoleCommand('abuseio.exportBulk', 'abuseio\scart\console\exportBulk');
         $this->registerConsoleCommand('abuseio.whoisTest', 'abuseio\scart\console\whoisTest');
         $this->registerConsoleCommand('abuseio.sendMailTest', 'abuseio\scart\console\sendMailTest');
         $this->registerConsoleCommand('abuseio.readMailTest', 'abuseio\scart\console\readMailTest');
@@ -81,6 +85,7 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.sendCustomNTD', 'abuseio\scart\console\sendCustomNTD');
         $this->registerConsoleCommand('abuseio.doArchive', 'abuseio\scart\console\doArchive');
         $this->registerConsoleCommand('abuseio.checkHASH', 'abuseio\scart\console\checkHASH');
+
         $this->registerConsoleCommand('abuseio.testDragon', 'abuseio\scart\console\testDragon');
         $this->registerConsoleCommand('abuseio.testUpdateWhois', 'abuseio\scart\console\testUpdateWhois');
         $this->registerConsoleCommand('abuseio.testAddon', 'abuseio\scart\console\testAddon');
@@ -90,7 +95,9 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.testPooling', 'abuseio\scart\console\testPooling');
         $this->registerConsoleCommand('abuseio.testChrome', 'abuseio\scart\console\testChrome');
         $this->registerConsoleCommand('abuseio.testSendNTD', 'abuseio\scart\console\testSendNTD');
-        $this->registerConsoleCommand('abuseio.correctImageurls', 'abuseio\scart\console\correctImageurls');
+        $this->registerConsoleCommand('abuseio.testCleanup', 'abuseio\scart\console\testCleanup');
+        $this->registerConsoleCommand('abuseio.testArchive', 'abuseio\scart\console\testArchive');
+        $this->registerConsoleCommand('abuseio.imageTypes', 'abuseio\scart\console\imageTypes');
 
         // ICCAM
         $this->registerConsoleCommand('abuseio.iccamApi', 'abuseio\scart\console\iccamApi');
@@ -98,7 +105,9 @@ class Plugin extends PluginBase {
         $this->registerConsoleCommand('abuseio.iccamLoadDirect', 'abuseio\scart\console\iccamLoadDirect');
         $this->registerConsoleCommand('abuseio.iccamReadBack', 'abuseio\scart\console\iccamReadBack');
         $this->registerConsoleCommand('abuseio.checkICCAMexport', 'abuseio\scart\console\checkICCAMexport');
-        $this->registerConsoleCommand('abuseio.checkAndCorrectICCAM', 'abuseio\scart\console\checkAndCorrectICCAM');
+        $this->registerConsoleCommand('abuseio.GetwhoisICCAM', 'abuseio\scart\console\GetwhoisICCAM');
+
+        $this->registerConsoleCommand('abuseio.importExport', 'abuseio\scart\console\importExport');
 
     }
 
@@ -163,6 +172,11 @@ class Plugin extends PluginBase {
                 'label' => 'NTD template management',
                 'tab' => 'SCARt reporting',
                 'order' => 240,
+            ],
+            'abuseio.scart.import_webform' => [
+                'label' => 'Import webform management',
+                'tab' => 'SCARt reporting',
+                'order' => 242,
             ],
             'abuseio.scart.whois' => [
                 'label' => 'WhoIs test',
@@ -273,11 +287,18 @@ class Plugin extends PluginBase {
             })->name('SCART:CreateReports')->withoutOverlapping($overlapping)->everyMinute();
         }
 
-        if (Systemconfig::get('abuseio.scart::scheduler.importexport.active',true)) {
+        if (Systemconfig::get('abuseio.scart::scheduler.import.active',true)) {
             // Task-6; read import
             $schedule->call(function () {
-                scartSchedulerImportExport::doJob();
-            })->name('SCART:ImportExport')->withoutOverlapping($overlapping)->everyMinute();
+                scartSchedulerImport::doJob();
+            })->name('SCART:Import')->withoutOverlapping($overlapping)->everyMinute();
+        }
+
+        if (Systemconfig::get('abuseio.scart::scheduler.export.active',true)) {
+            // Task-6; read import
+            $schedule->call(function () {
+                scartSchedulerExport::doJob();
+            })->name('SCART:Export')->withoutOverlapping($overlapping)->everyMinute();
         }
 
         // every day
@@ -300,7 +321,7 @@ class Plugin extends PluginBase {
             // Task-9; Archive
             $schedule->call(function () {
                 scartSchedulerArchive::doJob();
-            })->name('SCART:Archive')->dailyAt('02:05');
+            })->name('SCART:Archive')->dailyAt('02:15');
         }
 
 
@@ -354,6 +375,13 @@ class Plugin extends PluginBase {
         return "FATAL '$errtype' ERROR " . Config::get('abuseio.scart::errors.display_user','Error found');
     }
 
+    public static function shutdownError() {
+        $error = error_get_last();
+        if (!empty($error) && !in_array($error['type'],[E_WARNING,E_NOTICE,E_DEPRECATED])) {
+            scartLog::logDump("E-SHUTDWON error: ",$error);
+        }
+    }
+
     public function boot() {
 
         // patch for phpwhois library -> @TO-DO setup own phpwhois
@@ -391,6 +419,8 @@ class Plugin extends PluginBase {
             return $this->logError($exeception,'Exception');
         });
 
+        register_shutdown_function([Plugin::class,'shutdownError']);
+
         // Check if we are currently in backend module.
         if (!App::runningInBackend()) {
             // if not so, then stop return here
@@ -399,6 +429,8 @@ class Plugin extends PluginBase {
 
         if (!App::runningInConsole()) {
             scartLog::logMemory('scartInteractiveUser');
+        } else {
+            scartLog::logMemory('scartConsoleUser');
         }
 
         // General note: check always if db tables are up - can be in init/setup mode

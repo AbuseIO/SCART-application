@@ -36,7 +36,7 @@
             <div class="control-tabs primary-tabs" data-control="tab">
                 <ul class="nav nav-tabs">
                     <li class="active"><a href="#primaryTabOne">General</a></li>
-                    <?php if (count($realtimests) > 0) { ?><li><a href="#primaryTabTwo">Realtime workers</a></li><?php } ?>
+                    <?php if (!empty($realtimests)) { ?><li><a href="#primaryTabTwo">Realtime workers</a></li><?php } ?>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active">

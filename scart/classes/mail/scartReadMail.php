@@ -40,7 +40,7 @@ class scartReadMail {
 
     public static function getMode() {
 
-        return Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.mode','imap');
+        return Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.mode','imap');
     }
 
     public static function init() {

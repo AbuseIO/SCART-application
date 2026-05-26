@@ -1,6 +1,7 @@
 <?php namespace abuseio\scart\models;
 
 use abuseio\scart\classes\base\scartModel;
+use abuseio\scart\classes\helpers\scartLog;
 
 /**
  * Scrape_cache
@@ -33,11 +34,16 @@ class Scrape_cache extends scartModel {
         $cache->code = $code;
         $cache->cached = $cached;
         $cache->save();
+        scartLog::logLine("D-Scrape_cache; addcache($code)");
     }
 
     public static function getCache($code) {
         $cache = Scrape_cache::where('code',$code)->first();
         return ($cache) ? $cache : false;
+    }
+
+    public static function inCache($code) {
+        return Scrape_cache::where('code',$code)->exists();
     }
 
     public static function delCache($code) {

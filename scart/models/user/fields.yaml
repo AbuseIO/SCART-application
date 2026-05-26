@@ -31,13 +31,3 @@ fields:
         type: partial
         span: full
         context: update
-
-#tabs:
-#    fields:
-#        groups:
-#            span: full
-#            context: update
-#            path: groups
-#            type: checkboxlist
-#            tab: Groups
-

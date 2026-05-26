@@ -50,10 +50,8 @@
     </div>
     <div class="toolbar-item toolbar-item-account">
         <ul class="mainmenu-toolbar" style="border:white;">
-                <?php
-                if (isset($this->widget->finder)) {
-                 echo $this->widget->finder->render();
-                } ?>
+            <?php if (isset($this->widget->finder)) { echo $this->widget->finder->render(); } ?>
+            <li class="mainmenu-quick-action with-tooltip"></li>
             <li class="mainmenu-account with-tooltip">
                 <a
                     href="javascript:;" onclick="$.oc.layout.toggleAccountMenu(this)"

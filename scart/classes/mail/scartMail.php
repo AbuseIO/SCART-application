@@ -133,7 +133,7 @@ class scartMail {
         return $message_id;
     }
 
-    public static function sendNTD($to,$subject,$body,$bcc='',$attachment='',$forceTo=false) {
+    public static function sendNTD($to,$subject,$body,$bcc='',$attachments='',$forceTo=false) {
 
         $from = Systemconfig::get('abuseio.scart::scheduler.sendntd.from','from@local.domain');
         $envelope_from  = Systemconfig::get('abuseio.scart::scheduler.sendntd.envelope_from',$from);
@@ -142,34 +142,36 @@ class scartMail {
         if (!$forceTo) {
             $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
             if ($alt_email) {
-                Log::debug("D-Alternate email address (TEST MODE); use '$alt_email' for '$to' ");
+                Log::debug("D-SendNTD; alternate email address (CATCH MODE); use '$alt_email' for '$to' ");
                 $subject = "[ALT_EMAIL active; org=$to] $subject";
                 $to = $alt_email;
             }
         }
 
-        $message = '';
-
         try {
 
             // Send message
-            Mail::raw( $body, function($message) use ($to,$subject,$bcc,$from,$reply_to,$envelope_from,&$message_id,$attachment) {
+            Mail::raw( $body, function($message) use ($to,$subject,$bcc,$from,$reply_to,$envelope_from,&$message_id,$attachments) {
 
                 $message->to($to);
                 $message->subject($subject);
-                // bcc if set
                 if ($bcc) $message->bcc($bcc);
+                if ($from) $message->from($from);
+                if ($reply_to) $message->replyTo($reply_to);
 
                 // set special headers
                 $headers = $message->getHeaders();
-                if ($from) $message->from($from);
-                if ($reply_to) $message->replyTo($reply_to);
                 if ($envelope_from) {
                     $headers->addTextHeader('Envelope_from', $envelope_from);
                 }
 
                 // add attachment
-                if ($attachment) $message->attach($attachment);
+                if (!empty($attachments)) {
+                    if (!is_array($attachments)) $attachments = [$attachments];
+                    foreach ($attachments as $attachment) {
+                        $message->attach($attachment);
+                    }
+                }
 
                 // get message-iD (if supported)
                 $message_id = self::getMessageID($message);

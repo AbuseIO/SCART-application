@@ -9,8 +9,14 @@ fields:
         required: 1
         span: storm
         default: '1'
-        cssClass: p-l-lg col-sm-1
+        cssClass: p-l-lg col-sm-3
         type: number
+    required:
+        label: required
+        span: storm
+        default: '1'
+        cssClass: p-t-md col-sm-3
+        type: switch
     type:
         label: 'type'
         required: 1
@@ -42,6 +48,7 @@ fields:
         required: 1
         span: left
         type: text
+        comment: 'Use letters and numbers, please do not use spaces or special symbols'
     iccam_field:
         label: 'ICCAM field'
         required: false
@@ -52,6 +59,11 @@ fields:
             field: type
             condition:
                 value[section]
+    default:
+        label: default
+        span: left
+        type: text
+
 tabs:
     fields:
         options:

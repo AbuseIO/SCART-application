@@ -1,0 +1,37 @@
+fields:
+    name:
+        label: Name
+        span: auto
+        type: text
+    ntd_use_standard_fields:
+        label: 'NTD LEA use standard fields'
+        span: right
+        type: switch
+        cssClass: p-t-md col-sm-3
+    description:
+        label: Description
+        span: full
+        type: textarea
+        size: small
+    subject:
+        label: 'Import subject'
+        span: auto
+        type: text
+        comment: 'Unique string at the beginning of the receiving e-mail subject'
+    status_code:
+        label: 'Set status'
+        span: auto
+        type: dropdown
+        comment: 'New status of the report after importing'
+
+
+tabs:
+    fields:
+        fields:
+            span: full
+            path: import_fields
+            context: update
+            type: partial
+            tab: Fields
+
+

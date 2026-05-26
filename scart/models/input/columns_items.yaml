@@ -26,7 +26,9 @@ columns:
     firstseen_at:
         label: first seen
         type: datetime
+        format: 'Y-m-d H:i:s'
     lastseen_at:
         label: last seen
         type: datetime
+        format: 'Y-m-d H:i:s'
 

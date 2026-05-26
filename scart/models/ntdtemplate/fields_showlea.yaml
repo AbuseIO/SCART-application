@@ -1,0 +1,13 @@
+fields:
+    _lea_abusecontact:
+        label: 'LEA abusecontact'
+        required: true
+        span: full
+        type: dropdown
+        comment: 'After sending the report(s) will be closed'
+    ntd_note:
+        label: 'LEA (extra) note'
+        size: large
+        span: full
+        type: textarea
+

@@ -122,7 +122,7 @@ class Ntd extends scartModel {
 
                 $directntd = ($initNTDstatus==SCART_NTD_STATUS_QUEUE_DIRECTLY || $initNTDstatus==SCART_NTD_STATUS_QUEUE_DIRECTLY_POLICE);
                 if ($directntd) {
-                    $groupby_hour_threshold = 1;
+                    $groupby_hour_threshold = $interval;
                     //$initNTDstatus = SCART_NTD_STATUS_GROUPING;
                 } else {
                     $groupby_hour_threshold = $abusecontact->groupby_hours * $interval;
@@ -142,17 +142,7 @@ class Ntd extends scartModel {
                     $ntd->save();
                     $ntd->logText("Created NTD with status=$initNTDstatus");
                 } else {
-
-                    // 26-5-2020; obsolute
-
-                    // if already grouping and not already reset, then reset groupby_hour_threshold for next hour
-                    /*
-                    if ($directntd && ($ntd->groupby_hour_threshold == $abusecontact->groupby_hours * $interval)) {
-                        $ntd->groupby_hour_threshold = $groupby_hour_threshold;
-                        $ntd->save();
-                        $ntd->logText("Reset groupby_hour_threshold on '$ntd->groupby_hour_threshold' (next hour) because of DIRECT queuing");
-                    }
-                    */
+                    scartLog::logLine("D-use existing NTD for abusecontact '$abusecontact->owner' (type=$type) with status=$initNTDstatus");
                 }
 
                 $url = $record->url;

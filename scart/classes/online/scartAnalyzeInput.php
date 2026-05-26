@@ -88,52 +88,42 @@ class scartAnalyzeInput {
 
         $input->logText( 'Analyze input: '.$input->url);
 
-        $result = ''; $stat_new = $stat_upd = $stat_skip = $donecnt = $imgcnt = $delivered_items = 0;
+        $result = ''; $stat_new = $stat_upd = $stat_skip = $donecnt = $delivered_items = 0;
 
-        // check if scrapped before
+        // cleanup scrapping related item
         $itemscount = Input_parent::where('parent_id',$input->id)->count();
         if ($itemscount > 0) {
-
-            scartLog::logLine("D-doAnalyze; mark removed items; count=$itemscount " );
-
+            scartLog::logLine("D-doAnalyze; remove related items; count=$itemscount " );
             // remove connection(s)
-            Input_parent::where('parent_id',$input->id)->delete();
-
-            // To-Do:
-            //
-            // what if imageurl on status_code=grade and is not anymore found in the scrape below
-            // -> then this imageurl (record) is Orphan
-            // -> but because of some parent (mainurl) before this parent, this orphan is not closed
-
-
+            //Input_parent::where('parent_id',$input->id)->delete();
+            $input->deleteRelated();
         }
 
-        // Check double url
+        // 2024/8/16/Gs: duplicated URL allowed; skip "oldies" code
 
-        $oldies = Input::where('url',$input->url)
-            ->where('url_type',SCART_URL_TYPE_MAINURL)
-            ->where('id','<>',$input->id)
-            ->where('received_at','>=',$input->received_at)
-            ->where('status_code','<>',SCART_STATUS_CLOSE_DOUBLE)
-            ->get();
-        if ($oldies) {
-            foreach ($oldies as $oldie) {
-                scartLog::logLine("E-Found record_id=$oldie->id received_at=$oldie->received_at with same url=$oldie->url and status_code=$oldie->status_code -> set on ".SCART_STATUS_CLOSE_DOUBLE);
-
-                // log old/new for history
-                $oldie->logHistory(SCART_INPUT_HISTORY_STATUS,$oldie->status_code,SCART_STATUS_CLOSE_DOUBLE,"Detected as double url");
-
-                $oldie->status_code = SCART_STATUS_CLOSE_DOUBLE;
-                $oldie->save();
-            }
-        }
+//        $oldies = Input::where('url',$input->url)
+//            ->where('url_type',SCART_URL_TYPE_MAINURL)
+//            ->where('id','<>',$input->id)
+//            ->where('received_at','>=',$input->received_at)
+//            ->where('status_code','<>',SCART_STATUS_CLOSE_DOUBLE)
+//            ->get();
+//        if ($oldies) {
+//            foreach ($oldies as $oldie) {
+//                scartLog::logLine("E-Found record_id=$oldie->id received_at=$oldie->received_at with same url=$oldie->url and status_code=$oldie->status_code -> set on ".SCART_STATUS_CLOSE_DOUBLE);
+//
+//                // log old/new for history
+//                $oldie->logHistory(SCART_INPUT_HISTORY_STATUS,$oldie->status_code,SCART_STATUS_CLOSE_DOUBLE,"Detected as double url");
+//
+//                $oldie->status_code = SCART_STATUS_CLOSE_DOUBLE;
+//                $oldie->save();
+//            }
+//        }
 
         // Start flow
 
         if (scartRules::doNotScrape($input->url)) {
 
             $input->logText("mainurl '$input->url' in DO NOT SCRAPE rule - SKIP" );
-
             $result = [
                 'status' => false,
                 'warning' => "Mainurl '$input->url' in DO-NOT-SCRAPE rule - SKIP",
@@ -143,138 +133,17 @@ class scartAnalyzeInput {
         } else {
 
             // get WhoIs from input (link)
-            //$input->logText("Get WhoIs from input (link): ".$input->url );
-            $whois = scartWhois::getHostingInfo($input->url);
-            if ($whois['status_success']) {
-
-                $url = parse_url($input->url);
-
-                // log old/new for history
-                $newip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
-                $newtxt = ($input->url_ip) ? "Detected IP change in analyze input" : "Set IP in analyze input";
-                $input->logHistory(SCART_INPUT_HISTORY_IP,$input->url_ip,$newip,$newtxt);
-                $input->url_ip = $newip;
-
-                $input->url_host = (isset($url['host']) ? $url['host'] : '');
-
-                $input->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
-
-                $input->logHistory(SCART_INPUT_HISTORY_HOSTER,
-                    $input->host_abusecontact_id,$whois[SCART_HOSTER.'_abusecontact_id'],"Analyze; found hoster in WhoIs");
-
-                $input->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
-
-                // 2021/2/15/Gs: add proxy_abusecontact_id if set
-                $input = Abusecontact::fillProxyservice($input,$whois);
-
-                $input->logText("Set Whois information");
-                $input->save();
-
-                $input->logText("Input (link) ".$input->url."; " . $whois['status_text'] .
-                    "; registrar_owner=".$whois['registrar_owner'].
-                    ", host_owner=".$whois['host_owner'].
-                    ", proxy_abusecontact_id=".$input->proxy_abusecontact_id.
-                    ", country=".$whois['host_country']);
-
-            } else {
-
-                // @TO-DO: whois_error_retry count??
-                $input->logText("Warning WhoIs; looking up: " . $whois['status_text'] );
-
-            }
+            $input = self::updateWhoIs($input);
 
             // check if direct classify rule
 
             if ($settings = scartRules::checkDirectClassify($input)) {
 
-                // direct_classify -> set classify and directly to checkonline
+                // direct_classify -> set classify and direct to checkonline
                 scartLog::logLine("D-Direct_classify rule active for '$input->url' ");
 
-                $status = true;
-
-                if ($settings['rule_type_code'] == SCART_RULE_TYPE_DIRECT_CLASSIFY_ILLEGAL) {
-
-                    // only DIRECT_CLASSIFY when not ignore
-
-                    if ($input->grade_code != SCART_GRADE_IGNORE) {
-
-                        // set status, grading and type (always)
-                        $input->grade_code = SCART_GRADE_ILLEGAL;
-                        $input->firstseen_at = date('Y-m-d H:i:s');
-                        $input->online_counter = 0;   // start first NTD
-                        $input->type_code = $settings['type_code_'.SCART_GRADE_QUESTION_GROUP_ILLEGAL][0];
-                        if ($settings['police_first'][0] == 'y') {
-
-                            // log old/new for history
-                            $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_FIRST_POLICE,"Direct classify rule, first police; illegal");
-
-                            $input->status_code = SCART_STATUS_FIRST_POLICE;
-
-                            // also reason if set
-                            if (isset($settings['police_reason'][0])) {
-                                $clone = new Grade_answer();
-                                $clone->record_id = $input->id;
-                                $clone->record_type = SCART_INPUT_TYPE;
-                                $clone->grade_question_id = (isset($settings['police_reason'][0]['grade_question_id']) ? $settings['police_reason'][0]['grade_question_id'] : 0);
-                                $clone->answer = (isset($settings['police_reason'][0]['answer']) ? serialize($settings['police_reason'][0]['answer']) : '');
-                                $clone->save();
-                            }
-
-                        } else {
-
-                            // log old/new for history
-                            $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_SCHEDULER_CHECKONLINE,"Direct classify rule; illegal");
-
-                            $input->status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
-                        }
-                        // reset error counters
-                        $input->browse_error_retry = $input->whois_error_retry = 0;
-                        $input->save();
-                        $input->logText("Direct_classify; illegal classification set based on rule; status set on: '$input->status_code' ");
-
-                        // add mainurl parent table
-                        $iteminp = Input_parent::where('parent_id',$input->id)->where('input_id',$input->id)->first();
-                        if (!$iteminp) {
-                            $iteminp = new Input_parent();
-                            $iteminp->parent_id = $input->id;
-                            $iteminp->input_id = $input->id;
-                            $iteminp->save();
-                        }
-
-                        $warning = "Mainurl in DIRECT CLASSIFY ILLEGAL rule - classified - status set on '$input->status_code' ";
-
-                        if (scartICCAMinterface::isActive()) {
-                            scartICCAMinterface::exportReport($input);
-                        }
-
-                    } else {
-
-                        scartLog::logLine("D-Ignore SCART_RULE_TYPE_DIRECT_CLASSIFY_ILLEGAL rule because grade of record is IGNORE (filenumber=$input->filenumber) "  );
-
-                    }
-
-                } elseif ($settings['rule_type_code'] == SCART_RULE_TYPE_DIRECT_CLASSIFY_NOT_ILLEGAL) {
-
-                    // log old/new for history
-                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_CLOSE,"Direct classify rule; not illegal");
-
-                    // set status, grading and type (always)
-                    $input->grade_code = SCART_GRADE_NOT_ILLEGAL;
-                    $input->firstseen_at = date('Y-m-d H:i:s');
-                    $input->online_counter = 1;
-                    $input->type_code = $settings['type_code_'.SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL][0];
-                    $input->status_code = SCART_STATUS_CLOSE;
-                    $input->save();
-                    $input->logText("Direct_classify; NOT illegal classification set based on rule; status set on: '$input->status_code' ");
-
-                    $warning = "Mainurl in DIRECT CLASSIFY NOT ILLEGAL rule - classified - status set on '$input->status_code' ";
-
-                } else {
-
-                    $status = false;
-                    scartLog::logLine("E-Unkown settings[rule_type_code]=" . $settings['rule_type_code'] );
-
-                }
+                $status = self::handleDirectClassify($settings,$input);
+                $warning = "Mainurl in DIRECT CLASSIFY rule - status set on '$input->status_code' ";
 
                 if ($status) {
 
@@ -386,7 +255,6 @@ class scartAnalyzeInput {
 
                                 // check if imgcnt=2; when image[2]=src then mainurl=imageurl
 
-
                                 if ($imgcnt==2 && $images[1]['src'] == $input->url && $images[1]['type'] == SCART_URL_TYPE_IMAGEURL) {
 
                                     // load mainurl with 1 image found - skip screenshot (=image)
@@ -483,318 +351,110 @@ class scartAnalyzeInput {
                                         ", host_country=" . $whois['host_country'].
                                         ")");
 
+                                    // Note: allow duplicated URLs -> always create new item here
+
+                                    $item = new Input();
+                                    $item->url = $src;
+
+                                    // log old/new for history
+                                    $newip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
+                                    $item->url_ip = $newip;
+
+                                    $item->url_base = $image['base'];
+                                    $item->url_referer = $input->url_referer;
+                                    $item->url_type = $image['type'];
+                                    $item->url_host = $image['host'];
+                                    $item->url_hash = $hash;
+                                    $item->url_image_width = $image['width'];
+                                    $item->url_image_height = $image['height'];
+                                    $item->reference = '';  // do not copy from input
+                                    $item->workuser_id = $input->workuser_id;
+
+                                    // whois info
+                                    $item->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
+                                    $item->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
+
+                                    $item->status_code = $item->classify_status_code = SCART_STATUS_GRADE;
+                                    $item->grade_code = SCART_GRADE_UNSET;
+                                    $item->source_code = $input->source_code;
+                                    $item->type_code = $input->type_code;
+                                    $item->received_at = $input->received_at;
+
                                     // check HASH check database
+                                    $item->hashcheck_at = date('Y-m-d H:i:s');
+                                    $item->hashcheck_format = scartHASHcheck::getFormat();;
+                                    $item->hashcheck_return = scartHASHcheck::inDatabase($image['data']);
 
-                                    $hashcheck_at = date('Y-m-d H:i:s');
-                                    // Note: if HASH check off, then empty
-                                    $hashcheck_format = scartHASHcheck::getFormat();
-                                    // Note: if HASH check off, then always false
-                                    $hashcheck_return = scartHASHcheck::inDatabase($image['data']);
+                                    // do save with afterCreate (eg generate filnumber)
+                                    $item->save();
 
-                                    if ($item = Input::getItemOnUrl($src) ) {
+                                    $item->logHistory(SCART_INPUT_HISTORY_IP,'',$newip,"Set IP in analyze input");
+                                    $item->logHistory(SCART_INPUT_HISTORY_HOSTER,'',$item->host_abusecontact_id,"Analyze; found hoster in WhoIs");
+                                    $item->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_GRADE,"Analyze: new url found");
 
-                                        // already found
+                                    // connect to parent
+                                    $iteminp = new Input_parent();
+                                    $iteminp->parent_id = $input->id;
+                                    $iteminp->input_id = $item->id;
+                                    $iteminp->save();
+                                    $item->logText("Connect to mainurl (filenumber=$input->filenumber) " );
 
-                                        /**
-                                         * What if connected to other input and already classified?
-                                         *   -> and already in the check online status?
-                                         *
-                                         * Reset status to classification, but reuse classification
-                                         *   -> if hash unchanged
-                                         *
-                                         */
+                                    // add proxy_abusecontact_id if set
+                                    $item = Abusecontact::fillProxyservice($item,$whois);
+                                    $item->save();
 
-                                        if ($item->url_hash != $hash) {
+                                    if ($item->hashcheck_return) {
 
-                                            // CHANGED IMAGE HASH (!)
+                                        // ILLEGAL
 
-                                            // reset image
-                                            $item->url_hash = $hash;
-                                            $item->url_base = $image['base'];
-                                            // hold on to existing type
-                                            //$item->url_type = $image['type'];
-                                            $item->url_host = $image['host'];
-                                            $item->url_image_width = $image['width'];
-                                            $item->url_image_height = $image['height'];
-
-                                            // 2021/1/29/Gs: do not delete
-                                            // remove classification answers
-                                            //Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$item->id)->delete();
-
-                                            // reset classification
-                                            $item->grade_code = SCART_GRADE_UNSET;
-
-                                            $item->logText('Found other image (hash) - classification reset ');
-                                            scartLog::logLine("D-Connect existing item (filenumber=$item->filenumber) - RESET classification ");
-
-                                        } else {
-
-                                            $item->logText('Found again (same hash) - classification unchanged ');
-                                            scartLog::logLine("D-Connect existing item (filenumber=$item->filenumber) ");
-
+                                        $item->grade_code = SCART_GRADE_ILLEGAL;
+                                        $settings = scartHASHcheck::getClassification();
+                                        // set classification based on setting array
+                                        if ($settings['police_first'][0] == 'y') {
+                                            $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
+                                        }
+                                        $item->type_code = $settings['type_code_illegal'][0];
+                                        // set classify
+                                        foreach ($settings['grades'] AS $answer) {
+                                            $clone = new Grade_answer();
+                                            $clone->record_id = $item->id;
+                                            $clone->record_type = SCART_INPUT_TYPE;
+                                            $clone->grade_question_id = $answer['grade_question_id'];
+                                            $clone->answer = serialize($answer['answer']);
+                                            $clone->save();
                                         }
 
-                                        // new classify -> remove from NTD(s) if found
-                                        if ($item->grade_code == SCART_GRADE_ILLEGAL) {
+                                        $item->logText("New item - found '$src' in HASH database - direct classify");
 
-                                            // always be sure to remove
-                                            Ntd::removeUrlgrouping($item->url);
-                                            $item->logText("Removed from any (grouping) NTD's");
+                                    } elseif ($onhash = Input::getItemOnHash($hash,$item->id)) {
 
-                                        }
+                                        // same hash -> copy classification
 
-                                        // whois info can be changed
-                                        $item->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
-
-                                        $item->logHistory(SCART_INPUT_HISTORY_HOSTER,
-                                            $item->host_abusecontact_id,$whois[SCART_HOSTER.'_abusecontact_id'],"Analyze; found hoster in WhoIs");
-
-                                        $item->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
-
-                                        // log old/new for history
-                                        $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_GRADE,"Back to classify (found on url in new scrape)");
-
-                                        // url already in database -> back to grade again
-                                        $item->status_code = $item->classify_status_code = SCART_STATUS_GRADE;
-
-                                        $item->hashcheck_at = $hashcheck_at;
-                                        $item->hashcheck_format = $hashcheck_format;
-                                        $item->hashcheck_return = $hashcheck_return;
-                                        // save -> get ID
-                                        $item->save();
-
-                                        // 2021/2/15/Gs: add proxy_abusecontact_id if set
-                                        $item = Abusecontact::fillProxyservice($item,$whois);
-                                        $item->save();
-
-                                        // ** hashcheck **
-
-                                        if ($hashcheck_return) {
-
-                                            $input->logText("Warning; imageurl '$src' in HASH database - direct classify");
-
-                                            // ILLEGAL
-
-                                            $item->grade_code = SCART_GRADE_ILLEGAL;
-                                            $settings = scartHASHcheck::getClassification();
-                                            // set classification based on setting array
-                                            if ($settings['police_first'][0] == 'y') {
-                                                $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
-                                            }
-                                            $item->type_code = $settings['type_code_illegal'][0];
-                                            // remove old
-                                            Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$item->id)->delete();
-                                            // set classify
-                                            foreach ($settings['grades'] AS $answer) {
-                                                $clone = new Grade_answer();
-                                                $clone->record_id = $item->id;
-                                                $clone->record_type = SCART_INPUT_TYPE;
-                                                $clone->grade_question_id = $answer['grade_question_id'];
-                                                $clone->answer = serialize($answer['answer']);
-                                                $clone->save();
-                                            }
-                                            // save updates
-                                            $item->save();
-                                        }
-
-                                        // make connection (if not there)
-
-                                        $iteminp = Input_parent::where('parent_id',$input->id)->where('input_id',$item->id)->first();
-                                        if (!$iteminp) {
-                                            $iteminp = new Input_parent();
-                                            $iteminp->parent_id = $input->id;
-                                            $iteminp->input_id = $item->id;
-                                            $iteminp->save();
-                                            $item->logText("Connected to mainurl (filenumber=$input->filenumber) " );
-                                        } else {
-                                            $item->logText("Already connected to mainurl (filenumber=$input->filenumber) " );
-                                        }
-
-                                        $stat_upd += 1;
-
-                                    } elseif ($onhash = Input::getItemOnHash($hash) ) {
-
-                                        // same HASH -> grading already in database
-
-                                        // other url, so create new record
-
-                                        $item = new Input();
-                                        $item->url = $src;
-
-                                        // log old/new for history
-                                        $newip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
-                                        $item->url_ip = $newip;
-
-                                        $item->url_base = $image['base'];
-                                        $item->url_referer = $input->url_referer;
-                                        $item->url_type = $image['type'];
-                                        $item->url_host = $image['host'];
-                                        $item->url_hash = $hash;
-                                        $item->url_image_width = $image['width'];
-                                        $item->url_image_height = $image['height'];
-                                        $item->reference = '';  // do not copy from input
-                                        $item->workuser_id = $input->workuser_id;
-
-                                        // whois info
-                                        $item->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
-                                        $item->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
-
-                                        $item->status_code = $item->classify_status_code = SCART_STATUS_GRADE;
-                                        // copy basic fields
-                                        $item->source_code = $input->source_code;
                                         $item->grade_code = $onhash->grade_code;
-                                        $item->type_code = $input->type_code;
-                                        $item->received_at = $input->received_at;
-                                        $item->hashcheck_at = $hashcheck_at;
-                                        $item->hashcheck_format = $hashcheck_format;
-                                        $item->hashcheck_return = $hashcheck_return;
-                                        $item->save();
 
-                                        $item->logHistory(SCART_INPUT_HISTORY_IP,'',$newip,"Set IP in analyze input");
-                                        $item->logHistory(SCART_INPUT_HISTORY_HOSTER,'',$item->host_abusecontact_id,"Analyze; found hoster in WhoIs");
-                                        $item->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_GRADE,"Analyze: new item based on url, same hash");
-
-                                        $iteminp = new Input_parent();
-                                        $iteminp->parent_id = $input->id;
-                                        $iteminp->input_id = $item->id;
-                                        $iteminp->save();
-
-                                        $item->logText("Connect to mainurl (filenumber=$input->filenumber) " );
-
-                                        // 2021/2/15/Gs: add proxy_abusecontact_id if set
-                                        $item = Abusecontact::fillProxyservice($item,$whois);
-                                        $item->save();
-
-                                        // ** hashcheck **
-
-                                        if ($hashcheck_return) {
-
-                                            $input->logText("Found url '$src' in HASH database - direct classify");
-
-                                            // ILLEGAL
-
-                                            $item->grade_code = SCART_GRADE_ILLEGAL;
-                                            $settings = scartHASHcheck::getClassification();
-                                            // set classification based on setting array
-                                            if ($settings['police_first'][0] == 'y') {
-                                                $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
-                                            }
-                                            $item->type_code = $settings['type_code_illegal'][0];
-                                            // set classify
-                                            foreach ($settings['grades'] AS $answer) {
-                                                $clone = new Grade_answer();
-                                                $clone->record_id = $item->id;
-                                                $clone->record_type = SCART_INPUT_TYPE;
-                                                $clone->grade_question_id = $answer['grade_question_id'];
-                                                $clone->answer = serialize($answer['answer']);
-                                                $clone->save();
-                                            }
-                                            // save updates
-                                            $item->save();
-
-                                        } else {
-
-                                            // copy grading answers
-                                            $answers = Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$onhash->id)->get();
-                                            foreach ($answers AS $answer) {
-                                                $clone = new Grade_answer();
-                                                $clone->record_id = $item->id;
-                                                $clone->record_type = $answer->record_type;
-                                                $clone->grade_question_id = $answer->grade_question_id;
-                                                $clone->answer = $answer->answer;
-                                                $clone->save();
-                                            }
-
-                                            $item->logText("New item with classification based on existing (hash) item" );
-
+                                        // copy grading answers
+                                        $answers = Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$onhash->id)->get();
+                                        foreach ($answers AS $answer) {
+                                            $clone = new Grade_answer();
+                                            $clone->record_id = $item->id;
+                                            $clone->record_type = $answer->record_type;
+                                            $clone->grade_question_id = $answer->grade_question_id;
+                                            $clone->answer = $answer->answer;
+                                            $clone->save();
                                         }
 
-                                        $stat_new += 1;
+                                        $item->logText("New item with classification based on existing item (same hash)" );
 
                                     } else {
 
-                                        //$input->logText("Creating new item" );
+                                        $item->logText("New item");
 
-                                        $item = new Input();
-                                        $item->url = $src;
-
-                                        // log old/new for history
-                                        $newip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
-                                        $item->url_ip = $newip;
-
-                                        $item->url_base = $image['base'];
-                                        $item->url_referer = $input->url_referer;
-                                        $item->url_type = $image['type'];
-                                        $item->url_host = $image['host'];
-                                        $item->url_hash = $hash;
-                                        $item->url_image_width = $image['width'];
-                                        $item->url_image_height = $image['height'];
-                                        $item->reference = '';  // do not copy from input
-                                        $item->workuser_id = $input->workuser_id;
-
-                                        // whois info
-                                        $item->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
-                                        $item->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
-
-                                        $item->status_code = $item->classify_status_code = SCART_STATUS_GRADE;
-                                        // copy basic fields
-                                        $item->source_code = $input->source_code;
-                                        $item->type_code = $input->type_code;
-                                        $item->received_at = $input->received_at;
-                                        $item->hashcheck_at = $hashcheck_at;
-                                        $item->hashcheck_format = $hashcheck_format;
-                                        $item->hashcheck_return = $hashcheck_return;
-                                        $item->save();
-
-                                        $item->logHistory(SCART_INPUT_HISTORY_IP,'',$newip,"Set IP in analyze input");
-                                        $item->logHistory(SCART_INPUT_HISTORY_HOSTER,'',$item->host_abusecontact_id,"Analyze; found hoster in WhoIs");
-                                        $item->logHistory(SCART_INPUT_HISTORY_STATUS,'',SCART_STATUS_GRADE,"Analyze: new url found");
-
-                                        // 2021/2/15/Gs: add proxy_abusecontact_id if set
-                                        $item = Abusecontact::fillProxyservice($item,$whois);
-                                        $item->save();
-
-                                        // ** hashcheck **
-
-                                        if ($hashcheck_return) {
-
-                                            $item->logText("Found url '$src' in HASH database - direct classify");
-
-                                            // ILLEGAL
-
-                                            $item->grade_code = SCART_GRADE_ILLEGAL;
-                                            $settings = scartHASHcheck::getClassification();
-                                            // set classification based on setting array
-                                            if ($settings['police_first'][0] == 'y') {
-                                                $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
-                                            }
-                                            $item->type_code = $settings['type_code_illegal'][0];
-                                            // set classify
-                                            foreach ($settings['grades'] AS $answer) {
-                                                $clone = new Grade_answer();
-                                                $clone->record_id = $item->id;
-                                                $clone->record_type = SCART_INPUT_TYPE;
-                                                $clone->grade_question_id = $answer['grade_question_id'];
-                                                $clone->answer = serialize($answer['answer']);
-                                                $clone->save();
-                                            }
-                                            // save updates
-                                            $item->save();
-
-                                        }
-
-                                        // connect
-                                        $iteminp = new Input_parent();
-                                        $iteminp->parent_id = $input->id;
-                                        $iteminp->input_id = $item->id;
-                                        $iteminp->save();
-                                        $item->logText("Connect to mainurl (filenumber=$input->filenumber) " );
-
-                                        $item->logText("New (url) item" );
-
-                                        $stat_new += 1;
                                     }
 
+                                    // save updates
+                                    $item->save();
+
+                                    $stat_new += 1;
                                     $delivered_items += 1;
 
                                 } else {
@@ -850,6 +510,136 @@ class scartAnalyzeInput {
 
         // return true when ok
         return $result;
+    }
+
+    public static function handleDirectClassify($settings,&$input) {
+
+        $status = true;
+
+        if ($settings['rule_type_code'] == SCART_RULE_TYPE_DIRECT_CLASSIFY_ILLEGAL) {
+
+            // only DIRECT_CLASSIFY when not ignore
+
+            if ($input->grade_code != SCART_GRADE_IGNORE) {
+
+                // set status, grading and type (always)
+                $input->grade_code = SCART_GRADE_ILLEGAL;
+                $input->firstseen_at = date('Y-m-d H:i:s');
+                $input->online_counter = 0;   // start first NTD
+                $input->type_code = $settings['type_code_'.SCART_GRADE_QUESTION_GROUP_ILLEGAL][0];
+                if ($settings['police_first'][0] == 'y') {
+
+                    // log old/new for history
+                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_FIRST_POLICE,"Direct classify rule, first police; illegal");
+                    $input->status_code = SCART_STATUS_FIRST_POLICE;
+
+                    // also reason if set
+                    if (isset($settings['police_reason'][0])) {
+                        $clone = new Grade_answer();
+                        $clone->record_id = $input->id;
+                        $clone->record_type = SCART_INPUT_TYPE;
+                        $clone->grade_question_id = (isset($settings['police_reason'][0]['grade_question_id']) ? $settings['police_reason'][0]['grade_question_id'] : 0);
+                        $clone->answer = (isset($settings['police_reason'][0]['answer']) ? serialize($settings['police_reason'][0]['answer']) : '');
+                        $clone->save();
+                    }
+
+                } else {
+                    // log old/new for history
+                    $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_SCHEDULER_CHECKONLINE,"Direct classify rule; illegal");
+                    $input->status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
+                }
+                // reset error counters
+                $input->browse_error_retry = $input->whois_error_retry = 0;
+                $input->save();
+                $input->logText("Direct_classify; illegal classification set based on rule; status set on: '$input->status_code' ");
+
+                // add mainurl parent table
+                $iteminp = Input_parent::where('parent_id',$input->id)->where('input_id',$input->id)->first();
+                if (!$iteminp) {
+                    $iteminp = new Input_parent();
+                    $iteminp->parent_id = $input->id;
+                    $iteminp->input_id = $input->id;
+                    $iteminp->save();
+                }
+
+                if (scartICCAMinterface::isActive()) {
+                    scartICCAMinterface::exportReport($input);
+                }
+
+            } else {
+
+                scartLog::logLine("D-Ignore SCART_RULE_TYPE_DIRECT_CLASSIFY_ILLEGAL rule because grade of record is IGNORE (filenumber=$input->filenumber) "  );
+
+            }
+
+        } elseif ($settings['rule_type_code'] == SCART_RULE_TYPE_DIRECT_CLASSIFY_NOT_ILLEGAL) {
+
+            // log old/new for history
+            $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_CLOSE,"Direct classify rule; not illegal");
+
+            // set status, grading and type (always)
+            $input->grade_code = SCART_GRADE_NOT_ILLEGAL;
+            $input->firstseen_at = date('Y-m-d H:i:s');
+            $input->online_counter = 1;
+            $input->type_code = $settings['type_code_'.SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL][0];
+            $input->status_code = SCART_STATUS_CLOSE;
+            $input->save();
+            $input->logText("Direct_classify; NOT illegal classification set based on rule; status set on: '$input->status_code' ");
+
+        } else {
+
+            $status = false;
+            scartLog::logLine("E-Unkown settings[rule_type_code]=" . $settings['rule_type_code'] );
+
+        }
+
+        return $status;
+    }
+
+
+    public static function updateWhoIs($input) {
+
+        $whois = scartWhois::getHostingInfo($input->url);
+
+        if ($whois['status_success']) {
+
+            $url = parse_url($input->url);
+
+            // log old/new for history
+            $newip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
+            $newtxt = ($input->url_ip) ? "Detected IP change in analyze input" : "Set IP in analyze input";
+            $input->logHistory(SCART_INPUT_HISTORY_IP,$input->url_ip,$newip,$newtxt);
+            $input->url_ip = $newip;
+
+            $input->url_host = (isset($url['host']) ? $url['host'] : '');
+
+            $input->registrar_abusecontact_id = $whois[SCART_REGISTRAR.'_abusecontact_id'];
+
+            $input->logHistory(SCART_INPUT_HISTORY_HOSTER,
+                $input->host_abusecontact_id,$whois[SCART_HOSTER.'_abusecontact_id'],"Analyze; found hoster in WhoIs");
+
+            $input->host_abusecontact_id = $whois[SCART_HOSTER.'_abusecontact_id'];
+
+            // 2021/2/15/Gs: add proxy_abusecontact_id if set
+            $input = Abusecontact::fillProxyservice($input,$whois);
+
+            $input->logText("Set Whois information");
+            $input->save();
+
+            $input->logText("Input (link) ".$input->url."; " . $whois['status_text'] .
+                "; registrar_owner=".$whois['registrar_owner'].
+                ", host_owner=".$whois['host_owner'].
+                ", proxy_abusecontact_id=".$input->proxy_abusecontact_id.
+                ", country=".$whois['host_country']);
+
+        } else {
+
+            // @TO-DO: whois_error_retry count??
+            $input->logText("Warning WhoIs; looking up: " . $whois['status_text'] );
+
+        }
+
+        return $input;
     }
 
 

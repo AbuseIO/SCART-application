@@ -1,10 +1,12 @@
 <?php
 namespace abuseio\scart\classes\scheduler;
 
+use abuseio\scart\classes\cleanup\scartArchive;
 use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\Controllers\Startpage;
 use abuseio\scart\models\Grade_question;
 use abuseio\scart\models\Iccam_hotline;
+use abuseio\scart\Models\ImportWebform;
 use abuseio\scart\models\Input_extrafield;
 use Config;
 use abuseio\scart\classes\mail\scartAlerts;
@@ -46,9 +48,7 @@ class scartSchedulerCreateReports extends scartScheduler {
 
                 $adminreport = [];
 
-                // give ourself memory and time!
-                // @TOD-DO; config setting for reports
-                $memory_min = scartScheduler::setMinMemory('8G');
+                // give ourself time!
                 set_time_limit(0);
 
                 foreach ($reports AS $report) {
@@ -58,7 +58,7 @@ class scartSchedulerCreateReports extends scartScheduler {
                         // check checksum (if not already active) (is possible with long running reports)
                         if (scartExport::addExportJob($report)) {
 
-                            scartLog::logLine("D-{$logname}; (memory=$memory_min); create report '$report->title'; start=$report->filter_start, end=$report->filter_end");
+                            scartLog::logLine("D-{$logname}; create report '$report->title'; start=$report->filter_start, end=$report->filter_end");
 
                             $report->status_code = SCART_STATUS_REPORT_WORKING;
                             $report->status_at = date('Y-m-d H:i:s');
@@ -190,7 +190,17 @@ class scartSchedulerCreateReports extends scartScheduler {
 
 
     static private $_anonymousColumns = [
-        'url','url_host','url_referer','url_ip','url_hash',
+        'url','url_host','url_base','url_referer','url_ip','url_hash',
+    ];
+    static private $_defaultColumns = [
+        'hoster_contact',
+        'hoster_country',
+        'hoster_owner',
+        'hoster_first_ntd_at',
+        'registrar_contact',
+        'grade_code',
+        'number_of_ntd',
+        'delivered_items',
     ];
 
     public static function getAnonymousColumns() {
@@ -207,13 +217,20 @@ class scartSchedulerCreateReports extends scartScheduler {
 
         $data = [];
 
-        $exportrecords = scartExport::exportFiltered($report->filter_grade,$report->filter_status,$report->filter_country,$report->filter_start,$report->filter_end);
+        if ($report->archivedatabase && scartArchive::isActiveValid()) {
+            scartArchive::setArchiveDefault();
+        } else {
+            scartArchive::resetArchiveDefault();
+        }
+
+        $exportrecords = scartExport::exportFiltered($report->filter_grade,$report->filter_status,$report->filter_country,$report->filter_start,$report->filter_end,$logname);
 
         if ($exportrecords) {
 
             scartLog::logLine("D-{$logname}; recordcount=" . count($exportrecords) );
 
-            if ($report->export_columns) {
+            $userdefinedColumns = ($report->export_columns);
+            if ($userdefinedColumns) {
                 //scartLog::logLine(print_r($report->export_columns,true));
                 $columns = [];
                 foreach ($report->export_columns AS $export_column) {
@@ -223,7 +240,7 @@ class scartSchedulerCreateReports extends scartScheduler {
                 $columns = array_values((new Report())->getColumnDefaultOptions());
 
             }
-            //scartLog::logLine(print_r($columns,true));
+            //scartLog::logDump("D-Report columns",$columns);
 
             if (scartICCAMinterface::isActive()) {
                 // add source hotline country
@@ -232,18 +249,16 @@ class scartSchedulerCreateReports extends scartScheduler {
                 );
             }
 
-            $columns = array_merge($columns, [
-                    'hoster_contact',
-                    'hoster_country',
-                    'hoster_owner',
-                    'hoster_first_ntd_at',
-                    'registrar_contact',
-                    'grade_code',]
-            );
+            // if send to police email then NO defaults
+            $sendToPolice = ($report->sendpolice && $report->sent_to_email_police);
+            if (!$sendToPolice) {
+                // defaults
+                $columns = array_merge($columns, self::$_defaultColumns);
+            }
 
             // Check if anonymous
             if ($report->anonymous) {
-                // remove anonymous
+                // remove anonymous columns
                 $columns = array_diff($columns,self::$_anonymousColumns);
                 // reindex
                 $columns = array_values($columns);
@@ -251,11 +266,9 @@ class scartSchedulerCreateReports extends scartScheduler {
 
             $headerrow = implode(SCART_EXPORT_CSV_DELIMIT,$columns);
 
-            if (scartExport::inFilter($report->filter_grade,SCART_GRADE_ILLEGAL) || scartExport::inFilter($report->filter_grade,SCART_GRADE_NOT_ILLEGAL) ) {
+            $grademeta = ['labels' => []];
+            if (!$sendToPolice && (scartExport::inFilter($report->filter_grade,SCART_GRADE_ILLEGAL) || scartExport::inFilter($report->filter_grade,SCART_GRADE_NOT_ILLEGAL) )) {
                 $grademeta = Grade_question::getGradeHeaders($report->filter_grade);
-            } else {
-                $grademeta = [];
-                $grademeta['labels'] = [];
             }
 
             if (count($grademeta['labels']) > 0) {
@@ -265,12 +278,12 @@ class scartSchedulerCreateReports extends scartScheduler {
 
             $data[] = $headerrow;
 
-            $filter_grade = $report->filter_grade;
-
             scartLog::logLine("D-{$logname}; Start foreach ;headerrow=$headerrow " );
 
             // POLICE contact
-            $policecontact = Abusecontact::where('police_contact','<>',0)->first();
+            $policecontact = Abusecontact::where('police_contact',true)->first();
+            // LEA contact(s)
+            $leacontacts = Abusecontact::where('lea_contact',true)->get()->pluck('id')->toArray();
 
             foreach ($exportrecords AS $record) {
 
@@ -288,6 +301,56 @@ class scartSchedulerCreateReports extends scartScheduler {
                     $police = 'n';
                 }
                 $record->police = $police;
+
+                // LEA
+                if (!empty($leacontacts)) {
+                    $exists = Ntd_url::where('record_type',SCART_INPUT_TYPE)
+                        ->where('record_id',$record->id)
+                        ->join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
+                        ->whereIn(SCART_NTD_TABLE.'.abusecontact_id',$leacontacts)
+                        ->exists();
+                    $lea = ($exists) ? 'y' : 'n';
+                } else {
+                    $lea = 'n';
+                }
+                $record->lea = $lea;
+
+                // Number of NTD's
+                $record->number_of_ntd = Ntd_url::where('record_type',SCART_INPUT_TYPE)
+                    ->where('record_id',$record->id)
+                    ->join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
+                    ->whereIn(SCART_NTD_TABLE.'.status_code',[SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_SENT_API_SUCCES])
+                    ->count();
+
+                // NTD first send
+//                $first_ntd = Ntd::whereIn('status_code',[SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_SENT_API_SUCCES])
+//                    ->join(SCART_NTD_URL_TABLE,SCART_NTD_URL_TABLE.'.ntd_id','=',SCART_NTD_TABLE.'.id')
+//                    ->where(SCART_NTD_URL_TABLE.'.record_type',SCART_INPUT_TYPE)
+//                    ->where(SCART_NTD_URL_TABLE.'.record_id',$record->id)
+//                    ->orderBy('status_time','ASC')
+//                    ->first();
+                $firstntd = Ntd_url::where('record_type',SCART_INPUT_TYPE)
+                    ->where('record_id',$record->id)
+                    ->join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
+                    ->whereIn(SCART_NTD_TABLE.'.status_code',[SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_SENT_API_SUCCES])
+                    ->orderBy(SCART_NTD_TABLE.'.status_time','ASC')
+                    ->first();
+                if ($firstntd) {
+                    $record->hoster_first_ntd_at = $firstntd->status_time;
+                }
+
+                // NTD last send
+                $lastntd = Ntd_url::where('record_type',SCART_INPUT_TYPE)
+                    ->where('record_id',$record->id)
+                    ->join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
+                    ->whereIn(SCART_NTD_TABLE.'.status_code',[SCART_NTD_STATUS_SENT_SUCCES,SCART_NTD_STATUS_SENT_API_SUCCES])
+                    ->orderBy(SCART_NTD_TABLE.'.status_time','DESC')
+                    ->first();
+                $record->ntd = ($lastntd)?'y':'n';
+                $record->ntd_at = ($lastntd) ? $lastntd->status_time : '';
+
+                // no url record
+                $record->noUrl = (ImportWebform::isGeneratedUrl($record->url)) ? 'y' : 'n';
 
                 // iccam country
                 if (scartICCAMinterface::isActive()) {
@@ -309,26 +372,9 @@ class scartSchedulerCreateReports extends scartScheduler {
                 // fill related
                 $abusecontact = Abusecontact::find($record->host_abusecontact_id);
                 if ($abusecontact) {
-
                     $record->hoster_contact = $abusecontact->abusecustom;
                     $record->hoster_country = $abusecontact->abusecountry;
                     $record->hoster_owner = $abusecontact->owner;
-
-                    /**
-                     * Get NTD's (sent_succes time) where record (url) was included
-                     * Take first for first-NTD-time
-                     */
-                    $first_ntd = Ntd::where('status_code',SCART_NTD_STATUS_SENT_SUCCES)
-                        ->where('abusecontact_id',$abusecontact->id)
-                        ->join(SCART_NTD_URL_TABLE,SCART_NTD_URL_TABLE.'.ntd_id','=',SCART_NTD_TABLE.'.id')
-                        ->where(SCART_NTD_URL_TABLE.'.record_type',SCART_INPUT_TYPE)
-                        ->where(SCART_NTD_URL_TABLE.'.record_id',$record->id)
-                        ->orderBy('status_time','ASC')
-                        ->first();
-                    if ($first_ntd) {
-                        $record->hoster_first_ntd_at = $first_ntd->status_time;
-                    }
-
                 }
                 if (!empty($record->registrar_abusecontact_id)) {
                     $registrar_contact = Abusecontact::find($record->registrar_abusecontact_id);
@@ -350,11 +396,11 @@ class scartSchedulerCreateReports extends scartScheduler {
                             }
                         } elseif ($type == 'radio') {
                             $fld = 'grade_'.$id;
-                            if ($values != '') $values = implode('', $values);
+                            if ($values != '' && is_array($values)) $values = implode('', $values);
                             $record->$fld = (isset($grademeta['values'][$id][$values])) ? $grademeta['values'][$id][$values] : '';
                         } elseif ($type == 'text') {
                             $fld = 'grade_'.$id;
-                            if ($values != '') $values = implode('', $values);
+                            if ($values != '' && is_array($values)) $values = implode('', $values);
                             $record->$fld = $values;
                         }
                         //scartLog::logLine("D-record->$fld=" . $record->$fld);
@@ -363,12 +409,28 @@ class scartSchedulerCreateReports extends scartScheduler {
 
                 $row = '';
                 foreach ($columns AS $column) {
-                    if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
+                    if (substr($column,0,6) == 'extra_') {
 
+                        $label = substr($column,6);
+                        $extra = Input_extrafield::where('input_id',$record->id)->where('label',$label)->first();
+                        if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
+                        $columnvalue = (($extra)? $extra->value : '');
+                        // convert dubble quotes
+                        $columnvalue = str_replace('"','""',$columnvalue);
+                        // we put " before and " at the end so Excel will ignore CRLF and these can be restored within Excel itself
+                        $row .= '"'.$columnvalue.'"';
 
-
-
-                    $row .= (isset($record->$column)? $record->$column : '');
+//                    } elseif (($record->noUrl!='y') || !in_array($column,self::$_defaultColumns)) {
+//                    } elseif (!in_array($column,self::$_defaultColumns)) {
+                    } else {
+                        // when self generated url (=text only report) then skip default columns (hoster)
+                        if ($row!='') $row .= SCART_EXPORT_CSV_DELIMIT;
+                        $columnvalue = (isset($record->$column)? $record->$column : '');
+                        // convert dubble quotes
+                        $columnvalue = str_replace('"','""',$columnvalue);
+                        // we put " before and " at the end so Excel will ignore CRLF and these can be restored within Excel itself
+                        $row .= '"'.$columnvalue.'"';
+                    }
                 }
                 $data[] = $row;
 
@@ -388,6 +450,10 @@ class scartSchedulerCreateReports extends scartScheduler {
 
         }
 
+        if ($report->archivedatabase) {
+            scartArchive::resetArchiveDefault();
+        }
+
         return $data;
     }
 
@@ -404,7 +470,7 @@ class scartSchedulerCreateReports extends scartScheduler {
 
         $data = [];
 
-        $exportrecords = scartExport::exportFiltered($report->filter_grade,$report->filter_status,$report->filter_country,$report->filter_start,$report->filter_end);
+        $exportrecords = scartExport::exportFiltered($report->filter_grade,$report->filter_status,$report->filter_country,$report->filter_start,$report->filter_end,$logname);
 
         if ($exportrecords) {
 

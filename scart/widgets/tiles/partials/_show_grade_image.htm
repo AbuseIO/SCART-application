@@ -73,11 +73,11 @@
                                 <div class="tab-pane" style="padding: 5px; overflow-y: auto; overflow-x:hidden; height: <?= $extraheight ?>px;" >
                                     <?php foreach ($extra AS $field) { ?>
                                     <div class="row">
-                                        <div class="col-xs-9">
+                                        <div class="col-xs-4">
                                             <?= $field['label'] ?>
                                         </div>
-                                        <div class="col-xs-3" >
-                                            : <input style="" id="<?= $hash . '_' . $field['name']; ?>" readonly size="3" value="<?= $field['value'] ?>" class="grade-image-field-view <?= (($field['mark']) ? 'grade-image-field-mark' : '') ?>" />
+                                        <div class="col-xs-8" >
+                                            : <input style="" id="<?= $hash . '_' . $field['name']; ?>" readonly size="20" value="<?= $field['value'] ?>" class="grade-image-field-view <?= (($field['mark']) ? 'grade-image-field-mark' : '') ?>" />
                                         </div>
                                     </div>
                                     <?php } ?>

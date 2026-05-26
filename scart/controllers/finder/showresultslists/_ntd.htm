@@ -1,13 +1,8 @@
-
-
-
-
-
-
 <?= $this->makePartial('partials/breadcrumb') ?>
 <form class="form-elements" role="form">
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-12">
+            <h4>NTD <?= (($archiveActive)?'(archived data)':''); ?></h4>
             <?=$MainInfoNtd;?>
         </div>
     </div>

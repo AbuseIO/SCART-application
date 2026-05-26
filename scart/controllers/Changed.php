@@ -58,7 +58,7 @@ class Changed extends scartController {
                     $record->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
 
                 // log old/new for history
-                $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$record->classify_status_code,"Changed; set by analist");
+                $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$record->classify_status_code,"Changed; set by analyst");
 
                 $record->status_code = $record->classify_status_code;
 
@@ -85,7 +85,7 @@ class Changed extends scartController {
                     $record->workuser_id = scartUsers::getId();
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE,"Changed; set by analist");
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_CLOSE,"Changed; set by analyst");
                     $record->status_code = SCART_STATUS_CLOSE;
                     $record->save();
                     $record->logText("Manual set on $record->status_code");
@@ -289,7 +289,7 @@ class Changed extends scartController {
             }
 
             // log old/new for history
-            $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_FIRST_POLICE,"Changed; set by analist");
+            $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_FIRST_POLICE,"Changed; set by analyst");
 
             $item->classify_status_code = $item->status_code = SCART_STATUS_FIRST_POLICE;
             $item->grade_code = SCART_GRADE_ILLEGAL;

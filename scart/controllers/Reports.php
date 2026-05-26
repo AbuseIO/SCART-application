@@ -1,6 +1,7 @@
 <?php namespace abuseio\scart\Controllers;
 
 use abuseio\scart\classes\aianalyze\scartAIanalyze;
+use abuseio\scart\classes\cleanup\scartArchive;
 use abuseio\scart\models\Addon;
 use abuseio\scart\models\Systemconfig;
 use Redirect;
@@ -31,6 +32,10 @@ class Reports extends scartController
 
     public function formExtendFields($form, $fields) {
 
+        if (!scartArchive::isActiveValid()) {
+            $form->removeField('archivedatabase');
+        }
+
         if (!scartAIanalyze::isActive()) {
             // disable AI attribute export
             $form->removeField('filter_type');
@@ -53,18 +58,23 @@ class Reports extends scartController
                 if  (is_null($field->value)) {
                     $columns = (new Report())->getColumnDefaultOptions();
                     $export_columns = [];
-                    foreach ($columns AS $column) {
-                        $export_columns[] = ['column' => $column];
+                    foreach ($columns AS $key => $column) {
+                        $export_columns[] = ['column' => $key];
                     }
                     $field->value = $export_columns;
-
                 }
             }
         }
 
     }
 
+    public function listExtendColumns($list) {
 
+        if (!scartArchive::isActiveValid()) {
+            $list->removeColumn('archivedatabase');
+        }
+
+    }
 
     public function update($recordId, $context=null) {
 
@@ -98,7 +108,7 @@ class Reports extends scartController
 
             //scartLog::logLine("D-BEFORE filter_status=" . print_r($report->filter_status,true) );
             if (!is_array($report->filter_status)) {
-                //scartLog::logLine("D-filter_status=" . print_r($report->filter_status,true) );
+                scartLog::logLine("D-filter_status=" . print_r($report->filter_status,true) );
                 if ($report->filter_status != '*') {
                     $report->filter_status = [
                         ['filter_status' => $report->filter_status],
@@ -107,7 +117,7 @@ class Reports extends scartController
                     $report->filter_status = [];
                 }
                 $report->save();
-                //scartLog::logLine("D-AFTER filter_status=" . print_r($report->filter_status,true) );
+                scartLog::logLine("D-AFTER filter_status=" . print_r($report->filter_status,true) );
             }
 
         }

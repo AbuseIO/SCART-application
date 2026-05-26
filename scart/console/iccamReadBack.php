@@ -2,13 +2,16 @@
 namespace abuseio\scart\console;
 
 /**
- * Temporary job for reading ICCAM repors back in time (2020)
+ * Temporary job for check/correct ICCAM
  *
  */
 
 use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
 use abuseio\scart\classes\iccam\api2\scartImportICCAM;
 
+use abuseio\scart\classes\iccam\scartICCAMinterface;
+use abuseio\scart\models\ImportExport_job;
+use abuseio\scart\models\Input_parent;
 use Illuminate\Console\Command;
 use League\Flysystem\Exception;
 use abuseio\scart\classes\helpers\scartExportICCAM;
@@ -30,7 +33,7 @@ class iccamReadBack extends Command
     /**
      * @var string The console command description.
      */
-    protected $description = 'ICCAM read backwards reports';
+    protected $description = 'ICCAM check reports';
 
     /**
      * Execute the console command.
@@ -39,75 +42,44 @@ class iccamReadBack extends Command
     public function handle()
     {
 
-        /**
-         * Begin bij het laatste uur van 2020 en lees elke keer een uur
-         *
-         * Doe dit X keer met:
-         *  X = 24 = 1 dag
-         *  X = 168 = 1 week
-         *  X = 336 = 2 weken
-         *  x = 672 = 4 weken
-         *
-         */
+        $exports = ImportExport_job::withTrashed()->where('status_text','No mainurl')->get();
 
-        $reports = [];
-        $minutes = 60;
-        $x = 672;
+        $this->info("D-Found ".count($exports)." 'No mailurl' exports ");
 
-        scartLog::logLine("D-iccamReadBack; start");
-
-        for ($i=0;$i < $x;$i++) {
-
-            if ( !($lastdate = scartImportICCAM::getImportlast(SCART_INTERFACE_ICCAM_ACTION_IMPORTBACKDATE)) ) {
-                $lastdate = '2020-12-31 23:00:00';
-                scartImportICCAM::saveImportLast(SCART_INTERFACE_ICCAM_ACTION_IMPORTBACKDATE,$lastdate);
+        $maininputs = [];
+        foreach ($exports as $export) {
+            $input_id = trim(substr($export->checksum,strlen('Input-')));
+            foreach (Input_parent::where('input_id',$input_id)->get() as $parent) {
+                $maininputs[$parent->parent_id] = $input_id;
             }
-
-            $this->info("iccamReadBack; read backwards from '$lastdate' ");
-
-            $reports = array_merge($reports,scartImportICCAM::importFromLastdate($lastdate,$minutes));
-
-            /**
-             * NOTE
-             *
-             * Summertime 29-03-2020...
-             * When stepping back from 2020-03-29 03:00:00 then we get ..2020-03-29 03:00:00
-             * because 2020-03-29 02:00:00 = 2020-03-29 03:00:00
-             *
-             * be aware!
-             *
-             */
-
-            // next call hour before
-            $lastdate = date('Y-m-d H:i:00', strtotime('-'.$minutes.' min', strtotime($lastdate)));
-            scartLog::logLine("D-iccamReadBack; set lastDate on next hour: $lastdate");
-            scartImportICCAM::saveImportLast(SCART_INTERFACE_ICCAM_ACTION_IMPORTBACKDATE, $lastdate);
-
-            if ($lastdate < '2020-01-01 00:00:00' ) {
-
-                $params = [
-                    'reportname' => 'ICCAM READ BACK; job 2020 done',
-                    'report_lines' => [
-                        "lastdate=$lastdate",
-                    ]
-                ];
-                scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
-
-            }
-
         }
 
-        if (count($reports) > 0) {
+        $this->info("D-Found ".count($maininputs)." mainurls to check");
 
-            // report JOB
-            $params = [
-                'reports' => $reports,
-            ];
-            scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_import_iccam', $params);
+        foreach ($maininputs as $parent_id => $input_id) {
+            if (ImportExport_job::withTrashed()->where('checksum','Input-'.$parent_id)->count() > 0) {
+                $this->info("D-Main input $parent_id already ICCAM exported");
+            } else {
 
+                $record = Input::find($parent_id);
+
+                if ($record->url_type==SCART_URL_TYPE_MAINURL) {
+
+                    // add report to export ICCAM
+                    $this->info("D-ExportReport [$record->filenumber] is MAINURL; add action exportReport"  );
+//                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
+//                        'record_type' => class_basename($record),
+//                        'record_id' => $record->id,
+//                    ]);
+
+                } else {
+
+                    $this->warn("W-Input_id=$record->id (url_type=$record->url_type) is NO mainurl?");
+
+                }
+            }
         }
 
-        scartLog::logLine("D-iccamReadBack; end (x=$x)");
         $this->info('D-iccamReadBack; end');
     }
 
@@ -127,8 +99,6 @@ class iccamReadBack extends Command
      */
     protected function getOptions() {
         return [
-            ['inputfile', 'i', InputOption::VALUE_OPTIONAL, 'Inputfile', ''],
-            ['mode', 'm', InputOption::VALUE_OPTIONAL, 'mode', ''],
         ];
     }
 

@@ -289,6 +289,21 @@
                            data-extra-data=" "
                            data-size="giant">
                         <?= e(trans('abuseio.scart::lang.button.bulk_edit_input')) ?></a></li>
+                    <li><a href="#" tabindex="-1" class="oc-icon-folder-open-o ert-analyze-disable"
+                           onclick="onOpenUrls();"
+                           >
+                        <?= e(trans('abuseio.scart::lang.button.bulk_open_urls')) ?></a></li>
+                    <script type="text/javascript">
+                        function onOpenUrls() {
+                            $("[id$=_url]").each(function(index) {
+                                var newwin = window.open($(this).val(),'_blank');
+                                if (!newwin || newwin.closed || typeof newwin.closed=='undefined') {
+                                    sweetAlert('Check your browser settings - popup(s) are blocked');
+                                    return;
+                                }
+                            });
+                        }
+                    </script>
                 </ul>
             </div>
 
@@ -309,6 +324,27 @@
 
     </div>
     <div class="col-xs-6 text-right ">
+
+        <?php if ($add_edit_media) { ?>
+        <div class="btn-group">
+            <button type="button" class="btn btn-default oc-icon-file-image-o ert-analyze-disable"
+                    data-control="popup"
+                    data-handler="onUploadInput"
+                    data-extra-data="'record_id': '<?= implode(',',$this->getListRecords()); ?>'"
+                    data-size="giant"
+                    data-request-loading="#loading_input">Add media</button>
+        </div>
+        <?php } ?>
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-default oc-icon-search ert-analyze-disable"
+                    data-control="popup"
+                    data-handler="onWhois"
+                    data-extra-data=""
+                    data-size="giant"
+                    data-request-loading="#loading_input">WhoIs</button>
+        </div>
+
         <div class="btn-group">
             <button type="button" class="btn btn-default oc-icon-list-ul ert-analyze-disable"
                     data-control="popup"
@@ -319,7 +355,6 @@
         </div>
 
         <div class="btn-group">
-
             <button type="button" class="btn btn-default oc-icon-check-square ert-analyze-disable"
                     data-request="onDone"
                     data-request-data="screensize: '<?= $screensize ?>', columnsize: '<?= $columnsize ?>' "

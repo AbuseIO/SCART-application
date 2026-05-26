@@ -1,0 +1,19 @@
+fields:
+  label: Fields
+  modelClass: abuseio\scart\models\ImportWebformFields
+  readOnly: false
+  view:
+    list: $/abuseio/scart/models/importwebformfield/columns.yaml
+    showCheckboxes: true
+    toolbarButtons:
+      create: add
+      delete: delete
+    showSorting: false
+    showSearching: true
+    recordsPerPage: 10
+    defaultSort:
+      column: name
+      direction: ASC
+  manage:
+    form: $/abuseio/scart/models/importwebformfield/fields.yaml
+    list: $/abuseio/scart/models/importwebformfield/columns.yaml

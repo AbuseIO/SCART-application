@@ -367,5 +367,17 @@ class Abusecontact extends scartModel
         return true;
     }
 
+    public static function isEmpty($abusecontact) {
+
+        $empty = true;
+        if ($abusecontact) {
+            $aliases = (is_array($abusecontact->aliases) ? $abusecontact->aliases : []);
+            if ($abusecontact->owner!=SCART_ABUSECONTACT_OWNER_EMPTY && !in_array( SCART_ABUSECONTACT_OWNER_EMPTY,$aliases)) {
+                $empty = false;
+            }
+        }
+        return $empty;
+    }
+
 
 }

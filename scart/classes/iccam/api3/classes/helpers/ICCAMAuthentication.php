@@ -37,9 +37,13 @@ class ICCAMAuthentication {
                 if (isset($result->bearerToken)) {
                     self::$_token = $result->bearerToken;
                     self::$_refreshtoken = (isset($result->refreshToken) ? $result->refreshToken : '');
-                    $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
-                    self::$_expiresIn = time() + intval($refreshsecs);
-                    scartLog::logLine("D-".$calling."ICCAMurl(login): token valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
+                    if (isset($result->bearerTokenValidTo)) {
+                        self::$_expiresIn = strtotime($result->bearerTokenValidTo) - 60;
+                    } else {
+                        $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
+                        self::$_expiresIn = time() + (int) $refreshsecs - 60;
+                    }
+                    scartLog::logLine("D-".$calling."ICCAMurl(login): token valid until (utc): ".gmdate('Y-m-d H:i:s',self::$_expiresIn));
                     if (self::$_debug) scartLog::logLine("D-".$calling."ICCAMurl(login): token=".self::$_token);
 
                     // 2023/9/8 delay is needed for ICCAM to be ready for the next (tokenized) ICCAM call
@@ -93,7 +97,7 @@ class ICCAMAuthentication {
     /**
      * @return bool|mixed|string
      */
-    public function refreshToken()
+    public static function refreshToken()
     {
         if (self::$_debug) scartLog::logLine("D-ICCAMurl(refreshToken)");
         ICCAMcurl::connect();
@@ -101,17 +105,20 @@ class ICCAMAuthentication {
             'bearerToken' => self::$_token,
             'refreshToken' => self::$_refreshtoken,
         ]);
-        if ($result) {
-            if (self::$_debug) scartLog::logLine("D-ICCAMurl(refreshToken): data".print_r($result,true));
-            if (isset($result->bearerToken)) {
-                self::$_token = $result->bearerToken;
-                self::$_refreshtoken = (isset($result->refreshToken) ? $result->refreshToken : '');
-                $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
-                self::$_expiresIn = time() + intval($refreshsecs);
-                scartLog::logLine("D-ICCAMurl(refreshToken): token valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
-            }
+        if (self::$_debug) scartLog::logLine("D-ICCAMurl(refreshToken): data".print_r($result,true));
+        if (isset($result->bearerToken)) {
+            self::$_token = $result->bearerToken;
+            self::$_refreshtoken = (isset($result->refreshToken) ? $result->refreshToken : '');
+            $refreshsecs = (isset($result->bearerTokenExpiresIn) ? $result->bearerTokenExpiresIn : 1800);
+            // give 1 minute (60 sec) time for refresh
+            self::$_expiresIn = time() + intval($refreshsecs) - 60;
+            scartLog::logLine("D-ICCAMurl(refreshToken): token valid until (utc): ".date('Y-m-d H:i:s',self::$_expiresIn));
+        } else {
+            // error refresh -> try login again
+            self::$_loggedin = false;
+            self::login('ICCAMurl(refreshToken)');
+            // status to be decided by following calls
         }
-        return $result;
     }
 
     public static function isLoggedin() {

@@ -1,0 +1,19 @@
+columns:
+    name:
+        label: name
+        type: text
+    type:
+        label: type
+        type: text
+    password_protected:
+        label: 'password protected'
+        type: switch
+    not_lea:
+        label: 'not to LEA'
+        type: switch
+    not_report:
+        label: 'not in report'
+        type: switch
+    import_fieldname:
+        label: 'import to field'
+        type: text

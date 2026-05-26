@@ -34,7 +34,7 @@ class scartICCAMinterface {
     public static function maintenance() {
         // check if no maintenance of ICCAM import/export
 
-        $active = Systemconfig::get('abuseio.scart::scheduler.importexport.iccam_active', false);
+        $active = Systemconfig::get('abuseio.scart::scheduler.import.iccam_active', false);
         if (!$active){
             scartLog::logLine("D-scartICCAMinterface; import/export interface ICCAM OFF (maintenance)");
             $bool = true;
@@ -43,6 +43,18 @@ class scartICCAMinterface {
             $bool = false;
         }
         return $bool;
+    }
+
+    public static function rewindLastdate() {
+
+        // set last import date one day back at midnight
+        $lastlast = scartICCAMinterface::getImportlast();
+        // note: based on default timezone on server
+        $datebefore = date('Y-m-d 00:00:00',strtotime('-1 day'));
+        $report_line = "ICCAM report clean sweep; lastdate was '$lastlast', reset on '$datebefore'";
+        scartICCAMinterface::saveImportLast($datebefore);
+        scartLog::logLine("D-scartICCAMinterface; rewindLastDate report_line: $report_line");
+        return $report_line;
     }
 
     /** general get & set ICCAM reference field **/
@@ -243,7 +255,8 @@ class scartICCAMinterface {
     }
 
     static function delExportAction($job) {
-        $jobdel = ImportExport_job::find($job['job_id']);
+        if (is_array($job)) $job = (object) $job;
+        $jobdel = ImportExport_job::find($job->job_id);
         if ($jobdel) $jobdel->delete();
     }
 
@@ -256,8 +269,9 @@ class scartICCAMinterface {
         $exports = $exports->get();
         $jobs = [];
         $exports->each(function($export) use (&$jobs) {
-            $jobs[] = [
+            $jobs[] = (object) [
                 'job_id' => $export->id,
+                'created_at' => $export->created_at,
                 'timestamp' => $export->updated_at,
                 'action' => $export->action,
                 'data' => unserialize($export->data),
@@ -337,27 +351,31 @@ class scartICCAMinterface {
 
         } elseif (self::getVersion() == 'v3') {
 
-            // send ONLY mainurl record to Export -> in Export mainurl is hanlded with items in one flow
+            // send ONLY mainurl record to Export -> in Export mainurl is handled with items in one flow
 
             // if handled before, export again, can be changed to another ICCAM reference
 
-            if ($record->url_type==SCART_URL_TYPE_MAINURL) {
+            // only if ILLEGAL or is coming from ICCAM (not illegal)
+
+            if ($record->url_type == SCART_URL_TYPE_MAINURL && ($record->grade_code==SCART_GRADE_ILLEGAL || scartICCAMinterface::hasICCAMreportID($record->reference)) ) {
 
                 // add report to export ICCAM
-                scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is MAINURL; add action exportReport"  );
+                scartLog::logLine("D-scartICCAMinterface (v3); exportReport; [$record->filenumber] is MAINURL; add action exportReport"  );
                 scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT, [
                     'record_type' => class_basename($record),
                     'record_id' => $record->id,
                 ]);
 
             } else {
-
-                $parent = Input_parent::where('input_id',$record->id)->first();
-                $parent = Input::find($parent->parent_id);
-                $parentfilenumber = ($parent) ? $parent->filenumber : '(unknown?!)';
-                $parentreference = ($parent && $parent->reference) ? $parent->reference : '(not yet set)';
-                scartLog::logLine("D-scartICCAMinterface (v3); exportReport [$record->filenumber] is NO mainurl - is part of a mainurl filenumber '$parentfilenumber' with reference '$parentreference'");
-
+                if ($record->url_type != SCART_URL_TYPE_MAINURL) {
+                    $parent = Input_parent::where('input_id',$record->id)->first();
+                    $parent = Input::find($parent->parent_id);
+                    if ($parent) {
+                        scartLog::logLine("D-scartICCAMinterface (v3); exportReport; [$record->filenumber] is NO mainurl - is part of a mainurl filenumber '{$parent->filenumber}' with reference '{$parent->reference}'");
+                    }
+                } else {
+                    scartLog::logLine("D-scartICCAMinterface (v3); exportReport; [$record->filenumber] mainurl is NOT-ILLEGAL or NOT coming from ICCAM (reference='$record->reference')");
+                }
             }
 
             // for v3 the NotIllegal action are done AFTER assessment -> required by ICCAM API v3 -> see SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT in scartExportICCAMV3

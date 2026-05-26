@@ -27,6 +27,48 @@ use abuseio\scart\classes\helpers\scartLog;
 
 class scartBrowser {
 
+    public static $_imageMimeTypes = [
+        'image/svg+xml',
+        'image/png',
+        'image/jpeg',
+        'image/jpg',
+        'image/tiff',
+        'image/gif',
+        'image/bmp',
+        'image/webp',
+    ];
+
+    public static $_videoMimeTypes = [
+        'application/ogg',
+        'application/x-mpegurl',
+        'application/vnd.apple.mpegurl',
+        'video/3gpp',
+        'video/3gppv',
+        'video/mp4',
+        'video/mpeg',
+        'video/webm',
+        'video/ogg',
+        'video/x-flv',
+        'video/x-m4v',
+        'video/MP2T',
+        'video/x-msvideo',
+        'video/x-ms-wmv',
+        'video/quicktime',
+        'video/ms-asf',
+        'video/quicktime',
+    ];
+
+    public static $_audioMimeTypes = [
+        'audio/basic',
+        'audio/L24',
+        'audio/mid',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/x-aiff',
+        'audio/x-mpegurl',
+        'audio/x-wav',
+    ];
+
     static $_lasterror = '';
     public static function getLasterror() {
         return SELF::$_lasterror;

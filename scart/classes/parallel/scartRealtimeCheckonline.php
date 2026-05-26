@@ -161,8 +161,6 @@ class scartRealtimeCheckonline {
                      */
 
                     // dynamic depending on local server (mem/cpu) capacity
-                    $maxdatadragon = Systemconfig::get('abuseio.scart::scheduler.checkntd.realtime_max_wrokers','8');
-                    scartLog::logLine("D-{$logname}; got realtime_max_wrokers=$maxdatadragon ");
 
                     foreach ($createruntimes AS $runtimename => $runtimeneeded) {
 
@@ -180,11 +178,6 @@ class scartRealtimeCheckonline {
                         // calculate
                         $taskneeded = intval(round(($count / $threat_todo) + 0.5,0) );
                         scartLog::logLine("D-{$logname}; runtimename=$runtimename; taskneeded = $taskneeded = round(($count / $threat_todo) + 0.5) ");
-
-                        if ($taskneeded > $maxdatadragon) {
-                            scartLog::logLine("D-{$logname}; runtimename=$runtimename; taskneeded is more then max datadragon; limit on $maxdatadragon ");
-                            $taskneeded = $maxdatadragon;
-                        }
 
                         if ($taskneeded > $tasklastmax) {
 

@@ -16,4 +16,5 @@ columns:
         type: switch
     updated_at:
         label: updated
-        type: text
+        type: datetime
+        format: 'Y-m-d H:i:s'

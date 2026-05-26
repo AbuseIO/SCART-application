@@ -50,49 +50,60 @@ class scartCheckOnline {
             $registrar_interval = Systemconfig::get('abuseio.scart::ntd.registrar_interval',6);       // 6x times hoster
             $status_timestamp = '[time: '.date('Y-m-d H:i:s')."; record: {$current}/{$countrecs}] ";
 
-            if ($record->status_code==SCART_STATUS_FIRST_POLICE) {
+            if (in_array($record->status_code,[SCART_STATUS_FIRST_POLICE,SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL])) {
 
                 // seperated flow (eg no verifyWhoIs)
 
                 if ($record->online_counter==0) {
 
-                    // create one DIRECTLY -> sent direct to POLICE abusecontact
+                    if (!Systemconfig::get('abuseio.scart::options.lea_function',false)) {
 
-                    scartLog::logLine("D-scartCheckOnline; first time for illegal content (id=$record->id); (record_type=".class_basename($record).") setup NTD for status_code=$record->status_code");
+                        // create one DIRECTLY -> sent direct to POLICE abusecontact
 
-                    // find police contact
-                    $abusecontact_id = Abusecontact::findPolice();
+                        scartLog::logLine("D-scartCheckOnline; first time for illegal content (id=$record->id); (record_type=".class_basename($record).") setup NTD for status_code=$record->status_code");
 
-                    if ($abusecontact_id) {
-                        $ntdstat = SCART_NTD_STATUS_QUEUE_DIRECTLY_POLICE;
-                        scartLog::logLine("D-scartCheckOnline; create $ntdstat");
-                        $ntd = Ntd::createNTDurl($abusecontact_id, $record, $ntdstat, 1, SCART_NTD_ABUSECONTACT_TYPE_POLICE);
+                        // find police contact
+                        $abusecontact_id = Abusecontact::findPolice();
 
-                        $status = "Added to message for informing POLICE " ;
+                        if ($abusecontact_id) {
+                            $ntdstat = SCART_NTD_STATUS_QUEUE_DIRECTLY_POLICE;
+                            scartLog::logLine("D-scartCheckOnline; create $ntdstat");
+                            if ($ntd = Ntd::createNTDurl($abusecontact_id, $record, $ntdstat, 1, SCART_NTD_ABUSECONTACT_TYPE_POLICE)) {
 
-                        if (scartICCAMinterface::isActive()) {
+                                $status = "Added to message for informing POLICE " ;
 
-                            // Note: reference can be empty because record is not yet reported to ICCAM
+                                if (scartICCAMinterface::isActive()) {
 
-                            // ICCAM set SCART_ICCAM_ACTION_LEA
-                            scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION, [
-                                'record_type' => class_basename($record),
-                                'record_id' => $record->id,
-                                'object_id' => $record->reference,          // can be empty
-                                'action_id' => SCART_ICCAM_ACTION_LEA,
-                                'country' => '',                            // hotline default
-                                'reason' => 'SCART reported to LEA',
-                            ]);
+                                    // Note: reference can be empty because record is not yet reported to ICCAM
 
+                                    // ICCAM set SCART_ICCAM_ACTION_LEA
+                                    scartICCAMinterface::addExportAction(SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION, [
+                                        'record_type' => class_basename($record),
+                                        'record_id' => $record->id,
+                                        'object_id' => $record->reference,          // can be empty
+                                        'action_id' => SCART_ICCAM_ACTION_LEA,
+                                        'country' => '',                            // hotline default
+                                        'reason' => 'SCART reported to LEA',
+                                    ]);
+
+                                }
+
+                                $record->logText('Sent to police');
+
+                            } else {
+                                $status = 'cannot create NTD for police!?';
+                                scartLog::logLine("W-scartCheckOnline; $status");
+                            }
+
+                        } else {
+                            $status = "CAN NOT FIND POLICE ABUSECONTACT - MUST BE SET!? " ;
+                            scartLog::logLine("E-scartCheckOnline; $status");
                         }
 
-                        $record->logText('Sent to police');
 
                     } else {
-                        scartLog::logLine("E-scartCheckOnline; NO POLICE ABUSECONTACT SET!? ");
-
-                        $status = "CAN NOT FIND POLICE ABUSECONTACT - MUST BE SET!? " ;
-
+                        $status = "LEA mode - no automatic sending of NTD's" ;
+                        scartLog::logLine("D-scartCheckOnline; $status");
                     }
 
                     // update
@@ -112,9 +123,31 @@ class scartCheckOnline {
 
                 }
 
-            } else {
+            }
+
+            if ($record->status_code != SCART_STATUS_FIRST_POLICE) {
 
                 scartLog::logLine("D-scartCheckOnline; check (whois/rules/online) id=$record->id, lastseen=$record->lastseen_at, received_at=$record->received_at ");
+
+                if ($record->status_code == SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL) {
+
+                    // special status -> switch to checkonline_manual (first time)
+
+                    scartLog::logLine("D-scartCheckOnline; SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL; switch to checkonline manual");
+
+                    $record->online_counter = 0;
+
+                    // log old/new for history
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,
+                        "Checkonline; police_first NTD send; switch to checkonline manual");
+                    $record->status_code = SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL;
+                    $record->logText("FIRST_POLICE & CHECKONLINE_MANUAL SET; set status on $record->status_code");
+
+                    // do save to prefend double NTD's to police
+                    $record->save();
+
+                }
+
 
                 if ($record->online_counter==0) {
                     $verify_active = Systemconfig::get('abuseio.scart::verify.active',false);
@@ -166,7 +199,7 @@ class scartCheckOnline {
                         $status .= ($whois[SCART_REGISTRAR.'_changed_logtext']) ? $whois[SCART_REGISTRAR.'_changed_logtext'] : '';
                         $status .= ($status) ? ', ' : '';
                         $status .= ($whois[SCART_HOSTER.'_changed_logtext']) ? $whois[SCART_HOSTER.'_changed_logtext'] : '';
-                        $status = "Stop checkonline - wait for analist (CHANGED) - $status";
+                        $status = "Stop checkonline - wait for analyst (CHANGED) - $status";
                         scartLog::logLine("D-[$record->filenumber] $status");
 
                         $job_records[] = [
@@ -256,7 +289,7 @@ class scartCheckOnline {
 
                             } else {
 
-                                // Check if urlcheckonline active for this record
+                                // Check if linkCheckerOnline active for this record
 
                                 if ( ($addon = scartRules::linkCheckerOnline($record->url)) ) {
 
@@ -324,12 +357,14 @@ class scartCheckOnline {
                                             $imagetype = $image['type'] ?? SCART_URL_TYPE_IMAGEURL;
                                             scartLog::logLine("D-scartCheckOnline; [$record->filenumber] image content: $imagetype ");
 
-                                            if ($imagetype == SCART_URL_TYPE_SCREENSHOT) {
+                                            if ($imgcnt > 1 && $imagetype == SCART_URL_TYPE_SCREENSHOT) {
 
-                                                // Note: we don't hash the screenshot for checking differences because of dynamic/time/date values on website
+                                                // Note: we don't hash the website screenshot for checking differences because of dynamic/time/date values on website
                                                 $online = true;
 
                                             } else  {
+
+                                                // single image (screenshot)
 
                                                 $online = ($record->url_hash == $image['hash']);
                                                 if (!$online) {
@@ -338,18 +373,13 @@ class scartCheckOnline {
 
                                             }
 
-                                        } elseif ($record->url_type == SCART_URL_TYPE_VIDEOURL || $record->url_type == SCART_URL_TYPE_IMAGEURL) {
+                                        } else {
 
                                             // first image is image/video
                                             $online = ($record->url_hash == $image['hash']);
                                             if (!$online) {
                                                 scartLog::logLine("W-scartCheckOnline; [$record->filenumber] image/video url '$record->url' hash check FALSE; url_hash=$record->url_hash <> image hash=" . $image['hash'] );
                                             }
-
-                                        } else {
-
-                                            // IGNORE
-                                            scartLog::logLine("W-scartCheckOnline; [$record->filenumber] unknown record url_type '$record->url_type' ");
 
                                         }
 
@@ -549,7 +579,7 @@ class scartCheckOnline {
                         scartLog::logLine("D-scartCheckOnline; WHOIS check retry max reached (=$record->whois_error_retry), lastseen_at=" . $record->lastseen_at);
                         $record->logText("WHOIS CHECK retry max reached (=$record->whois_error_retry)");
 
-                        $status = "Stop checkonline - NO WHOIS INFO FOUND - wait for analist (CHANGED)";
+                        $status = "Stop checkonline - NO WHOIS INFO FOUND - wait for analyst (CHANGED)";
                         $record->logText($status);
 
                         $job_records[] = [
@@ -684,7 +714,7 @@ class scartCheckOnline {
 
             // local, but not approved (yet)
 
-            $status = "Stop check online; wait for analist (CHANGED); unknown hoster or not (yet) GDPR approved; hoster is: $abuseowner" ;
+            $status = "Stop check online; wait for analyst (CHANGED); unknown hoster or not (yet) GDPR approved; hoster is: $abuseowner" ;
             $job_records[] = [
                 'filenumber' => $record->filenumber,
                 'url' => $record->url,
@@ -793,7 +823,7 @@ class scartCheckOnline {
 
             $abusecontact = Abusecontact::find($record->host_abusecontact_id);
             $abuseowner = ($abusecontact) ? $abusecontact->owner . " ($abusecontact->filenumber)" : SCART_ABUSECONTACT_OWNER_EMPTY;
-            $status = "Stop checkonline - wait for analist (CHANGED) - Abusecontact not in local country and/or GDPR approved; hoster is: $abuseowner";
+            $status = "Stop checkonline - wait for analyst (CHANGED) - Abusecontact not in local country and/or GDPR approved; hoster is: $abuseowner";
             scartLog::logLine("D-scartCheckOnline; [$record->filenumber] $status");
 
             $job_records[] = [

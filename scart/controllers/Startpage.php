@@ -49,11 +49,6 @@ class Startpage extends scartController
         $this->vars['release'] = Systemconfig::get('abuseio.scart::release.version', '0.0a') . ' - ' . Systemconfig::get('abuseio.scart::release.build', 'UNKNOWN');
         $this->vars['title'] = Systemconfig::get('abuseio.scart::release.title', 'Classify & Reporting Tool');
 
-        // Note: In the cleanup job each night the dashboard data is reloaded into cache
-        //trace_sql();
-        //$this->resetLoadCache();
-        //scartLog::logLine("isLocal(nl) = " . scartGrade::isLocal('nl'));
-
         $cacheReload = $this->getCache('cacheLoad');
         $this->vars['cacheReload'] = $cacheReload;
 

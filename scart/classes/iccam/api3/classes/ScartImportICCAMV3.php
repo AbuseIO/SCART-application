@@ -5,7 +5,6 @@ use abuseio\scart\classes\aianalyze\scartAIanalyze;
 use abuseio\scart\classes\browse\scartBrowser;
 use abuseio\scart\classes\iccam\api2\scartICCAMmapping;
 use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMAuthentication;
-use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMContent;
 use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMcurl;
 use abuseio\scart\classes\iccam\api3\models\ScartICCAMapi;
 use abuseio\scart\classes\iccam\api3\models\scartICCAMfieldsV3;
@@ -13,6 +12,7 @@ use abuseio\scart\classes\iccam\scartICCAMinterface;
 
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\mail\scartAlerts;
+use abuseio\scart\classes\online\scartAnalyzeInput;
 use abuseio\scart\classes\online\scartHASHcheck;
 use abuseio\scart\classes\rules\scartRules;
 use abuseio\scart\classes\whois\scartWhois;
@@ -27,8 +27,12 @@ use abuseio\scart\models\Iccam_api_field;
 use abuseio\scart\models\Ntd;
 use abuseio\scart\models\Systemconfig;
 use Symfony\Component\Debug\Exception\FatalThrowableError;
+use abuseio\scart\classes\scheduler\scartSchedulerAnalyzeInput;
+
 
 class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
+
+    public $debug = false;
 
     public function __construct($maxresults = 0) {
 
@@ -45,21 +49,27 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         try {
 
+            // init
             $reports = [];
+            ICCAMcurl::resetErrors();
 
             // Check if we can do (ICCAM) requests and get Token
             if (ICCAMAuthentication::login('ScartImportICCAMV3')) {
 
                 scartLog::logLine("D-ScartImportICCAMV3; authenticated" );
 
+                $this->debug = (Systemconfig::get('abuseio.scart::iccam.debug_mode', false));
+                if ($this->debug) scartLog::logLine("D-ScartImportICCAMV3; DEBUG MODE ACTIVE" );
+
                 // init/start browser
                 scartBrowser::startBrowser();
 
                 // set ICCAM time frame
-                $iccamtimeframe = 30;
+                $iccamtimeframe = Systemconfig::get('abuseio.scart::iccam.readimportperiod', '30');
 
                 // get import bulk count
                 scartLog::logLine("D-ScartImportICCAMV3; import bulk maxresults=$this->maxresults" );
+                $totresults = 0;
 
                 // get time
                 $hotlineAssignmentDate = $this->gethotlineAssignmentDate($iccamtimeframe);
@@ -77,15 +87,23 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
                         scartLog::logLine("D-ScartImportICCAMV3; got $type count=".count($iccamreports));
 
+                        // if ($this->debug) scartLog::logDump("D-ScartImportICCAMV3; debug-mode; iccamreports",$iccamreports);
+
                         // collect all related fields for each report
 
                         $reportId = '';
                         $mainreports = [];
                         foreach ($iccamreports as $iccamreport) {
 
+                            // @todo; remove after a while, usefull for ICCAM V3 testing
+                            if (!is_object(($iccamreport))) {
+                                scartLog::logDump("D-ScartImportICCAMV3; not object=",$iccamreport);
+                            }
+                            scartLog::logLine("D-ScartImportICCAMV3; got reportId={$iccamreport->reportId} ");
+
                             if ($reportId=='' || ($reportId != $iccamreport->reportId)) $reportId = $iccamreport->reportId;
 
-                            //if (!scartICCAMinterface::alreadyICCAMreportID($reportId)) {
+                            if (!scartICCAMinterface::alreadyICCAMreportID($reportId)) {
 
                                 // group by main report
                                 if (!isset($mainreports[$reportId])) {
@@ -102,21 +120,28 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                                         $mainreports[$reportId]->contentItems = [];
                                     }
 
-                                    scartLog::logLine("D-ScartImportICCAMV3; add for processing reports[$reportId]->contentItems[$iccamreport->contentId] ");
-                                    $mainreports[$reportId]->contentItems[$iccamreport->contentId] =(new ScartICCAMapi())->getContent($iccamreport->contentId);
+                                    // when interface error or ICCAM report gone, then $mainreports[$reportId] can be empty -> skip loading
+                                    if ($contentItem = (new ScartICCAMapi())->getContent($iccamreport->contentId)) {
+                                        scartLog::logLine("D-ScartImportICCAMV3; add for processing reports[$reportId]->contentItems[$iccamreport->contentId] ");
+                                        $mainreports[$reportId]->contentItems[$iccamreport->contentId] = $contentItem;
+                                        $totresults += 1;
+                                    } else {
+                                        scartLog::logLine("W-ScartImportICCAMV3; cannot read contentId=$iccamreport->contentId - skip");
+                                    }
 
                                 } else {
                                     unset($mainreports[$reportId]);
                                 }
 
-                            //} else {
-                            //    // already imported -> skip
-                            //    scartLog::logLine("D-ScartImportICCAMV3; reportId=$reportId ALREADY in database - skip import");
-                            //}
+                            } else {
+                                // already imported in SCART (so hotline reference must be set) -> skip
+                                scartLog::logLine("D-ScartImportICCAMV3; reportId=$reportId ALREADY in database - skip import");
+                            }
 
                         }
 
                         // parse the found report(s)
+                        scartLog::logLine("D-ScartImportICCAMV3; parseContent $totresults (total) items...");
                         $reports = $this->parseContent($type,$mainreports);
 
                     } else {
@@ -128,15 +153,20 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 // stop browser
                 scartBrowser::stopBrowser();
 
-                // save date
-                $this->saveNexthotlineAssignmentStartDate($hotlineAssignmentDate, $iccamtimeframe);
+                // if maxresult then retry (read more) on this lastdate
+                if ($totresults < $this->maxresults) {
+                    // next 'iccamtimeframe' if valid
+                    $this->saveNexthotlineAssignmentStartDate($hotlineAssignmentDate, $iccamtimeframe);
+                } else {
+                    scartLog::logLine("D-ScartImportICCAMV3; totaal ($totresults) >= maxresults {$this->maxresults} - retry (read more)");
+                }
 
                 // Finalize proccess : set Alerts or log
-                if (count($reports) > 0) {
+                if ($totresults > 0) {
+                    // alert report(s)
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_import_iccam', ['reports' => $reports]);
-                } elseif (ICCAMcurl::hasErrors()) {
-                    scartLog::logLine("W-scartImportICCAM; ICCAM OFFLINE!?: error=" . ICCAMcurl::getErrors());
                 }
+
             }
 
         } catch (\Throwable $err) {
@@ -174,11 +204,12 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         $reports = [];
 
-        //scartLog::logDump("D-scartImportICCAM(parseContent); scartimport=",$scartimport);
+        //scartLog::logDump("D-scartImportICCAM(parseContent); scartimports: ",$scartimports);
 
+        $totreports = count($scartimports); $cntreport = 1;
         foreach ($scartimports as $reportId => $reportRecord) {
 
-            scartLog::logLine("D-ScartImportICCAMV3; parseContent(type=$type); got ICCAM reportId=$reportId");
+            scartLog::logLine("D-ScartImportICCAMV3 [$cntreport/$totreports]; parseContent(type=$type); got ICCAM reportId=$reportId");
 
             /**
              * Note:
@@ -207,6 +238,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 scartLog::logLine("D-ScartImportICCAMV3; $addgot mainContentId for processing reports[$reportId]->contentItems[$mainContentId]");
 
                 if ($mainContentId) {
+
                     if (!scartICCAMinterface::alreadyICCAMreport($reportId,$mainContentId)) {
 
                         $reportRecord->report_type = $type;
@@ -221,6 +253,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                         }
 
                     } else {
+
                         // already imported -> skip
                         scartLog::logLine("D-ScartImportICCAMV3; (mainurl) reportId=$reportId (contentId=$mainContentId) ALREADY in database - skip import");
 
@@ -240,6 +273,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                 scartLog::logLine("W-ScartImportICCAMV3; empty result from getReports(); skip ");
             }
 
+            $cntreport += 1;
         }
 
         return $reports;
@@ -251,8 +285,9 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         /**
          * We insert the Report with the Content item(s)
-         * the SCART report will directly go to the CLASSIFY state
          * we (fill) the whois information and get the image(data)
+         * the SCART report will directly go to the CLASSIFY state
+         * Note: except if DIRECT CLASSIFY rule
          *
          * if reports (contentitems) already exist in SCART, then they are reset to classify
          * the analist can decide what to do with these reports
@@ -266,111 +301,134 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         $inputParentId = $delivered_items = 0;
 
+        // Note: we always insert content items, allow duplicated records.
+
+        // analyze and create SCART input record
         $contentItem = $reportRecord->contentItems[$mainContentId];
-        if (Input::where('url', $contentItem->url->urlString)->count() == 0) {
+        if ($maininput = $this->insertContent($reportId,$mainContentId,$contentItem,$reportRecord,0)) {
 
-            // analyze and create SCART input record
-            if ($maininput = $this->insertContent($reportId,$mainContentId,$contentItem,$reportRecord,0)) {
+            $inputParentId = $maininput->id;
 
-                $inputParentId = $maininput->id;
+            $this->setSCARTreference($mainContentId,$maininput->filenumber);
 
-                $this->setSCARTreference($mainContentId,$maininput->filenumber);
+            $this->addLogline("(main) filenumber=$maininput->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$mainContentId");
 
-                $this->addLogline("(main) filenumber=$maininput->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$mainContentId");
+            $delivered_items += 1;
 
-                $delivered_items += 1;
+            // check if existing url within one day
 
-            } else {
-                scartLog::logLine("W-ScartImportICCAMV3; error inserting (mainurl) contentId=$mainContentId - skip");
+            if (Input::where('url',$maininput->url)
+                ->where('url_type',SCART_URL_TYPE_MAINURL)
+                ->where('id','<>',$maininput->id)
+                ->where('status_code','<>',SCART_STATUS_CLOSE_DOUBLE)
+                ->where('received_at','>=',strtotime("-1 day",strtotime($maininput->received_at)))
+                ->exists()) {
 
+                $this->addLogline("(main) filenumber=$maininput->filenumber; duplicate url within one day - set on status: ".SCART_STATUS_CLOSE_DOUBLE);
+
+                $maininput->logHistory(SCART_INPUT_HISTORY_STATUS,$maininput->status_code,SCART_STATUS_CLOSE_DOUBLE,"Duplicate url within one day");
+
+                $maininput->status_code = SCART_STATUS_CLOSE_DOUBLE;
+                $maininput->logText("Stop processing url '$maininput->url' ($maininput->reference) ");
+                $maininput->save();
+
+                // no futher processing
+                $inputParentId = 0;
             }
 
         } else {
-
-            scartLog::logLine("W-ScartImportICCAMV3; (MAINURL) url '".$contentItem->url->urlString."' already in SCART");
-
-            if ($maininput = Input::where('url', $contentItem->url->urlString)->first()) {
-                // Note: check in which state the SCRAT report is, don't mess with reports in a running state
-                $delivered_items = $this->connectNotRunning($reportId,$contentItem,$maininput,$inputParentId);
-            }
-
+            scartLog::logLine("W-ScartImportICCAMV3; error inserting (mainurl) contentId=$mainContentId - mark as CANNOT IMPORT - skip");
+            // try always to mark as done importing
+            $this->setSCARTreference($contentItem->contentId,'CANNOT_IMPORT');
         }
 
         if ($inputParentId) {
 
-            foreach ($reportRecord->contentItems as $contentItem) {
+            $cntcontentitems = 1;
+            foreach ($reportRecord->contentItems as $no => $contentItem) {
 
                 if ($contentItem->contentId != $mainContentId) {
 
-                    $existingRecord = false;
+                    scartLog::logLine("D-ScartImportICCAMV3; insertReport; process $cntcontentitems from ".count($reportRecord->contentItems));
+
+                    // @TODO; check if assigned to current hotline?!
 
                     // note: imageurl (image) can already be imported
                     if (!scartICCAMinterface::alreadyICCAMreport($reportId,$contentItem->contentId)) {
 
-                        if (Input::where('url', $contentItem->url->urlString)->count() == 0) {
+                        // get content and analyzed
+                        if ($input = $this->insertContent($reportId,$contentItem->contentId,$contentItem,$reportRecord,$inputParentId)) {
 
-                            // get content and analyzed
-                            if ($input = $this->insertContent($reportId,$contentItem->contentId,$contentItem,$reportRecord,$inputParentId)) {
+                            // set & mark status
+                            $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Import from ICCAM; direct to classify");
+                            $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
+                            $input->save();
 
-                                // set & mark status
-                                $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_GRADE,"Import from ICCAM; direct to classify");
-                                $input->status_code = $input->classify_status_code = SCART_STATUS_GRADE;
-                                $input->save();
+                            $this->setSCARTreference($contentItem->contentId,$input->filenumber);
 
-                                $this->setSCARTreference($contentItem->contentId,$input->filenumber);
-
-                                $this->addLogline("filenumber=$input->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$contentItem->contentId");
-                                $delivered_items += 1;
-
-                            } else {
-                                scartLog::logLine("W-ScartImportICCAMV3; error inserting contentId=$contentItem->contentId - skip");
-                            }
+                            $this->addLogline("filenumber=$input->filenumber; ICCAM reference; ReportId=$reportId, ContentId=$contentItem->contentId");
+                            $delivered_items += 1;
 
                         } else {
-
-                            scartLog::logLine("W-ScartImportICCAMV3; (content item) url '".$contentItem->url->urlString."' ALREADY in SCART - add to this import");
-
-                            $input = Input::where('url', $contentItem->url->urlString)->first();
-
-                            $existingRecord = true;
-
+                            scartLog::logLine("W-ScartImportICCAMV3; error inserting contentId=$contentItem->contentId - mark as CANNOT IMPORT - skip");
+                            // try always to mark as done importing
+                            $this->setSCARTreference($contentItem->contentId,'CANNOT_IMPORT');
                         }
+
                     } else {
 
-                        scartLog::logLine("D-ScartImportICCAMV3; (content) reportId=$reportId, contentId=$contentItem->contentId ALREADY imported");
+                        // Note:
+                        // Strange when we get here; mainurl (reportId/contentId) not imported, this content already in SCARt!?
+
+                        // Connect when not in running state
 
                         $input = scartICCAMinterface::findICCAMreport($reportId,$contentItem->contentId);
+                        scartLog::logLine("W-ScartImportICCAMV3; (content) reportId=$reportId, contentId=$contentItem->contentId ALREADY imported under filenumber '$input->filenumber' - SKIP");
 
-                        $existingRecord = true;
+                        // SKIP!
 
-                    }
-
-                    if ($existingRecord && $input) {
-
-                        $delivered_items += $this->connectNotRunning($reportId,$contentItem,$input,$inputParentId);
+//                        if ($input = scartICCAMinterface::findICCAMreport($reportId,$contentItem->contentId)) {
+//                            $delivered_items += $this->connectNotRunning($reportId,$contentItem,$input,$inputParentId);
+//                        }
 
                     }
 
                 }
 
+                $cntcontentitems += 1;
             }
             scartLog::logLine("D-ScartImportICCAMV3; found $delivered_items content item(s) for reportId=$reportId");
 
             $maininput->delivered_items = $delivered_items;
 
-            // Next status -> can be AI_ANALYZE
-            $status_next = (scartAIanalyze::isActive()) ? SCART_STATUS_SCHEDULER_AI_ANALYZE : SCART_STATUS_GRADE;
-            if ($maininput->status_code != $status_next) {
-                $maininput->logHistory(SCART_INPUT_HISTORY_STATUS,$maininput->status_code,$status_next,"Import from ICCAM; next fase");
-                $maininput->status_code = $status_next;
-            }
-            $maininput->save();
+            if ($settings = scartRules::checkDirectClassify($maininput)) {
 
-            // special step when AI addon is active
-            if ($maininput->status_code == SCART_STATUS_SCHEDULER_AI_ANALYZE) {
-                $AIaddon = Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER);
-                $this->addLogline("filenumber=$maininput->filenumber; (MAINURL) push first to AI analyzer");
-                scartSchedulerAnalyzeInput::pushRecordsAI($AIaddon, $maininput);
+                // direct_classify -> set classify and direct to checkonline
+                scartLog::logLine("D-ScartImportICCAMV3; direct_classify rule active for '$maininput->url' ");
+                $status = scartAnalyzeInput::handleDirectClassify($settings, $maininput);
+                if ($status) {
+                    $this->addLogline("filenumber=$maininput->filenumber; mainurl in DIRECT CLASSIFY rule - status set on '$maininput->status_code'");
+                }
+
+            } else {
+
+                // Next status -> can be AI_ANALYZE
+
+                $status_next = (scartAIanalyze::isActive() && scartAIanalyze::validAIinput($maininput)) ? SCART_STATUS_SCHEDULER_AI_ANALYZE : SCART_STATUS_GRADE;
+                if ($maininput->status_code != $status_next) {
+                    $maininput->logHistory(SCART_INPUT_HISTORY_STATUS,$maininput->status_code,$status_next,"Import from ICCAM; next fase");
+                    $maininput->status_code = $status_next;
+                }
+                $maininput->save();
+                scartLog::logLine("D-ScartImportICCAMV3; filenumber=$maininput->filenumber, source_code=$maininput->source_code; status next (status_code): '$maininput->status_code' ");
+
+                // special step when AI addon is active
+                if ($maininput->status_code == SCART_STATUS_SCHEDULER_AI_ANALYZE) {
+                    $AIaddon = Addon::getAddonType(SCART_ADDON_TYPE_AI_IMAGE_ANALYZER);
+                    $this->addLogline("filenumber=$maininput->filenumber; mainurl push to AI analyzer");
+                    scartSchedulerAnalyzeInput::pushRecordsAI($AIaddon, $maininput);
+                }
+
             }
 
         }
@@ -398,6 +456,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
             scartLog::logLine("W-ScartImportICCAMV3; $mainurltxt filenumber '$input->filenumber' has status '$input->status_code' - in running state so ignore as new import");
 
             $this->addLogline("filenumber=$input->filenumber; $mainurltxt SCART report in running state; ignore as new import");
+
             $add_delivered = 0;
 
         } else {
@@ -413,12 +472,12 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
             $this->analyzeICCAMinput($input);
 
             $this->addLogline("filenumber=$input->filenumber; $mainurltxt ICCAM reference; ReportId=$reportId, ContentId=$contentItem->contentId");
+
+            // set ICCAM reference to this SCART report
+            $this->setSCARTreference($contentItem->contentId,$input->filenumber);
+
             $add_delivered = 1;
-
         }
-
-        // set ICCAM reference to this SCART report
-        $this->setSCARTreference($contentItem->contentId,$input->filenumber);
 
         return $add_delivered;
     }
@@ -499,7 +558,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
     private function insertContent($reportId,$contentId,$contentItem,$reportGeneral,$inputParentId) {
 
-        scartLog::logLine("D-ScartImportICCAMV3; insertContent; reportId=$reportId, contentId=$contentId, inputParentId=$inputParentId");
+        scartLog::logLine("D-ScartImportICCAMV3; insertContent; reportId=$reportId, contentId=$contentId, inputParentId=$inputParentId, assignedCountryCode={$contentItem->assignedCountryCode} ");
 
         $input = false;
 
@@ -529,7 +588,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
              *
              * - (report)-> hotlineReceivedDate  -> the date the public reported this content to the hotline
              * - (content)-> countryAssignmentDate -> the date the content item was assigned to a country.
-             *   We use assignment and hosting separately because of orphan reports, i.e. we could have a content
+             *   We use assignment and hotline separately because of orphan reports, i.e. we could have a content
              *   item in country where INHOPE does not have a country, so hosting is set to Moldova for example
              *   but it can be assigned for actioning to the UK, for example.
              *
@@ -552,9 +611,17 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
             }
 
             if ($inputParentId == 0) {
-                // extra ICCAM iccamreport fields
+                // extra ICCAM iccamreport fields for MAINURL
                 $input->addExtrafield( SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_HOTLINEID,$reportGeneral->reportingHotlineId);
                 $input->addExtrafield( SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_ANALYST,$reportGeneral->reportingAnalystName);
+                // optional fields
+                if (!empty($reportGeneral->siteUsername)) {
+                    $input->addExtrafield( SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_USERNAME,$reportGeneral->siteUsername);
+                }
+                if (!empty($reportGeneral->sitePassword)) {
+                    $input->addExtrafield( SCART_INPUT_EXTRAFIELD_ICCAM,SCART_INPUT_EXTRAFIELD_ICCAM_PASSWORD,$reportGeneral->sitePassword);
+                }
+                // Note: sourceUrlCommerciality and sourceUrlPaymentMethods ?
             }
 
             $input->logText("Added url '$input->url' ($input->reference)");
@@ -679,7 +746,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         // ** WhoIs information **
 
-        scartLog::logLine("D-analyzeICCAMinput; get WhoIs info");
+        scartLog::logLine("D-analyzeICCAMinput [filenumber=$input->filenumber]; get WhoIs info");
 
         try {
 
@@ -717,7 +784,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         } catch (\Exception $err) {
 
-            scartLog::logLine("E-analyzeICCAMinput; get WhoIs exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
+            scartLog::logLine("E-analyzeICCAMinput [filenumber=$input->filenumber]; get WhoIs exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
             $input->logText("Warning WhoIs; error during WhoIslooking up ");
             $this->addLogline("filenumber=$input->filenumber; error during WhoIs lookup");
 
@@ -726,14 +793,14 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         // ** get image(s) **
 
-        scartLog::logLine("D-analyzeICCAMinput; get image/video/screenshot");
+        scartLog::logLine("D-analyzeICCAMinput [filenumber=$input->filenumber]; get image/video/screenshot");
 
         try {
 
             // get images -> screenshot if mainurl
             $images = scartBrowser::getImages($input->url, $input->url_referer,($input->url_type==SCART_URL_TYPE_MAINURL));
             $imgcnt = count($images);
-            scartLog::logLine("D-analyzeICCAMinput; filenumber=$input->filenumber, type=$input->url_type; found $imgcnt image(s)");
+            scartLog::logLine("D-analyzeICCAMinput [filenumber=$input->filenumber]; type=$input->url_type; found $imgcnt image(s)");
 
             // get image or screenshot
 
@@ -752,7 +819,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
                     $imagedata = $image;
                     $imagedata['hash'] = $hash;
-                    $imagetype = 'image/video';
+                    $imagetype = 'image or video';
 
                     if ($input->url_type != SCART_URL_TYPE_MAINURL) {
                         break;
@@ -770,7 +837,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                     }
 
                 } else {
-                    scartLog::logDump("D-analyzeICCAMinput; skip image '$src'; type=",$image['type']);
+                    scartLog::logDump("D-analyzeICCAMinput [filenumber=$input->filenumber]; skip image '$src'; type=",$image['type']);
                 }
 
             }
@@ -812,6 +879,25 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
                         $clone->save();
                     }
 
+                } elseif (!Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$input->id)->exists() && $onhash = Input::getItemOnHash($hash,$input->id)) {
+
+                    // same hash -> copy classification
+
+                    $input->grade_code = $onhash->grade_code;
+
+                    // copy grading answers
+                    $answers = Grade_answer::where('record_type',SCART_INPUT_TYPE)->where('record_id',$onhash->id)->get();
+                    foreach ($answers AS $answer) {
+                        $clone = new Grade_answer();
+                        $clone->record_id = $input->id;
+                        $clone->record_type = $answer->record_type;
+                        $clone->grade_question_id = $answer->grade_question_id;
+                        $clone->answer = $answer->answer;
+                        $clone->save();
+                    }
+
+                    $input->logText("New item with classification based on existing item (same hash)" );
+
                 }
 
                 $input->save();
@@ -833,7 +919,7 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
 
         } catch (\Exception $err) {
 
-            scartLog::logLine("E-analyzeICCAMinput; get-images exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
+            scartLog::logLine("E-analyzeICCAMinput [filenumber=$input->filenumber]; get-images exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage() );
             $input->logText("Warning; can not process image url=$src - message: " . $err->getMessage());
 
         }
@@ -869,31 +955,32 @@ class ScartImportICCAMV3 extends ScartGenericICCAMV3 {
     private function gethotlineAssignmentDate(int $iccamtimeframe = 30)
     {
         // Note: use UTC date/time
-        $currentutc = time() - date('Z');
-        $currentdate = date('Y-m-d H:00:00',$currentutc);
-        if ($iccamtimeframe < 60 && date('i') >= 30) $currentdate = date('Y-m-d H:30:00',$currentutc);
+        //$currentutc = time() - date('Z');
+        $nextdate = date('Y-m-d H:i:00',strtotime('-'.($iccamtimeframe * 2).' minutes', time() - date('Z')));
+        //$currentdate = date('Y-m-d H:i:00',time() - date('Z'));
 
         if (($lastdate = scartICCAMinterface::getImportlast()) ) {
-            $log = "D-ScartImportICCAMV3; currentdate (utc)=$currentdate, lastDate (utc)=$lastdate; date('Z)'=".date('Z');
+            $log = "D-ScartImportICCAMV3; gethotlineAssignmentDate; timejump=$iccamtimeframe minutes, lastDate (utc)=$lastdate, nextdate=$nextdate; date('Z)'=".date('Z');
         } else {
-            $lastdate = $currentdate;
+            $lastdate = date('Y-m-d H:00:00',time() - date('Z'));;
             scartICCAMinterface::saveImportLast($lastdate);
-            $log = "D-ScartImportICCAMV3; init lastDate (utc) on: $lastdate";
+            $log = "D-ScartImportICCAMV3; gethotlineAssignmentDate; init lastDate (utc) on: $lastdate";
         }
 
         scartLog::logLine($log);
-        return ['currentdate' => $currentdate, 'lastdate' => $lastdate];
+        return ['nextdate' => $nextdate, 'lastdate' => $lastdate];
     }
 
 
     private function saveNexthotlineAssignmentStartDate($hotlineAssignmentDate, $iccamtimeframe) {
 
-        if ($hotlineAssignmentDate['lastdate'] < $hotlineAssignmentDate['currentdate']) {
+
+
+        if ($hotlineAssignmentDate['lastdate'] < $hotlineAssignmentDate['nextdate']) {
             // set on next 'iccamtimeframe' minutes
             $lastdate = date('Y-m-d H:i:00', strtotime('+'.$iccamtimeframe.' minutes', strtotime($hotlineAssignmentDate['lastdate'])));
             scartICCAMinterface::saveImportLast($lastdate);
-            scartLog::logLine("D-ScartImportICCAMV3; currentdate={$hotlineAssignmentDate['currentdate']}, set lastDate on next hour: $lastdate");
+            scartLog::logLine("D-ScartImportICCAMV3; saveNexthotlineAssignmentDate; current lastdate={$hotlineAssignmentDate['lastdate']}, set lastDate on next: $lastdate");
         }
-
     }
 }

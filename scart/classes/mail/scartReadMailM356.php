@@ -18,14 +18,14 @@ class scartReadMailM356 {
     public static function init() {
 
         $tokenRequestContext = new ClientCredentialContext(
-            Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.m356.tenantId',''),
-            Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.m356.appId',''),
-            Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.m356.clientSecret',''),
+            Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.m356.tenantId',''),
+            Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.m356.appId',''),
+            Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.m356.clientSecret',''),
         );
 
         $graphServiceClient = new GraphServiceClient($tokenRequestContext);
 
-        self::$_userContext = $graphServiceClient->users()->byUserId(Systemconfig::get('abuseio.scart::scheduler.importexport.readmailbox.m356.principal',''));
+        self::$_userContext = $graphServiceClient->users()->byUserId(Systemconfig::get('abuseio.scart::scheduler.import.readmailbox.m356.principal',''));
 
     }
 
@@ -63,6 +63,49 @@ class scartReadMailM356 {
         }
         return $messages;
     }
+
+    public static function getAttachments($msgId='') {
+
+        $attachments = self::$_userContext
+            ->messages()
+            ->byMessageId($msgId)
+            ->attachments()
+            ->get()
+            ->wait();
+
+        $result = [];
+        foreach ($attachments->getValue() ?? [] as $att) {
+
+            if ($att->getOdataType() !== '#microsoft.graph.fileAttachment') {
+
+                continue;
+            }
+
+            $att = self::$_userContext
+                ->messages()
+                ->byMessageId($msgId)
+                ->attachments()
+                ->byAttachmentId($att->getId())
+                ->get()
+                ->wait();
+
+            $bytes = base64_decode($att->getContentBytes(), true);
+
+            if ($bytes === false) {
+                continue;
+            }
+
+            $result[] = [
+                'id'         => $att->getId(),
+                'filename'       => $att->getName(),
+                'size'       => $att->getSize(),
+                'contentType'=> $att->getContentType(),
+                'content'   => $bytes,
+            ];
+        }
+        return $result;
+    }
+
 
 
     public static function deleteMessage($msg) {

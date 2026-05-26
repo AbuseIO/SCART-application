@@ -16,7 +16,28 @@
 <?php endif ?>
 
 <p>
+    <?php if (in_array($this->formGetModel()->status_code,[
+        SCART_NTD_STATUS_SENT_FAILED,
+        SCART_NTD_STATUS_SENT_SUCCES,
+        SCART_NTD_STATUS_SENT_API_SUCCES,
+        SCART_NTD_STATUS_SENT_API_FAILED])) { ?>
+    <button
+        type="button"
+        data-request="onSendAgain"
+        data-request-data="ntd_id: <?= $this->formGetModel()->id; ?>"
+        data-request-confirm="Are you sure you want to send manual this NTD again?"
+        data-request-loading="#resending"
+        class="btn btn-primary">
+        Send again
+    </button>
+    <?php } ?>
     <a href="<?= Backend::url('abuseio/scart/ntds') ?>" class="btn btn-default oc-icon-chevron-left">
         <?= e(trans('backend::lang.form.return_to_list')) ?>
     </a>
 </p>
+
+<div id="resending" style="display: none;" class="popup-backdrop fade in loading">
+    <div class="modal-content popup-loading-indicator indicator-center">
+        <span> </span>
+    </div>
+</div>

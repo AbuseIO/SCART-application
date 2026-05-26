@@ -9,7 +9,8 @@ columns:
         width: 8%
     status_time:
         label: 'status time'
-        type: text
+        type: datetime
+        format: 'Y-m-d H:i:s'
         width: 20%
     contact:
         label: 'abuse e-mail'

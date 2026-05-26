@@ -99,17 +99,25 @@ class Whois extends scartModel {
 
             scartLog::logLine("D-Add first WhoIs record; type=$whois_type; abusecontact: $foundabusecontact " );
 
-            $newwhois = new Whois();
-            $newwhois->abusecontact_id = $abusecontact->id;
-            $newwhois->whois_type = $whois_type;
-            $newwhois->whois_timestamp = date('Y-m-d H:i:s');
-            foreach (SELF::$_whoisarrayfields AS $rfield => $afield) {
-                $newwhois->$rfield = trim($whois[$whois_type.$afield]);
-            }
-            $newwhois->save();
+            try {
 
-            // Log create of whois
-            $abusecontact->logText("Add first WhoIs info; type=$whois_type; abuse email is '$newwhois->abusecontact'");
+                $newwhois = new Whois();
+                $newwhois->abusecontact_id = $abusecontact->id;
+                $newwhois->whois_type = $whois_type;
+                $newwhois->whois_timestamp = date('Y-m-d H:i:s');
+                foreach (SELF::$_whoisarrayfields AS $rfield => $afield) {
+                    $newwhois->$rfield = trim($whois[$whois_type.$afield]);
+                }
+                $newwhois->save();
+
+                // Log create of whois
+                $abusecontact->logText("Add first WhoIs info; type=$whois_type; abuse email is '$newwhois->abusecontact'");
+
+            } catch (\Exception $err) {
+
+                scartLog::logLine("E-connectAC; error add  WhoIs record: " .$err->getMessage() );
+
+            }
 
         }
 

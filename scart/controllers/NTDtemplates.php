@@ -53,28 +53,30 @@ class NTDtemplates extends scartController
 
             $msg = Ntd_template::where('id',$recordId)->first();
             $lang = Lang::getLocale();
-
-            $csvtemp  = plugins_path() . '/abuseio/scart/views/mailparts/'.$lang.'/';
-            $csvtemp .= 'ntdbody-onlyurl.tpl';
+            $csvtemp  = plugins_path() . '/abuseio/scart/views/mailparts/'.$lang;
+            if (!is_dir($csvtemp)) {
+                scartLog::logLine("W-schedulerSendNTD; language directory '$csvtemp' NOT found; switch back to lang='en'");
+                $lang = 'en';
+            }
 
             $lines = [
                 [
                     'url' => 'https://www.domain.nl/image1.jpg',
-                    'reason' => 'Example reason 1',
+                    'ntd_note' => 'Example reason 1',
                     'url_ip' => '1.2.3.1',
                     'firstseen_at' => date('Y-m-d H:i:s'),
                     'lastseen_at' => date('Y-m-d H:i:s'),
                 ],
                 [
                     'url' => 'https://www.domain.nl/image2.jpg',
-                    'reason' => 'Example reason 2',
+                    'ntd_note' => 'Example reason 2',
                     'url_ip' => '1.2.3.2',
                     'firstseen_at' => date('Y-m-d H:i:s'),
                     'lastseen_at' => date('Y-m-d H:i:s'),
                 ],
                 [
                     'url' => 'https://www.domain.nl/image3.jpg',
-                    'reason' => 'Example reason 3',
+                    'ntd_note' => 'Example reason 3',
                     'url_ip' => '1.2.3.3',
                     'firstseen_at' => date('Y-m-d H:i:s'),
                     'lastseen_at' => date('Y-m-d H:i:s'),
@@ -104,10 +106,13 @@ class NTDtemplates extends scartController
             }
 
 
-            $abuselinks = Bracket::parse(file_get_contents($csvtemp),['lines' => $lines]);
-            //scartLog::logDump("D-abuseLinks=",$abuselinks);
+            //$abuselinks = Bracket::parse(file_get_contents($csvtemp),['lines' => $lines]);
 
-            $msg_body = str_replace('<p>{{'.'abuselinks'.'}}</p>', $abuselinks, $msg->body);
+            scartLog::logDump("D-abuseLinks=",$abuselinks);
+
+            //$msg_body = str_replace('<p>{{'.'abuselinks'.'}}</p>', $abuselinks, $msg->body);
+            $msg_body = str_replace(['<p>{{'.'abuselinks'.'}}</p>','{abuselinks}'], $abuselinks, $msg->body);
+            scartLog::logDump("D-msg_body=",$msg_body);
 
             scartMail::sendNTD($email,$msg->subject,$msg_body,'',$tmpfile,true);
 

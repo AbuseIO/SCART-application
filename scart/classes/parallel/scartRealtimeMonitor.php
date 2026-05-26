@@ -2,6 +2,7 @@
 namespace abuseio\scart\classes\parallel;
 
 use abuseio\scart\classes\helpers\scartUsers;
+use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\classes\online\scartAnalyzeInput;
 use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\online\scartCheckOnline;
@@ -10,6 +11,26 @@ use abuseio\scart\classes\scheduler\scartSchedulerCheckOnline;
 use abuseio\scart\models\Systemconfig;
 
 class scartRealtimeMonitor {
+
+    public static function realtimeActive() {
+        $mode = Systemconfig::get('abuseio.scart::scheduler.checkntd.mode',SCART_CHECKNTD_MODE_CRON);
+        return ($mode == SCART_CHECKNTD_MODE_REALTIME);
+    }
+
+    public static function sendRealtimeStatusAdmin() {
+
+        $realtimests = scartRealtimeMonitor::realtimeStatus();
+        $realtime_report_lines = [];
+        foreach ($realtimests AS $sts) {
+            $warning = ($sts['icon'] ? ' ('.$sts['icon'].')' : '');
+            $realtime_report_lines[] = $sts['status'].': '.$sts['count']." $warning";
+        }
+        $params = [
+            'reportname' => 'Realtime worker status',
+            'report_lines' => $realtime_report_lines
+        ];
+        scartAlerts::insertAlert(SCART_ALERT_LEVEL_ADMIN,'abuseio.scart::mail.admin_report',$params);
+    }
 
     public static function realtimeStatus() {
 

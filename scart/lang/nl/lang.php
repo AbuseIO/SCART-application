@@ -43,7 +43,7 @@ return [
         'whoiscache' => 'WhoIs cache',
         'iccamhotline' => 'ICCAM hotlines',
         'exporterrors' => 'Export fouten',
-
+        'webforms' => 'Import webforms',
     ],
 
     'dosendntd' => [
@@ -93,6 +93,7 @@ return [
         'bulk_set_not_illegal' => 'Zet geselecteerde op niet illegaal',
         'bulk_set_police' => 'Zet geselecteerde op eerst politie',
         'bulk_edit_input' => 'Wijzig de input van de geselecteerde items',
+        'bulk_open_urls' => 'Open alle urls op deze pagina',
         'refresh_title' => 'Ververs scherm',
 
         'rules' => 'Regels',
@@ -119,8 +120,12 @@ return [
         'import' => "Importeer",
         'export' => "Exporteer",
         'start_ntd' => "Start online controle voor de geselecteerde(n)",
+        'start_ntd_manual' => "Start manual controle voor de geselecteerde(n)",
 
         'language' => "Taal",
+
+        'send_lea' => 'Stuur door naar LEA',
+        'classify_lea' => 'Classificeer LEA',
 
         // abuseio.scart::lang.button.Show_image
 
@@ -144,8 +149,9 @@ return [
         'scrape_selected' => "Geselecteerde (opnieuw) scrapen?",
         'classify_selected' => "Zonder scrape de geselecteerde op classificeren zetten?",
         'reset_recreate' => "Huidig rapport opnieuw creeeren (reset)?",
-        'continue_withmywork' => "Are you sure you want to go back to the previous list?"
-
+        'continue_withmywork' => "Weet u zeker dat u terug wilt gaan naar de voorgaande lijst?",
+        'set_checkntd' => "Geselecteerde doorzetten naar checkonline (scheduler)?",
+        'set_checkntd_manual' => "Geselecteerde doorzetten naar checkonline (manual)?",
     ],
 
     'head' => [
@@ -176,12 +182,9 @@ return [
         'found_hash' => 'GEVONDEN in de HASH server',
         'proxy_error' => 'Proxy fout',
         'changed_next_action' => "De abusecontact informatie is van onderstaande records gewijzigd. Bepaal hier de vervolgactie.",
-            //"The abusecontact information of the records below is changed due to WhoIs changes. Please specify the next action.",
         'analyzing' => "Analyse...",
         'loading' => "Laden...",
-        'police_next_action' => "De records hieronder zijn eerst naar de politie gegaan. Geef (eventueel) de vervolgactie aan",
-            //The records below are set on POLICE-FIRST. Please specify the next action.
-
+        'police_next_action' => "De records hieronder zijn gemarkeerd voor de politie . Geef de vervolgactie aan",
     ],
 
     'backend' => [
@@ -261,6 +264,8 @@ return [
             'delete_selected_empty' => 'Er zijn geen record geselecteerd om te verwijderen.',
             'delete_selected_confirm' => 'Verwijder de geselecteerde records?',
             'delete_selected_success' => 'De records zijn verwijderd.',
+            'copy_selected' => "Copieer geselecteerde",
+            'copy_selected_confirm' => 'Copieer de geselecteerde records?',
             'column_switch_true' => 'Ja',
             'column_switch_false' => 'Nee',
         ],

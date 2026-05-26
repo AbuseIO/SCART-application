@@ -1,0 +1,7 @@
+fields:
+    domain_full:
+        label: Domain
+        showSearch: true
+        span: full
+        type: dropdown
+        required: 1

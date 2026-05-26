@@ -12,6 +12,7 @@ use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\classes\base\scartModel;
 use abuseio\scart\models\Systemconfig;
 use abuseio\scart\models\User_options;
+use abuseio\scart\classes\parallel\scartRealtimeMonitor;
 
 class scartScheduler {
 
@@ -20,14 +21,16 @@ class scartScheduler {
     public static $logname = '';
     public static $jobName = '';
 
-    public static function setMinMemory($memory_min='') {
-        if ($memory_min=='') $memory_min =  Systemconfig::get('abuseio.scart::scheduler.scheduler_memory_limit','' );
+    public static function setMinMemory($memory_set='') {
+        $memory_min = Systemconfig::get('abuseio.scart::scheduler.scheduler_memory_limit','' );
+        if ($memory_set=='') $memory_set = $memory_min;
+        if ($memory_min > $memory_set) $memory_set = $memory_min;
         $memory_limit = ini_get('memory_limit');
-        if ($memory_min!='' && $memory_min > $memory_limit) {
+        if ($memory_set > $memory_limit) {
             // need memory
-            ini_set('memory_limit', $memory_min);
+            ini_set('memory_limit', $memory_set);
         }
-        return $memory_min;
+        return $memory_set;
     }
 
     public static function startScheduler($schedulername,$configname) {
@@ -132,6 +135,9 @@ class scartScheduler {
 
     /**
      * For each scheduler the active (running) state is memorized in the user option table
+     *
+     * In maintenance.monitor_schedulers a ';' delimiterd string can be placed with
+     *
      * Use the last update time to check if NOT active for more then the SCART_SCHEDULER_MAX_RUNNING_SECS
      * If so, warn (alert) the admin.
      * Ignore when in maintenance
@@ -142,32 +148,35 @@ class scartScheduler {
         if (!Systemconfig::get('abuseio.scart::maintenance.mode',false)) {
             // important schedulers
             $schedulers = [
-                'schedulerAnalyzeInput' => 'scrape',
+                'schedulerAnalyseInput' => 'scrape',
                 'schedulerCreateReports' => 'createreports',
-                'schedulerImportExport' => 'importexport',
+                'schedulerImport' => 'import',
+                'schedulerExport' => 'export',
                 'schedulerSendAlerts' => 'sendalerts',
                 'schedulerSendNTD' => 'sendntd',
                 'schedulerCheckOnline' => 'checkntd',
             ];
-            foreach ($schedulers as $scheduler => $configname) {
-                // only if active
-                if (Systemconfig::get('abuseio.scart::scheduler.'.$configname.'.active',true)) {
-                    if ($scheduler == 'schedulerCheckOnline' && (Systemconfig::get('abuseio.scart::scheduler.checkntd.mode',SCART_CHECKNTD_MODE_CRON)==SCART_CHECKNTD_MODE_REALTIME)) {
-                        $scheduler = 'schedulerRealtimeCheckonline';
+            $monitorschedulers = Systemconfig::get('abuseio.scart::maintenance.monitor_schedulers','');
+            if ($monitorschedulers) {
+                $monitorschedulersArr = explode(';',$monitorschedulers);
+                foreach ($schedulers as $scheduler => $configname) {
+                    if (in_array($configname,$monitorschedulersArr)) {
+                        if ($scheduler == 'schedulerCheckOnline' && (scartRealtimeMonitor::realtimeActive())) {
+                            $scheduler = 'schedulerRealtimeCheckonline';
+                        }
+                        // use active marker
+                        $scheduleroption = User_options::where('user_id',0)->where('name',$scheduler)->first();
+                        // check updated_at timestamp as
+                        $runningsecs = ($scheduleroption) ? (time() - strtotime($scheduleroption->updated_at)) : 0;
+                        if ($runningsecs > SCART_SCHEDULER_MAX_RUNNING_SECS) {
+                            // alert the admin somewhere each (~) half hour about this state
+                            scartLog::logLine("W-checkSchedulerRunningTime; $scheduler last life beat was $runningsecs secs ago");
+                            $alertcount = count($schedulers) * 30;
+                            scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',true, "$scheduler is NOT active for more then $runningsecs secs!?", 3, $alertcount);
+                        } else {
+                            scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',false, "$scheduler is active again");
+                        }
                     }
-                    $scheduleroption = User_options::where('user_id',0)->where('name',$scheduler)->first();
-                    // check updated_at timestamp as
-                    $runningsecs = ($scheduleroption) ? (time() - strtotime($scheduleroption->updated_at)) : 0;
-                    if ($debug) scartLog::logLine("D-$scheduler; last update $runningsecs secs ago");
-                    if ($runningsecs > SCART_SCHEDULER_MAX_RUNNING_SECS) {
-                        // alert the admin somewhere each (~) half hour about this state
-                        $alertcount = count($schedulers) * 30;
-                        scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',true, "$scheduler is NOT active for more then $runningsecs secs!?", 3, $alertcount);
-                    } else {
-                        scartAlerts::alertAdminStatus('RUNNING_TO_LONG_'.$scheduler,'checkSchedulerRunningTime',false);
-                    }
-                } else {
-                    if ($debug) scartLog::logLine("D-$scheduler not active");
                 }
             }
         }

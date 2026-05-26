@@ -1,0 +1,10 @@
+columns:
+    name:
+        label: name
+        type: text
+    subject:
+        label: subject
+        type: text
+    status_code:
+        label: status_code
+        type: text

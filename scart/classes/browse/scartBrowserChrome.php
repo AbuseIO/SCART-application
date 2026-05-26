@@ -28,48 +28,6 @@ class scartBrowserChrome extends scartBrowser {
     private static $_useragent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36';
     private static $_timeout = 60000;     // timeout for waiting on response (load) of browser content
 
-    private static $_imageMimeTypes = [
-        'image/svg+xml',
-        'image/png',
-        'image/jpeg',
-        'image/tiff',
-        'image/gif',
-        'image/bmp',
-        'image/webp',
-        'image/avif',
-    ];
-
-    private static $_videoMimeTypes = [
-        'application/ogg',
-        'application/x-mpegurl',
-        'application/vnd.apple.mpegurl',
-        'video/3gpp',
-        'video/3gppv',
-        'video/mp4',
-        'video/mpeg',
-        'video/webm',
-        'video/ogg',
-        'video/x-flv',
-        'video/x-m4v',
-        'video/MP2T',
-        'video/x-msvideo',
-        'video/x-ms-wmv',
-        'video/quicktime',
-        'video/ms-asf',
-        'video/quicktime',
-    ];
-
-    private static $_audioMimeTypes = [
-        'audio/basic',
-        'audio/L24',
-        'audio/mid',
-        'audio/mpeg',
-        'audio/mp4',
-        'audio/x-aiff',
-        'audio/x-mpegurl',
-        'audio/x-wav',
-    ];
-
     private static $_browser = null;
 
     public static function getChromeBrowser() {
@@ -238,7 +196,6 @@ class scartBrowserChrome extends scartBrowser {
         } catch (OperationTimedOut $err) {
             // timeout is server offline or dead -> image(s) not found
             scartLog::logLine("W-scartBrowserChrome.getImageScreenshot timeout message: ".$err->getMessage());
-            $image - false;
         } catch (\Exception $err) {
             SELF::$_lasterror = $err->getMessage();
             scartLog::logLine("E-scartBrowserChrome.getImageScreenshot error: line=".$err->getLine()." in ".$err->getFile().", message: ".SELF::$_lasterror );
@@ -289,8 +246,10 @@ class scartBrowserChrome extends scartBrowser {
                 $imgelm = (isset($images[0])) ? $images[0] : false;
 
                 // get schreenshot
-                $image = self::getImageScreenshot($page,$url,$imgelm);
-                $image['type'] = SCART_URL_TYPE_IMAGEURL;
+                if ($image = self::getImageScreenshot($page,$url,$imgelm)) {
+                    // mark as image
+                    $image['type'] = SCART_URL_TYPE_IMAGEURL;
+                }
 
             } else {
 
@@ -365,7 +324,6 @@ class scartBrowserChrome extends scartBrowser {
         } catch (OperationTimedOut $err) {
             // timeout is server offline or dead -> image(s) not found
             scartLog::logLine("W-scartBrowserChrome.getImageFromContent timeout message: ".$err->getMessage());
-            $image - false;
         } catch (\Exception $err) {
             SELF::$_lasterror = $err->getMessage();
             scartLog::logLine("E-scartBrowserChrome.getImageFromContent error: line=".$err->getLine()." in ".$err->getFile().", message: ".SELF::$_lasterror );
@@ -441,6 +399,7 @@ class scartBrowserChrome extends scartBrowser {
                         // Note: in making this screenshot we also scroll to the bottom to force lazy loading
                         $image = self::getImageScreenshot($page,$url);
                         if ($image && self::$_lasterror == '') $images[] = $image;
+                        scartLog::logLine("D-scartBrowserChrome.getImages; made website screenshot");
 
                     } else {
                         scartLog::logLine("D-scartBrowserChrome.getImages; skip making screenshot");
@@ -499,6 +458,37 @@ class scartBrowserChrome extends scartBrowser {
 
                                     if ($subpage!=null) $subpage->close();
                                 }
+
+                                // @TODO: support video -> also support in receiving functions (eg AnalyzeInput)
+
+//                                if ($resource->type == 'Media' && in_array($resource->mimeType,self::$_videoMimeTypes) && !scartBrowser::isDataURI($resource->url)) {
+//
+//                                    // video
+//
+//                                    $subpage = null;
+//
+//                                    // skip errors on sub urls
+//                                    try {
+//
+//                                        $subpage = $browser->createPage();
+//                                        // mainurl als referer
+//                                        if ($referer) $subpage->setExtraHTTPHeaders([
+//                                            'referer' => $urlbase,
+//                                        ]);
+//                                        scartLog::logLine("D-scartBrowserChrome.getImages; video url($resource->url)->waitForNavigation() ");
+//                                        $step = 6;
+//                                        $subpage->navigate($resource->url)->waitForNavigation(\HeadlessChromium\Page::LOAD,SELF::$_timeout);
+//                                        $step = 7;
+//                                        $image = self::getImageScreenshot($subpage,$resource->url,$referer);
+//                                        if ($image && self::$_lasterror == '') $images[] = $image;
+//
+//                                    } catch (\Exception $err) {
+//                                        scartLog::logLine("W-scartBrowserChrome.getImages; skip lookup selectorimage, error: ".$err->getMessage());
+//                                    }
+//
+//                                    if ($subpage!=null) $subpage->close();
+//
+//                                }
 
                             }
 

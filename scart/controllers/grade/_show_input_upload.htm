@@ -1,0 +1,48 @@
+
+<form class="form-elements form" role="form" enctype="multipart/form-data" >
+
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h2 class="modal-title">Upload input</h2>
+</div>
+<div class="modal-body">
+
+    <div class="row">
+        <div class="col-xs-12" >
+            <?= $inputWidget->render() ?>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12" >
+            <?= Form::label('mediafile', 'Upload media file'); ?>
+            <?= Form::file('mediafile', [ 'class' => 'btn btn-sm btn-secondary wn-icon-upload', ]); ?>
+        </div>
+    </div>
+
+</div>
+<div class="modal-footer">
+
+    <br />
+    <div class="form-buttons">
+        <div class="loading-indicator-container">
+            <button
+                    type="button"
+                    data-request="onUploadInputSave"
+                    data-request-data="'record_id': '<?= $record_id; ?>','workuser_id': '<?= $workuser_id; ?>' "
+                    data-request-update="show_result: '#show_result'"
+                    data-request-loading="#loading_input"
+                    data-dismiss="modal"
+                    data-hotkey="ctrl+enter, cmd+enter"
+                    data-request-files=""
+                    class="btn btn-primary">
+                <?= e(trans('backend::lang.form.save')) ?>
+            </button>
+            <span class="btn-text">
+                <?= e(trans('backend::lang.form.or')) ?> <a href="#" data-dismiss="modal"><?= e(trans('backend::lang.form.close')) ?></a>
+            </span>
+        </div>
+    </div>
+</div>
+
+</form>

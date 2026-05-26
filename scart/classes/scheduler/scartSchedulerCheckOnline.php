@@ -122,7 +122,11 @@ class scartSchedulerCheckOnline extends scartScheduler {
     public static function FirstTime() {
 
         scartLog::logLine("D-scartSchedulerCheckOnline; get FirstTime ");
-        return Input::whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE,SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE])
+        return Input::whereIn('status_code',
+                [SCART_STATUS_SCHEDULER_CHECKONLINE,
+                    SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,
+                    SCART_STATUS_FIRST_POLICE,
+                    SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL])
             ->where('grade_code',SCART_GRADE_ILLEGAL)
             ->whereNull('checkonline_lock')
             ->where('online_counter','=', 0)

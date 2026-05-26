@@ -1,0 +1,36 @@
+fields:
+    name:
+        label: Name
+        type: text
+        span: left
+    type:
+        label: Type
+        span: right
+        type: dropdown
+        options:
+            string: 'string'
+            text: 'text'
+            image: 'image'
+    import_fieldname:
+        label: 'Import to field'
+        span: left
+        type: dropdown
+    password:
+        label: Password
+        span: right
+        type: password
+    password_protected:
+        label: 'Password protected'
+        span: storm
+        type: checkbox
+        cssClass: 'col-sm-4 m-t-md'
+    not_lea:
+        label: 'Not to LEA'
+        span: storm
+        type: checkbox
+        cssClass: 'col-sm-4 m-t-md'
+    not_report:
+        label: 'Not in report'
+        span: storm
+        type: checkbox
+        cssClass: 'col-sm-4 m-t-md'

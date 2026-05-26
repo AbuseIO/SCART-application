@@ -40,8 +40,17 @@ class whoisTest extends Command
 
             if ($whois && $whois['status_success']) {
 
-                // log console work done
-                $this->info("whoisTest; " . print_r($whois, true) );
+                $desturl = scartWhois::getDestinationUrl($domainip);
+
+                $this->info("org=$domainip, destination=$desturl");
+
+//                $whois = array_merge([
+//                    'input url' => $domainip,
+//                    'destination url' => $desturl,
+//                ],$whois);
+//
+//                // log console work done
+//                $this->info("whoisTest; " . print_r($whois, true) );
 
 
             } else {

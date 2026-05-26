@@ -7,8 +7,6 @@ use abuseio\scart\classes\iccam\api3\models\ScartICCAMapi;
 use abuseio\scart\classes\iccam\api3\models\scartICCAMfieldsV3;
 use abuseio\scart\classes\iccam\api3\ScartICCAM;
 use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMAuthentication;
-use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMContent;
-
 
 use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\classes\mail\scartAlerts;
@@ -21,14 +19,14 @@ use Config;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Console\Input\InputOption;
 
-class ICCAMAPI3 extends Command
+class iccamApi3 extends Command
 {
     /**
      * @var string The console command name.
      */
-    protected $name = 'abuseio:ICCAMAPI3';
-    protected $description = 'Testen ICCAM API versie 3.0';
-    protected $signature = 'abuseio:ICCAMAPI3
+    protected $name = 'abuseio:iccamApi3';
+    protected $description = 'Test ICCAM API versie 3.0';
+    protected $signature = 'abuseio:iccamApi3
         {mode? : read: read reports from lastdate, token: show token get: read content item, get_report: read report, put_action: put action, loadiccamfields: INIT basic iccam values}
         {--l|lastdate= : read from date, default current time}
         {--c|count= : read number of records, default 20}
@@ -51,7 +49,7 @@ class ICCAMAPI3 extends Command
         $actionID = $this->option('action');
         if (empty($actionID)) $actionID = SCART_ICCAM_ACTION_NI;
 
-        $this->info("D-ICCAMAPI3 start; mode=$mode, lastdate=$lastdate, count=$count, id=$id, actionID=$actionID");
+        $this->info("D-iccamApi3 start; mode=$mode, lastdate=$lastdate, count=$count, id=$id, actionID=$actionID");
 
         $valid = true;
         $result = '';
@@ -66,9 +64,9 @@ class ICCAMAPI3 extends Command
                 ICCAMcurl::setDebug(true);
 
                 // Check if we can do (ICCAM) requests and get Token
-                if (ICCAMAuthentication::login('ICCAMAPI3')) {
+                if (ICCAMAuthentication::login('iccamApi3')) {
 
-                    scartLog::logLine("D-ICCAMAPI3; authenticated" );
+                    scartLog::logLine("D-iccamApi3; authenticated" );
 
                     switch ($mode) {
 
@@ -79,30 +77,30 @@ class ICCAMAPI3 extends Command
                             //$calls = ['getUnassessed','getUnactioned','getnoreference'];
                             $calls = ['getnoreference'];
                             foreach ($calls as $call) {
-                                scartLog::logLine("D-ICCAMAPI3; $call; read count=$count" );
+                                scartLog::logLine("D-iccamApi3; $call; read count=$count" );
                                 // 12 records
                                 $reports = (new ScartICCAMapi())->$call($count,$lastdate);
 
                                 if ($reports) {
 
-                                    scartLog::logLine("D-ICCAMAPI3; got $call count=".count($reports));
+                                    scartLog::logLine("D-iccamApi3; got $call count=".count($reports));
                                     $reportid = '';
                                     foreach ($reports as $report) {
                                         if ($report->reportId != $reportid) {
                                             $mainreport = (new ScartICCAMapi())->getReport($report->reportId);
-                                            scartLog::logDump("D-ICCAMAPI3; mainreport=",$mainreport );
+                                            scartLog::logDump("D-iccamApi3; mainreport=",$mainreport );
                                             $reportid = $report->reportId;
                                         }
 
                                         $detail = (new ScartICCAMapi())->getContent($report->contentId);
                                         $scartimport = array_merge((array)$report,(array)$detail);
-                                        scartLog::logLine("D-ICCAMAPI3; merged detail=" . print_r($scartimport,true) );
+                                        scartLog::logLine("D-iccamApi3; merged detail=" . print_r($scartimport,true) );
 
                                     }
 
                                 } else {
 
-                                    scartLog::logLine("D-ICCAMAPI3; NO $call records");
+                                    scartLog::logLine("D-iccamApi3; NO $call records");
 
                                 }
 
@@ -112,7 +110,7 @@ class ICCAMAPI3 extends Command
                         case 'token':
 
                             $showhelp = false;
-                            scartLog::logDump("D-ICCAMAPI3; token=",ICCAMAuthentication::getToken());
+                            scartLog::logDump("D-iccamApi3; token=",ICCAMAuthentication::getToken());
 
                             break;
 
@@ -120,7 +118,7 @@ class ICCAMAPI3 extends Command
 
                             $showhelp = false;
                             $content = (new ScartICCAMapi())->getContent($id);
-                            scartLog::logDump("D-ICCAMAPI3; content=",$content);
+                            scartLog::logDump("D-iccamApi3; content=",$content);
 
                             break;
 
@@ -134,7 +132,7 @@ class ICCAMAPI3 extends Command
                                     $reportdata->reportContents[$key] = (object)array_merge((array)$content,(array)$contentdata);
                                 }
                             }
-                            scartLog::logDump("D-ICCAMAPI3; report=",$reportdata);
+                            scartLog::logDump("D-iccamApi3; report=",$reportdata);
 
                             break;
 
@@ -157,14 +155,14 @@ class ICCAMAPI3 extends Command
                                 $action->reasonId = $iccamActionReasonId;
                                 $action->reasonText = $reason;
                             }
-                            scartLog::logDump("D-ICCAMAPI3; actionname=$actionname, postContentAction.action=",$action);
+                            scartLog::logDump("D-iccamApi3; actionname=$actionname, postContentAction.action=",$action);
 
                             ICCAMcurl::setDebug(true);
                             $result = (new ScartICCAMapi())->postContentAction($id, $action);
-                            scartLog::logDump("D-ICCAMAPI3; postContentAction.result=",$result);
+                            scartLog::logDump("D-iccamApi3; postContentAction.result=",$result);
 
                             //$content = (new ScartICCAMapi())->getContent($id);
-                            //scartLog::logDump("D-ICCAMAPI3; getContent=",$content);
+                            //scartLog::logDump("D-iccamApi3; getContent=",$content);
 
                             break;
 
@@ -181,7 +179,7 @@ class ICCAMAPI3 extends Command
 
                             // SPECIAL DEDICATED TEST
 
-                            scartLog::logLine("D-ICCAMAPI3; do special ICCAM action");
+                            scartLog::logLine("D-iccamApi3; do special ICCAM action");
 
                             $newIpAddress = '45.156.25.234';
                             $newCountryCode = 'RU';
@@ -206,21 +204,21 @@ class ICCAMAPI3 extends Command
                     }
 
                 } else {
-                    scartLog::logLine("D-ICCAMAPI3; not authenticated" );
+                    scartLog::logLine("D-iccamApi3; not authenticated" );
                 }
 
             } else {
-                scartLog::logLine("D-ICCAMAPI3; unknown mode '$mode'" );
+                scartLog::logLine("D-iccamApi3; unknown mode '$mode'" );
             }
 
         } catch (\Exception $err) {
 
-            scartLog::logLine("E-ICCAMAPI3; exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage());
+            scartLog::logLine("E-iccamApi3; exception on line " . $err->getLine() . " in " . $err->getFile() . "; message: " . $err->getMessage());
 
         }
 
         if ($showhelp) {
-            Artisan::call('abuseio:ICCAMAPI3 -h');
+            Artisan::call('abuseio:iccamApi3 -h');
             $this->info(Artisan::output());
         }
 

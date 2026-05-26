@@ -1,0 +1,66 @@
+<?php foreach ($records as $record): ?>
+    <?= $this->makePartial('list_body_row', ['record' => $record, 'treeLevel' => $treeLevel]) ?>
+<?php endforeach ?>
+
+<div class="control-popup modal huge" id="PassWordField">
+    <div class="modal-dialog">
+        <div class="modal-content text-left">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Decrypt</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-xs-2">
+                        <?= Form::label('decrypt_password', 'Password') ?>
+                    </div>
+                    <div class="col-xs-10">
+                        : <?= Form::password('decrypt_password',[
+                            'placeholder' => 'Password...'
+                        ]); ?>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-2">
+                        <span id="field_label"><span>
+                    </div>
+                    <div class="col-xs-10">
+                        : <?= Form::textarea('decrypted','',[
+                            'disabled' => true,
+                            'placeholder' => '******'
+                        ]); ?>
+                    </div>
+                </div>
+            </div>
+            <br /><br />
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="submit_decrypt()">Decrypt</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var decrypt_input_id=null;
+    function showPassword(input_id,field_label) {
+        decrypt_input_id = input_id;
+        $('#field_label').html(field_label);
+        $('textarea[name=decrypted]').val('********');
+        $('#PassWordField').modal('show');
+    }
+    function submit_decrypt() {
+        var passwd = document.getElementById('decrypt_password').value;
+        $.request('onGetPasswordField', {
+            data: {
+                input_id: decrypt_input_id,
+                field_label: $('#field_label').html(),
+                password: passwd
+            },
+            complete: function(data,request) {
+                if (typeof data.responseJSON.result !== 'undefined') {
+                    $('textarea[name=decrypted]').val(data.responseJSON.result);
+                }
+            }
+        });
+    }
+</script>

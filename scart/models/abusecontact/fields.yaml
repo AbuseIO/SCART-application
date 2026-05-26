@@ -23,24 +23,35 @@ fields:
         span: left
         required: 1
         type: text
+        comment: 'Messages will be send to this email address'
     abusecountry:
         label: 'host/registrar country'
         required: 1
         type: text
         span: right
-        comment: 'Use country codes; for example NL for Netherlands'
+        comment: 'Use ISO 3166 2-alpha country codes; for example NL for Netherlands'
     gdpr_approved:
         label: 'GDPR approved'
         type: checkbox
         default: false
-        span: left
-        comment: 'Comment: if not checked then NO NTD will be sent'
+        span: storm
+        cssClass: col-sm-4
+        comment: 'If not checked then NO NTD will be sent'
     police_contact:
-        label: 'Police contact'
+        label: 'First police contact'
         type: checkbox
         default: false
-        span: right
-        comment: 'Comment: if checked then this abusecontact is a police contact'
+        span: storm
+        cssClass: col-sm-4
+        comment: 'If checked then this abusecontact is used as first-police contact'
+    lea_contact:
+        label: 'Law enforcement agency (LEA) contact'
+        type: checkbox
+        default: false
+        span: storm
+        cssClass: col-sm-4
+        comment: 'If checked then this abusecontact can be used as LEA contact'
+
 tabs:
     fields:
         ntd_type:

@@ -20,6 +20,7 @@ columns:
     received_at:
         label: 'received'
         type: datetime
+        format: 'Y-m-d H:i:s'
     hashcheck_at:
         label: 'hashcheck time'
         type: datetime

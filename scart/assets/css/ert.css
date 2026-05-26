@@ -67,3 +67,12 @@
 .nbip-shift-up {
     padding-top: 25px !important;
 }
+
+.previewtable table th {
+    padding: 3px;
+    border: 1px solid grey;
+}
+.previewtable table td {
+    padding: 3px;
+    border: 1px solid grey;
+}

@@ -3,9 +3,9 @@ namespace abuseio\scart\classes\iccam\api3\classes;
 
 use abuseio\scart\classes\classify\scartGrade;
 use abuseio\scart\classes\helpers\scartLog;
-use abuseio\scart\classes\iccam\api2\scartICCAM;
 use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMcurl;
 use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMAuthentication;
+use abuseio\scart\classes\iccam\api3\classes\helpers\ICCAMerrors;
 use abuseio\scart\classes\iccam\api3\models\ScartICCAMapi;
 use abuseio\scart\classes\iccam\api3\models\scartICCAMfieldsV3;
 use abuseio\scart\classes\iccam\scartICCAMinterface;
@@ -34,7 +34,9 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
         try {
 
+            // init
             $reports = [];
+            ICCAMcurl::resetErrors();
 
             // Check if we can do (ICCAM) requests and get Token
             if (ICCAMAuthentication::login('ScartExportICCAMV3')) {
@@ -49,29 +51,33 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 $notinonerun = [];
                 foreach ($jobs AS $job) {
 
-                    scartLog::logLine("D-scartExportICCAMV3; [$cnt/$cntjobs]; got job-id: ". $job['job_id'] .", action: " . $job['action'] . ", timestamp: " . $job['timestamp']);
+                    scartLog::logLine("D-scartExportICCAMV3; [$cnt/$cntjobs]; got job-id: ". $job->job_id .", action: " . $job->action . ", timestamp: " . $job->timestamp);
 
                     $this->resetLoglines();
                     $this->resetPosts();
 
+                    // begin positive
                     $this->_status = SCART_IMPORTEXPORT_STATUS_SUCCESS;
                     $this->_status_text = '';
-
+                    ICCAMcurl::resetErrors();
                     $skip = false;
 
-                    if ($record = $this->getDataRecord($job['data']) ) {
+                    if ($record = $this->getDataRecord($job->data) ) {
 
-                        switch ($job['action']) {
+                        switch ($job->action) {
 
                             case SCART_INTERFACE_ICCAM_ACTION_EXPORTREPORT:
 
-                                $skip = $this->doExportReport($record,$job);
-                                if ($record->reference != '') {
+                                // mainurl / parent
+                                if ($skip = $this->doExportReport($record,$job)) {
+                                    scartLog::logLine("D-scartExportICCAMV3; filenumber=$record->filenumber - skip actions because of (ICCAM) error(s)" );
+                                    $notinonerun[] = $record->id;
+                                } elseif ($record->reference != '') {
                                     // do exclude in one run the export of further action(s) for this report
                                     // ICCAM will give errors because ICCAM need time to process these report settings and to put the report into MONITOR stage
                                     $reportId = scartICCAMinterface::getICCAMreportID($record->reference);
                                     scartLog::logLine("D-scartExportICCAMV3; filenumber=$record->filenumber, reportId=$reportId; skip actions within this same export run" );
-                                    $notinonerun[] = $reportId;
+                                    $notinonerun[] = $record->id;
                                 }
                                 break;
 
@@ -90,22 +96,63 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
                             case SCART_INTERFACE_ICCAM_ACTION_EXPORTACTION:
 
-                                $reportId = scartICCAMinterface::getICCAMreportID($record->reference);
-                                if (!in_array($reportId,$notinonerun)) {
-                                    $skip = $this->doExportAction($record,$job);
+                                $parent = Input_parent::where('input_id',$record->id)->first();
+                                if ($parent) {
+                                    if (!in_array($parent->parent_id, $notinonerun)) {
+                                        $skip = $this->doExportAction($record, $job);
+                                    } else {
+                                        scartLog::logLine("D-scartExportICCAMV3; filenumber=$record->filenumber; action(s) for report not in this run");
+                                        $skip = true;
+                                    }
                                 } else {
-                                    scartLog::logLine("D-scartExportICCAMV3; action(s) for report $reportId not in one run with report (general) export" );
-                                    $skip = true;
+                                    scartLog::logLine("E-scartExportICCAMV3; filenumber=$record->filenumber; cannot find input_parent record!?!");
                                 }
                                 break;
 
                             default:
-                                $logline = $this->_status_text = "Unknown job action: ".$job['action'];
+                                $logline = $this->_status_text = "Unknown job action: ".$job->action;
                                 scartLog::logLine("W-scartExportICCAMV3; $logline");
                                 $this->addLogline($logline);
                                 $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
                                 break;
 
+                        }
+
+                        // Handle ICCAM errors -> if offline or within max error time then skip processing and retry later
+
+                        if (ICCAMcurl::isOffline()) {
+                            // if ICCAM offline then skip and retry later
+                            $logline = $this->_status_text = "ICCAM (curl) offline error";
+                            $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
+                            $this->addLogline($logline);
+                            $skip = true;
+                        } elseif (ICCAMcurl::hasErrors()) {
+                            if (ICCAMerrors::isFatal(ICCAMcurl::getErrorsArr())) {
+                                // mark fatal error, no retry
+                                $logline = $this->_status_text = "ICCAM (curl) error: " . ICCAMcurl::getErrors(). " - fatal error";
+                                $this->addLogline($logline);
+                                $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
+                                $skip = false;
+                                scartLog::logLine("W-ScartExportICCAMV3; [$record->filenumber] ICCAM fatal error");
+                            } else {
+                                $max_error_time = Systemconfig::get('abuseio.scart::iccam.export_error_max_time', SCART_IMPORTEXPORT_STATUS_ERROR_RETRY_TIME);
+                                $error_time = (time() - strtotime($job->timestamp));
+                                if ($error_time >= $max_error_time) {
+                                    // mark error - stop with retry
+                                    $logline = $this->_status_text = "ICCAM (curl) error: " . ICCAMcurl::getErrors(). " - retry timeout $error_time sec reached";
+                                    $this->addLogline($logline);
+                                    $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
+                                    $skip = false;
+                                    scartLog::logLine("W-ScartExportICCAMV3; [$record->filenumber] in error time is: $error_time sec (>= $max_error_time sec) - mark error and stop retry");
+                                } else {
+                                    // retry
+                                    $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
+                                    $skip = true;
+                                    scartLog::logLine("W-ScartExportICCAMV3; [$record->filenumber] in error time is: $error_time sec (max $max_error_time sec) - retry");
+                                    // note: when retry then no report in alert email
+                                    $this->resetLoglines();
+                                }
+                            }
                         }
 
                     } else {
@@ -118,7 +165,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
                     if (!$skip) {
                         // UPDATE abuseio_scart_importexport_job with status and status_text
-                        $importexport = ImportExport_job::where('id',$job['job_id'])->withTrashed()->first();
+                        $importexport = ImportExport_job::where('id',$job->job_id)->withTrashed()->first();
                         if ($importexport) {
                             $importexport->status = $this->_status;
                             $importexport->status_text = $this->_status_text;
@@ -151,8 +198,6 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 // Finalize proccess : set Alerts or log
                 if (!empty($reports)) {
                     scartAlerts::insertAlert(SCART_ALERT_LEVEL_INFO, 'abuseio.scart::mail.scheduler_export_iccam', ['reports' => $reports]);
-                } elseif (ICCAMcurl::hasErrors()) {
-                    scartLog::logLine("W-ScartExportICCAMV3; ICCAM OFFLINE!?");
                 }
 
             }
@@ -205,19 +250,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 scartLog::logLine("D-ScartExportICCAMV3; [$record->filenumber] doExport new ICCAM report");
 
                 // Insert record with all items
-                $this->insertReport($record);
-
-                if (ICCAMcurl::isOffline()) {
-                    // if ICCAM offline then skip and retry later
-                    $logline = $this->_status_text = "ICCAM (curl) offline error";
-                    $this->addLogline($logline);
-                    $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
-                    $skip = true;
-                } elseif (ICCAMcurl::hasErrors()) {
-                    $logline = $this->_status_text = "ICCAM (curl) error: " . ICCAMcurl::getErrors();
-                    $this->addLogline($logline);
-                    $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
-                }
+                $skip = $this->insertReport($record);
 
             } else {
 
@@ -226,23 +259,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 // export record items
                 $skip = $this->insertExistingReport($record);
 
-                if (!$skip) {
-                    if (ICCAMcurl::isOffline()) {
-                        // if ICCAM offline then skip and retry later
-                        $logline = $this->_status_text = "ICCAM (curl) offline error";
-                        $this->addLogline($logline);
-                        $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
-                        $skip = true;
-                    } elseif (ICCAMcurl::hasErrors()) {
-                        $logline = $this->_status_text = "ICCAM (curl) doExportReport error: " . ICCAMcurl::getErrors();
-                        $this->addLogline($logline);
-                        $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
-                    }
-                }
-
             }
-
-            // After this ready to receive actions in ICCAM  (monitor stage)
 
         } else {
 
@@ -253,7 +270,6 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
         }
 
-        // Note: exit obsolute
         return $skip;
     }
 
@@ -265,6 +281,8 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
      */
     private function insertReport($parent) {
 
+        $skip = false;
+
         // set workuser on ICCAM (API) user -> SCART workusers not always ICCAM user
         $workuser = Systemconfig::get('abuseio.scart::iccam.apiuser', '');
 
@@ -274,8 +292,8 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         $iccamreport = [
             'reportingAnalystName' => $workuser,
             'hotlineReceivedDate' => $hotlineReceivedDate,
-            // make ALWAYS unique
-            'hotlineReference' => $parent->filenumber.'_'.date('YmdHi'),
+            // make ALWAYS unique (report level)
+            'hotlineReference' => 'Report_'.$parent->filenumber.'_'.date('YmdHi'),
             'memo' => $parent->note,
             'urls' => [],
             'sourceUrlUsername' => '',
@@ -298,20 +316,33 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         $inputs = Input_parent::where('parent_id',$parent->id)->get();
         foreach ($inputs as $input_parent) {
             $input = Input::find($input_parent->input_id);
-            $parentitems[$input->url] = $input;
-            $url = $this->makeUrl($input,$parent->id);
-            if (is_array($url)) $urls[$input->url] = (object) $url;
+            if ($input) {
+                $url = $this->makeUrl($input,$parent->id);
+                if (is_array($url) && !isset($urls[$input->url])) {
+                    // Note: imageurl can have the same url; use the parent url (isSourceUrl)
+                    $parentitems[$input->url] = $input;
+                    $urls[$input->url] = (object) $url;
+                } else {
+                    if (isset($urls[$input->url])) {
+                        scartLog::logLine("W-scartExportICCAMV3; [$input->filenumber]; item url ($input->url) already added to urls ");
+                    }
+                }
+            } else {
+                scartLog::logLine("W-scartExportICCAMV3; input_id={$input_parent->input_id} not present (anymore?)");
+            }
         }
 
         // rules flow -> there can be no input_parent
         if (empty($urls)) {
             scartLog::logLine("W-scartExportICCAMV3; [$parent->filenumber]; missing parent url, repair");
-            $parentitems[$parent->url] = $parent;
             $url = $this->makeUrl($parent,$parent->id);
-            if (is_array($url)) $urls[$parent->url] = (object) $url;
+            if (is_array($url)) {
+                $parentitems[$parent->url] = $parent;
+                $urls[$parent->url] = (object) $url;
+            }
         }
 
-        // when assessment is NOT-ILLEGAL, sent (also) action NOT-ILLEGAL or NOT FOUND
+        // when assessment is NOT-ILLEGAL, sent (also) action NOT-ILLEGAL
         if ($parent->grade_code != SCART_GRADE_ILLEGAL) {
 
             // if SCART_GRADE_NOT_ILLEGAL get reason -> if NOT-FOUND then SCART_ICCAM_ACTION_CU
@@ -319,58 +350,89 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
         }
 
-        $iccamreport = (object) $iccamreport;
-        $iccamreport->urls = array_values($urls);
+        // hoster can be unknown because of rule and/or direct assignment of not illegal -> $urls = empty
 
-        //scartLog::logDump("D-scartExportICCAMV3; postReport, iccamdata=",$iccamreport);
-        //ICCAMcurl::setDebug(true);
-        $this->addPosts($iccamreport);
-        $ICCAMreportID = (new ScartICCAMapi())->postReport($iccamreport);
-        //ICCAMcurl::setDebug(false);
+        if (!empty($urls)) {
 
-        if ($ICCAMreportID && is_numeric($ICCAMreportID)) {
+            $iccamreport = (object) $iccamreport;
+            $iccamreport->urls = array_values($urls);
 
-            // get ICCAM contentId's and map to SCART records
-            $report = (new ScartICCAMapi())->getReport($ICCAMreportID);
-            if (isset($report->reportContents) && count($report->reportContents) > 0) {
-                foreach ($report->reportContents as $reportContent) {
-                    if (isset($parentitems[$reportContent->urlString])) {
+            //scartLog::logDump("D-scartExportICCAMV3; postReport, iccamdata=",$iccamreport);
+            //ICCAMcurl::setDebug(true);
+            $this->addPosts($iccamreport);
+            $ICCAMreportID = (new ScartICCAMapi())->postReport($iccamreport);
+            //ICCAMcurl::setDebug(false);
 
-                        // 1. get reference
+            if ($ICCAMreportID && is_numeric($ICCAMreportID)) {
 
-                        $input = $parentitems[$reportContent->urlString];
-                        $oldref = $input->reference;
-                        $input->reference = scartICCAMinterface::setICCAMreportID($ICCAMreportID,$reportContent->contentId);
-                        if ($oldref) {
-                            scartLog::logLine("W-scartExportICCAMV3; [$input->filenumber]; already has reference in SCART ($oldref) - overrule by ICCAM ($input->reference)");
+                // ICCAM succeeded
+
+                // get ICCAM contentId's and map to SCART records
+                $report = (new ScartICCAMapi())->getReport($ICCAMreportID);
+                if (isset($report->reportContents) && count($report->reportContents) > 0) {
+                    foreach ($report->reportContents as $reportContent) {
+                        if (isset($parentitems[$reportContent->urlString])) {
+
+                            // 1. get reference
+
+                            $input = $parentitems[$reportContent->urlString];
+                            $oldref = $input->reference;
+                            $input->reference = scartICCAMinterface::setICCAMreportID($ICCAMreportID,$reportContent->contentId);
+                            if ($oldref) {
+                                scartLog::logLine("W-scartExportICCAMV3; [$input->filenumber]; already has reference in SCART ($oldref) - overrule by ICCAM ($input->reference)");
+                            }
+                            $input->save();
+                            $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$oldref,$input->reference,'Got reportID/contentId from export to ICCAM');
+                            $input->logText("(ICCAM) Exported; got ICCAM reportID=$ICCAMreportID, contentId=$reportContent->contentId");
+                            scartLog::logLine("D-scartExportICCAMV3; [$input->filenumber]; got contentId, set reference=$input->reference");
+                            if ($input->id == $parent->id) {
+                                // update parent record because of reference set
+                                $parent = $input;
+                            }
+
+                            // 2. assign to local country if not hotline local country
+
+                            if ($input->grade_code == SCART_GRADE_ILLEGAL) {
+                                $iccamcontent = (new ScartICCAMapi())->getContent($reportContent->contentId);
+                                $this->checkSetAssignedCountry($input,$iccamcontent,true);
+                            }
+
                         }
-                        $input->save();
-                        $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$oldref,$input->reference,'Got reportID/contentId from export to ICCAM');
-                        $input->logText("(ICCAM) Exported; got ICCAM reportID=$ICCAMreportID, contentId=$reportContent->contentId");
-                        scartLog::logLine("D-scartExportICCAMV3; [$input->filenumber]; got contentId, set reference=$input->reference");
-                        if ($input->id == $parent->id) {
-                            // update parent record because of reference set
-                            $parent = $input;
-                        }
-
-                        // 2. assign to another country if not hotline local country
-
-                        if ($input->grade_code == SCART_GRADE_ILLEGAL) {
-
-                            $iccamcontent = (new ScartICCAMapi())->getContent($reportContent->contentId);
-                            $this->checkSetAssignedCountry($input,$iccamcontent,true);
-
-                        }
-
                     }
                 }
+
+                // if ICCAM error here, for example offline when reading records - reset errors because else retry of postReport and looping
+
+                ICCAMcurl::resetErrors();
+
+            } else {
+
+                if (ICCAMcurl::isOffline()) {
+                    // if ICCAM offline then skip and retry later
+                    $logline = $this->_status_text = "ICCAM (curl) offline error";
+                    $skip = true;
+                } elseif (ICCAMcurl::hasErrors()) {
+                    // ICCAM error - skip
+                    $logline = $this->_status_text = "ICCAM (curl) error: " . ICCAMcurl::getErrors();
+                    $skip = true;
+                } else {
+                    $logline = $this->_status_text = "received ICCAM reportId empty or not numeric!?!";
+                    $this->addLogline($logline);
+                }
+                scartLog::logLine("W-scartExportICCAMV3; [reference=$input->reference] $logline");
+
             }
-            $this->addLogline("exported SCART report (mainurl=$parent->filenumber) to ICCAM (reporId=$ICCAMreportID)");
 
         } else {
-            scartLog::logLine("W-scartExportICCAMV3; [filenumber=$parent->filenumber] ICCAM reportId empty or not numeric!?!");
+
+            $logline = $this->_status_text = "received input has no hosting provider ";
+            $this->addLogline($logline);
+            scartLog::logLine("W-scartExportICCAMV3; [$parent->filenumber] $logline");
+            $this->_status = SCART_IMPORTEXPORT_STATUS_SKIP;
+
         }
 
+        return $skip;
     }
 
     private function makeUrl($input,$parent_id) {
@@ -378,8 +440,10 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         $url = false;
 
         $hostabusecontact = Abusecontact::find($input->host_abusecontact_id);
-        if (!$hostabusecontact) {
-            scartLog::logLine("W-scartExportICCAMV3; filenumber=$input->filenumber; hoster not set?!? - skip");
+        if (Abusecontact::isEmpty($hostabusecontact)) {
+
+            scartLog::logLine("W-scartExportICCAMV3; [$input->filenumber] hoster not set (empty) - skip");
+
         } else {
 
             $hotlinecountry = Systemconfig::get('abuseio.scart::classify.hotline_country', '');
@@ -389,15 +453,23 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
             if ($input->grade_code == SCART_GRADE_ILLEGAL || $input->id == $parent_id) {
 
-                scartLog::logLine("D-scartExportICCAMV3; filenumber=$input->filenumber; add to insert export ");
+                scartLog::logLine("D-scartExportICCAMV3; [$input->filenumber] add to insert export ");
 
                 $assessment = (object) $this->makeAssessment($input);
 
                 // Note (To-Do): imagedata is in this stage already cleaned from the scrapecache; how to get the sha1...!?
                 // may be add field url_hash_sha1 also for other hash export (eg Verify)
 
+                // special handling of $contentType
+                $contentType = SCART_ICCAM_CONTENTTYPE_MEDIA;
+                if (($input->url_type==SCART_URL_TYPE_MAINURL) && (Input_parent::where('parent_id',$parent_id)->count() > 1)) {
+                    // only website when more items and is mainurl
+                    $contentType = SCART_ICCAM_CONTENTTYPE_WEBSITE;
+                }
+
                 $url = [
                     "urlString" => $input->url,
+                    // make ALWAYS unique (content level)
                     'hotlineReference' => $input->filenumber.'_'.date('YmdHi'),
                     "hostingCountryCode" => $hostcounty,
                     "hostingIpAddress" => $input->url_ip,
@@ -411,13 +483,13 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
                     "isSourceUrl"=> (($input->id==$parent_id)?true:false),
                     "memo" => $input->note,
-                    "contentType" => (($input->url_type=='mainurl')?SCART_ICCAM_CONTENTTYPE_WEBSITE:SCART_ICCAM_CONTENTTYPE_MEDIA),
+                    "contentType" => $contentType,
                     'assessment' => $assessment,
                     "actions" => [],
                 ];
 
             } else {
-                scartLog::logLine("D-scartExportICCAMV3; filenumber=$input->filenumber; grade_code=$input->grade_code, skip record");
+                scartLog::logLine("D-scartExportICCAMV3; [$input->filenumber] grade_code=$input->grade_code, skip record");
             }
 
         }
@@ -444,63 +516,68 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             $inputs = Input_parent::where('parent_id',$record->id)->get();
             foreach ($inputs as $input_parent) {
 
+                // first one is parent itself
+
                 $input = Input::find($input_parent->input_id);
 
-                // handle every input - update assessment of specific RECORD in ICCAM
+                if ($input) {
+                    // handle every input - update assessment of specific RECORD in ICCAM
 
-                $contentId = scartICCAMinterface::getICCAMcontentID($input->reference);
-                if ($contentId == '') {
-                    // no ICCAM reference in SCARt -> is possible with record from old API
-                    $contentId = $this->getICCAMcontentId($reportId,$input->url);
-                    if ($contentId) {
-                        $reference = scartICCAMinterface::setICCAMreportID($reportId,$contentId);
-                        $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$input->reference,$reference,"Set reference based on ICCAM import");
-                        $input->reference = $reference;
-                        $input->save();
+                    $contentId = scartICCAMinterface::getICCAMcontentID($input->reference);
+                    if ($contentId == '') {
+                        // no ICCAM reference in SCARt -> is possible with record from old API
+                        $contentId = $this->getICCAMcontentId($reportId,$input->url);
+                        if ($contentId) {
+                            $reference = scartICCAMinterface::setICCAMreportID($reportId,$contentId);
+                            $input->logHistory(SCART_INPUT_HISTORY_ICCAM,$input->reference,$reference,"Set reference based on ICCAM import");
+                            $input->reference = $reference;
+                            $input->save();
+                        }
                     }
-                }
-                if ($contentId) {
+                    if ($contentId) {
 
-                    if (!in_array($contentId,$contentIds)) {
+                        if (!in_array($contentId,$contentIds)) {
 
-                        $isParent = ($input_parent->input_id == $input_parent->parent_id);
+                            if ($skip = $this->doUpdateAssessment($contentId,$input)) {
+                                // ICCAM offline/error found -> skip report
+                                break;
+                            }
 
-                        $skip = $this->doUpdateAssessment($contentId,$input,$isParent);
+                            if ($input->url_type == SCART_URL_TYPE_MAINURL && $this->_status != SCART_IMPORTEXPORT_STATUS_ERROR) {
+                                // check/update set important stage report fields -> always
+                                $this->checkUpdateReport($reportId,$record);
+                            } elseif ($input->url_type == SCART_URL_TYPE_MAINURL) {
+                                scartLog::logLine("W-scartExportICCAMV3; skip futher report updates because of ICCAM error state ");
+                            }
 
-                        if ($skip && $isParent) {
-                            // ICCAM offline found -> skip report
-                            break;
+                            if ($input->grade_code == SCART_GRADE_ILLEGAL) {
+
+                                // check if hoster outside hotline-country and assignment still current hotline-country -> if so assign to hoster country (!)
+                                if ($iccamcontent = (new ScartICCAMapi())->getContent($contentId)) {
+                                    $this->checkSetAssignedCountry($input,$iccamcontent,false);
+                                }
+                            }
+
+                            $contentIds[] = $contentId;
+
+                        } else {
+
+                            scartLog::logLine("W-scartExportICCAMV3; [filenumber=$input->filenumber, reference=$input->reference]; already added ");
+
                         }
-
-                        if (!$skip && $input->grade_code == SCART_GRADE_ILLEGAL) {
-
-                            // check if hoster outside hotline-country and assignment still current hotline-country -> if so assign to hoster country (!)
-                            $iccamcontent = (new ScartICCAMapi())->getContent($contentId);
-                            $this->checkSetAssignedCountry($input,$iccamcontent,false);
-
-                        }
-
-                        $contentIds[] = $contentId;
 
                     } else {
-
-                        scartLog::logLine("W-scartExportICCAMV3; [filenumber=$input->filenumber, reference=$input->reference]; already added ");
-
+                        // if not found, then we have a problem
+                        $logline = $this->_status_text = "Cannot get (ICCAM) contentId of this (ICCAM) record (mainurl.reportId=$reportId, id=$input->id, reference=$input->reference)";
+                        $this->addLogline($logline);
+                        scartLog::logLine("W-scartExportICCAMV3; $this->_status_text; ");
+                        $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
                     }
 
                 } else {
-                    // if still not found, then we have a problem
-                    $logline = $this->_status_text = "Cannot get (ICCAM) contentId of this (ICCAM) record (mainurl.reportId=$reportId, id=$input->id, reference=$input->reference)";
-                    $this->addLogline($logline);
-                    scartLog::logLine("W-scartExportICCAMV3; $this->_status_text; ");
-                    $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
+                    scartLog::logLine("W-scartExportICCAMV3; input_id={$input_parent->input_id} not present (anymore)");
                 }
 
-            }
-
-            if (!$skip) {
-                // check/update set important stage report fields -> always
-                $this->checkUpdateReport($reportId,$record);
             }
 
         } else {
@@ -556,6 +633,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                         $result = (new ScartICCAMapi())->putContentAssignedCountry($iccamcontent->contentId, $hostingCountryCode);
                         if (ICCAMcurl::isOffline() || ICCAMcurl::hasErrors()) {
                             scartLog::logLine("W-scartExportICCAMV3; [$input->filenumber]; checkSetAssignedCountry; ICCAM offline and/or error putContentAssignedCountry($iccamcontent->contentId, $hostingCountryCode)!?");
+                            ICCAMcurl::resetErrors();
                         }
                     }
 
@@ -570,7 +648,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         }
     }
 
-    private function doUpdateAssessment($contentId,$input,$isParent=false) {
+    private function doUpdateAssessment($contentId,$input) {
 
         $skip = false;
 
@@ -598,7 +676,6 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
          */
 
         $toAssessed = $this->isICCAMClassificationToAssessed($contentId);
-        //if ($toAssessed) $toAssessed = !$isParent;
 
         if ($toAssessed) {
 
@@ -608,21 +685,25 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             $this->insertAssessment($contentId,$input);
 
             if (ICCAMcurl::isOffline()) {
+
                 // if ICCAM offline then skip and retry later
                 $logline = $this->_status_text = "ICCAM (curl) offline error";
-                $this->addLogline($logline);
-                $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
-                scartLog::logLine("W-scartExportICCAMV3; $logline");
+                scartLog::logLine("W-scartExportICCAMV3; [reference=$input->reference] $logline");
                 $skip = true;
+
             } elseif (ICCAMcurl::hasErrors()) {
-                // warning no error
-                $logline = $this->_status_text = "ICCAM (curl) insertExistingReport warning: " . ICCAMcurl::getErrors();
-                $this->addLogline($logline);
-                //$this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
-                scartLog::logLine("W-scartExportICCAMV3; $logline");
+
+                // error because content already assest -> continue (no retry)
+                scartLog::logLine("W-scartExportICCAMV3; [reference=$input->reference] cannot assest - continue without retry");
+                $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
+                $this->_status_text = "ICCAM (curl) error: ".ICCAMcurl::getErrors();
+                ICCAMcurl::resetErrors();
+
             } else {
-                $logline = $this->_status_text = "ICCAM updated report";
-                $this->addLogline($logline);
+                if ($this->_status_text == '') {
+                    $logline = $this->_status_text = "ICCAM updated report";
+                    $this->addLogline($logline);
+                }
             }
 
         } else {
@@ -631,7 +712,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
         // new ICCAM api; for assessment = NOT-ILLEGAL, sent NOT-ILLEGAL action
 
-        if ($input->grade_code != SCART_GRADE_ILLEGAL) {
+        if (!$skip && $input->grade_code != SCART_GRADE_ILLEGAL) {
 
             // if SCART_GRADE_NOT_ILLEGAL get reason -> if NOT-FOUND then SCART_ICCAM_ACTION_CU
             $this->exportNotIllegalAction($input);
@@ -862,7 +943,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
         $skip = false;
 
         $this->addLogline("url: $record->url ($record->filenumber)");
-        $actionID = $job['data']['action_id'];
+        $actionID = $job->data['action_id'];
 
         $reportId = scartICCAMinterface::getICCAMreportID($record->reference);
         if ($reportId=='' && $record->url_type !=SCART_URL_TYPE_MAINURL) {
@@ -887,7 +968,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
             $actionname = ($actionID == SCART_ICCAM_ACTION_SETHOTLINE) ? 'set hotline reference' : scartICCAMfieldsV3::getActionName($actionID);
 
-            if ($error = self::validateAction($contentId,$job['data'],$actionname)) {
+            if ($error = self::validateAction($contentId,$job->data,$actionname)) {
 
                 $logline = $this->_status_text = "[contentId=$contentId, actionname=$actionname] ".$error;
                 scartLog::logLine("W-scartExportICCAMV3; $logline");
@@ -904,7 +985,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
                     // in ICCAM V3 seperated flow for MOVED
                     $newIpAddress = $record->url_ip;
-                    $newCountryCode = $job['data']['country'];
+                    $newCountryCode = $job->data['country'];
                     if (empty($newCountryCode)) $newCountryCode = Systemconfig::get('abuseio.scart::classify.hotline_country', '');
                     $this->addLogline("Set ICCAM hotline country to '$newCountryCode'");
                     $this->postMovedAction($contentId,$newIpAddress,$newCountryCode);
@@ -912,7 +993,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 } elseif ($actionID == SCART_ICCAM_ACTION_NI) {
 
                     // sent NOT ILLEGAL
-                    $this->postNotIllegalAction($contentId,$job['data'],$record);
+                    $this->postNotIllegalAction($contentId,$job->data,$record);
 
                 } elseif ($actionID == SCART_ICCAM_ACTION_SETHOTLINE) {
 
@@ -922,26 +1003,26 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
                 } else {
 
                     // any other action
-                    $this->postAction($contentId,$job['data']);
+                    $this->postAction($contentId,$job->data);
 
                 }
 
                 if (ICCAMcurl::isOffline()) {
                     // if ICCAM offline then skip and retry later
-                    $logline = $this->_status_text = "[contentId=$contentId, actionname=$actionname] error: ICCAM offline";
-                    $this->addLogline($logline);
-                    $this->_status = SCART_IMPORTEXPORT_STATUS_EXPORT;
+                    $logline = $this->_status_text = "ICCAM (curl) offline error";
+                    scartLog::logLine("W-scartExportICCAMV3; [reference=$record->reference] $logline");
                     $skip = true;
                 } elseif (ICCAMcurl::hasErrors()) {
-                    $logline = $this->_status_text =  "[contentId=$contentId, actionname=$actionname] error: " . ICCAMcurl::getErrors();
-                    $this->addLogline($logline);
-                    $this->_status = SCART_IMPORTEXPORT_STATUS_ERROR;
+                    // ICCAM error - skip
+                    $logline = $this->_status_text = "ICCAM (curl) error: " . ICCAMcurl::getErrors();
+                    scartLog::logLine("W-scartExportICCAMV3; [reference=$record->reference] $logline");
+                    $skip = true;
                 } else {
-                    $logtext = "Exported action '$actionname' ($actionID) from contenId=$contentId";
-                    $record->logText("$logtext");
-                    $this->addLogline($logtext);
+                    $logline = "Exported action '$actionname' ($actionID) for contenId=$contentId";
+                    $record->logText("$logline");
+                    $this->addLogline($logline);
                     // ICCAMreportID no change, force history insert, external (iccam) action add
-                    $record->logHistory(SCART_INPUT_HISTORY_ICCAM,$record->reference,$record->reference,$logtext,true);
+                    $record->logHistory(SCART_INPUT_HISTORY_ICCAM,$record->reference,$record->reference,$logline,true);
                 }
 
             }
@@ -975,9 +1056,9 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             // when not assigned to this hotline, we have NO right for this in ICCAM
             $hotlinecountry = Systemconfig::get('abuseio.scart::classify.hotline_country', '');
             $localassigned = ($iccamcontent->assignedCountryCode == $hotlinecountry);
-            if (!$localassigned) $error = "localhostline is '$hotlinecountry' but content in ICCAM is assigned to '$iccamcontent->assignedCountryCode'; cannot do action";
-            // check actions
-            if ($error == '' && !empty($iccamcontent->actions)) {
+            if (!$localassigned) {
+                $error = "localhostline is '$hotlinecountry' but content in ICCAM is assigned to '$iccamcontent->assignedCountryCode'; cannot do action";
+            } elseif (!empty($iccamcontent->actions)) {
                 $actionID = $data['action_id'];
                 $iccamActionId = scartICCAMfieldsV3::getActionID($actionID);
                 if ($iccamActionId) {
@@ -1083,6 +1164,7 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
             $result = (new ScartICCAMapi())->putContentAssignedCountry($contentId, $newCountryCode);
         } else {
             scartLog::logLine("W-scartExportICCAMV3; ICCAM offline and/or errors; CANNOT putContentAssignedCountry($contentId, $newCountryCode)");
+            ICCAMcurl::resetErrors();
         }
         //ICCAMcurl::setDebug(false);
     }
@@ -1115,7 +1197,9 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
     private function getDataRecord($jobdata) {
 
         if (isset($jobdata['record_id']) ) {
-            $record = Input::find($jobdata['record_id']);
+            if (!($record = Input::find($jobdata['record_id']))) {
+                scartLog::logLine("W-getDataRecord; cannot find input_id=".$jobdata['record_id']);
+            }
         } else {
             $record = '';
         }
@@ -1138,14 +1222,20 @@ class ScartExportICCAMV3 extends ScartGenericICCAMV3 {
 
         $toAssessed = true;
         $contentItem = (new ScartICCAMapi())->getContent($contentId);
-        if (!empty($contentItem->assessments)) {
-            // Reference Kalina/INHOPE; use last assessment
-            $assessment = $contentItem->assessments[count($contentItem->assessments) - 1];
-            if (!empty($assessment->classification)) {
-                $toAssessed = ($assessment->classification != scartICCAMfieldsV3::$ClassificationIDbaseline && $assessment->classification != scartICCAMfieldsV3::$ClassificationIDignore);
-                if (!$toAssessed) scartLog::logLine("D-scartExportICCAMV3; isICCAMClassificationToAssessed [contentId=$contentId] classification is Baseline or Ignore");
-            }
-        }
+
+        // 2026-05-6; ALWAYS sent assessment, let ICCAM descide what to do
+
+        // #Done do not exclude already baseline or ingore assessment
+
+//        if (!empty($contentItem->assessments)) {
+//            // Reference Kalina/INHOPE; use last assessment
+//            $assessment = $contentItem->assessments[count($contentItem->assessments) - 1];
+//            if (!empty($assessment->classification)) {
+//                $toAssessed = ($assessment->classification != scartICCAMfieldsV3::$ClassificationIDbaseline && $assessment->classification != scartICCAMfieldsV3::$ClassificationIDignore);
+//                if (!$toAssessed) scartLog::logLine("D-scartExportICCAMV3; isICCAMClassificationToAssessed [contentId=$contentId] classification is Baseline or Ignore");
+//            }
+//        }
+
         if ($toAssessed && !empty($contentItem->actions)) {
             $toAssessed = (count($contentItem->actions) == 0);
             if (!$toAssessed) scartLog::logLine("D-scartExportICCAMV3; isICCAMClassificationToAssessed [contentId=$contentId] actions already set");

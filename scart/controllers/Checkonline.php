@@ -30,7 +30,7 @@ class Checkonline extends scartController
     }
 
     public function listExtendQuery($query) {
-        $query->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE, SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL]);
+        $query->whereIn('status_code',[SCART_STATUS_SCHEDULER_CHECKONLINE, SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL, SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL]);
     }
 
     /**
@@ -77,7 +77,7 @@ class Checkonline extends scartController
 
                     // log old/new for history
                     $new = ($record->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Set by analist');
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Set by analyst');
                     // set status
                     $record->status_code = $new;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
@@ -106,7 +106,7 @@ class Checkonline extends scartController
                     Ntd::removeUrlgrouping($record->url);
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_ABUSECONTACT_CHANGED,'Set by analist');
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_ABUSECONTACT_CHANGED,'Set by analyst');
 
                     // set status
                     $record->status_code = SCART_STATUS_ABUSECONTACT_CHANGED;

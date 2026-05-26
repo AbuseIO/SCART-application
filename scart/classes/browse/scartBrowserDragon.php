@@ -28,46 +28,7 @@ class scartBrowserDragon extends scartBrowser {
     private static $_useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0';
     private static $_curltimeout = 300;     // 5 minuut
 
-    private static $_imageMimeTypes = [
-        'image/svg+xml',
-        'image/png',
-        'image/jpeg',
-        'image/tiff',
-        'image/gif',
-        'image/bmp',
-        'image/webp',
-    ];
 
-    private static $_videoMimeTypes = [
-        'application/ogg',
-        'application/x-mpegurl',
-        'application/vnd.apple.mpegurl',
-        'video/3gpp',
-        'video/3gppv',
-        'video/mp4',
-        'video/mpeg',
-        'video/webm',
-        'video/ogg',
-        'video/x-flv',
-        'video/x-m4v',
-        'video/MP2T',
-        'video/x-msvideo',
-        'video/x-ms-wmv',
-        'video/quicktime',
-        'video/ms-asf',
-        'video/quicktime',
-    ];
-
-    private static $_audioMimeTypes = [
-        'audio/basic',
-        'audio/L24',
-        'audio/mid',
-        'audio/mpeg',
-        'audio/mp4',
-        'audio/x-aiff',
-        'audio/x-mpegurl',
-        'audio/x-wav',
-    ];
 
     /**
      * General START and STOP functions

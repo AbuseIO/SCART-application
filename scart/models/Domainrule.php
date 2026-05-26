@@ -135,7 +135,25 @@ class Domainrule extends scartModel
             ->get();
         $ret = array();
         foreach ($recs AS $rec) {
-            $domain = str_replace('www.','',$rec->url_host);
+            $domain = $rec->url_host;
+//            $domain = str_replace('www.','',$domain);
+            $ret[$domain] = $domain;
+        }
+        ksort($ret);
+        return $ret;
+    }
+
+    public function getDomainFullOptions($value='',$formData='') {
+
+        $recs = Input::join(SCART_INPUT_PARENT_TABLE, SCART_INPUT_PARENT_TABLE.'.input_id', '=', SCART_INPUT_TABLE.'.id')
+            ->where(SCART_INPUT_PARENT_TABLE.'.deleted_at',null)
+            ->whereIn(SCART_INPUT_PARENT_TABLE.'.parent_id', $this->_input_ids)
+            ->select(SCART_INPUT_TABLE.'.url_host')
+            ->distinct()
+            ->get();
+        $ret = array();
+        foreach ($recs AS $rec) {
+            $domain = 'https://'.$rec->url_host.'/';
             $ret[$domain] = $domain;
         }
         ksort($ret);

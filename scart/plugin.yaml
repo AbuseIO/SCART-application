@@ -112,19 +112,19 @@ navigation:
                 permissions:
                     - abuseio.scart.system_config
                 order: '1'
-            maintenance:
-                label: 'abuseio.scart::lang.menu.maintenance'
-                url: /abuseio/scart/Maintenance
-                icon: icon-coffee
-                permissions:
-                    - abuseio.scart.system_config
-                order: '1'
             addons:
                 label: 'abuseio.scart::lang.menu.addons'
                 url: /abuseio/scart/Addons
                 icon: icon-sitemap
                 permissions:
                     - abuseio.scart.system_addons
+                order: '2'
+            maintenance:
+                label: 'abuseio.scart::lang.menu.maintenance'
+                url: /abuseio/scart/Maintenance
+                icon: icon-coffee
+                permissions:
+                    - abuseio.scart.system_config
                 order: '2'
             Users:
                 label: 'abuseio.scart::lang.menu.users'
@@ -140,33 +140,40 @@ navigation:
                 permissions:
                     - abuseio.scart.blocked_days
                 order: '4'
-            Whitelist:
-                label: 'White list'
-                url: /abuseio/scart/whitelist
-                icon: icon-list-ul
+            webforms:
+                label: 'abuseio.scart::lang.menu.webforms'
+                url: /abuseio/scart/ImportWebform
+                icon: icon-table
                 permissions:
-                    - abuseio.scart.system_whitelist
+                    - abuseio.scart.import_webform
                 order: '5'
-            Sources:
-                label: 'Input sources'
-                url: /abuseio/scart/Input_source
-                icon: icon-list-ul
-                permissions:
-                    - abuseio.scart.sources
-                order: '5'
-            NTDtemplates:
-                label: 'abuseio.scart::lang.menu.ntdtemplates'
-                url: /abuseio/scart/NTDtemplates
-                icon: icon-files-o
-                permissions:
-                    - abuseio.scart.ntdtemplate_manage
-                order: '6'
             GradeQuestions:
                 label: 'abuseio.scart::lang.menu.gradequestions'
                 url: /abuseio/scart/Grade_questions
                 icon: icon-table
                 permissions:
                     - abuseio.scart.grade_questions
+                order: '6'
+            Whitelist:
+                label: 'White list'
+                url: /abuseio/scart/whitelist
+                icon: icon-list-ul
+                permissions:
+                    - abuseio.scart.system_whitelist
+                order: '7'
+            Sources:
+                label: 'Input sources'
+                url: /abuseio/scart/Input_source
+                icon: icon-list-ul
+                permissions:
+                    - abuseio.scart.sources
+                order: '7'
+            NTDtemplates:
+                label: 'abuseio.scart::lang.menu.ntdtemplates'
+                url: /abuseio/scart/NTDtemplates
+                icon: icon-files-o
+                permissions:
+                    - abuseio.scart.ntdtemplate_manage
                 order: '7'
             Manualedit:
                 label: 'abuseio.scart::lang.menu.manualedit'

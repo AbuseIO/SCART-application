@@ -81,3 +81,50 @@
 6.0.23:
     - 'Updated table abuseio_scart_report'
     - builder_table_update_abuseio_scart_report_3.php
+6.0.24:
+    - 'Created table abuseio_scart_import_webform'
+    - builder_table_create_abuseio_scart_import_webform.php
+6.0.25:
+    - 'Created table abuseio_scart_import_webform_field'
+    - builder_table_create_abuseio_scart_import_webform_field.php
+6.0.26:
+    - 'Add direct_police status'
+    - seeder6026.php
+6.0.27:
+    - 'Updated table abuseio_scart_abusecontact'
+    - builder_table_update_abuseio_scart_abusecontact.php
+6.0.28:
+    - 'Updated table abuseio_scart_grade_question'
+    - builder_table_update_abuseio_scart_grade_question.php
+6.0.29:
+    - 'Updated table abuseio_scart_config'
+6.0.30:
+    - 'Updated table abuseio_scart_report'
+    - builder_table_update_abuseio_scart_report_2.php
+6.0.31:
+    - 'Updated table abuseio_scart_grade_question'
+    - builder_table_update_abuseio_scart_grade_question_2.php
+6.0.32:
+    - 'Updated table abuseio_scart_import_webform_field'
+    - builder_table_update_abuseio_scart_import_webform_field.php
+6.0.33:
+    - 'Reset AI attributes'
+    - SeederAIattributes.php
+6.0.34:
+    - 'Add first_police_checkonline_manual status'
+    - seeder6027.php
+6.0.35:
+    - 'Updated table abuseio_scart_ntd_url'
+    - builder_table_update_abuseio_scart_ntd_url.php
+6.0.36:
+    - 'Updated table abuseio_scart_import_webform_field'
+    - builder_table_update_abuseio_scart_import_webform_field_2.php
+6.0.37:
+    - 'Updated table abuseio_scart_import_webform_field'
+    - builder_table_update_abuseio_scart_import_webform_field_3.php
+6.0.38:
+    - 'Updated table abuseio_scart_import_webform'
+    - builder_table_update_abuseio_scart_import_webform.php
+6.0.39:
+    - 'Check & sync input source code'
+    - seeder6028.php

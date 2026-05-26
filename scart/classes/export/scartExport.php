@@ -33,13 +33,15 @@ use abuseio\scart\classes\rules\scartRules;
 
 class scartExport {
 
-    public static $version = '2.0.1';
+    public static $version = '3.0.1';
 
     private static $_cached = [];
 
     private static $_basefields  = [
         'filenumber' => 'filenumber',
+        'reference' => 'external reference',
         'url' => 'url',
+        'url_referer' => 'referer',
         'url_host' => 'host',
         'url_ip' => 'IP',
         'url_type' => 'url type',
@@ -64,6 +66,11 @@ class scartExport {
         'firstseen_at' => 'first seen',
         'firstntd_at' => 'first NTD',
         'lastseen_at' => 'last seen',
+    ];
+
+    private static $_basefields_notes = [
+        'note' => 'note',
+        'ntd_note' => 'NTD note',
     ];
 
     private static $_whoisheaders_default = [
@@ -201,14 +208,12 @@ class scartExport {
         return $cnt;
     }
 
-    public static function exportWhoisRecords($record_type, $class, $from, $to) {
+    public static function exportWhoisRecords($class, $from, $to) {
 
         $lines = [];
 
         //trace_sql();
-        $records = ($record_type == SCART_INPUT_TYPE) ?
-            Input::whereNotIn('status_code', [SCART_STATUS_OPEN,SCART_STATUS_CANNOT_SCRAPE,SCART_STATUS_WORKING]) :
-            Notification::whereNotIn('status_code', [SCART_STATUS_OPEN,SCART_STATUS_CANNOT_SCRAPE,SCART_STATUS_WORKING]);
+        $records = Input::whereNotIn('status_code', [SCART_STATUS_OPEN,SCART_STATUS_CANNOT_SCRAPE,SCART_STATUS_WORKING]);
 
         $records = $records->where('grade_code', $class)
             ->where('created_at','>',$from)
@@ -226,7 +231,7 @@ class scartExport {
 
             // send to police (NTD)
             if ($policecontact) {
-                $cnt = Ntd_url::where('record_type',$record_type)
+                $cnt = Ntd_url::where('record_type',SCART_INPUT_TYPE)
                     ->where('record_id',$record->id)
                     ->join(SCART_NTD_TABLE,SCART_NTD_TABLE.'.id','=',SCART_NTD_URL_TABLE.'.ntd_id')
                     ->where(SCART_NTD_TABLE.'.abusecontact_id',$policecontact->id)
@@ -244,7 +249,7 @@ class scartExport {
                 $whois = array_merge(self::$_whoisheaders_default, $whois);
 
                 if ($record->host_abusecontact_id) {
-                    $whois['host_ntd_count'] = self::count_ntds($record,$record_type,$record->host_abusecontact_id);
+                    $whois['host_ntd_count'] = self::count_ntds($record,SCART_INPUT_TYPE,$record->host_abusecontact_id);
                 }
 
                 if ($siteownerac_id = scartRules::checkSiteOwnerRule($record->url) ) {
@@ -253,16 +258,23 @@ class scartExport {
                         $whois['site_owner'] = $siteownerac->owner;
                         $whois['site_country'] = $siteownerac->abusecountry;
                         $whois['site_abusecustom'] = $siteownerac->abusecustom;
-                        $whois['site_ntd_count'] = self::count_ntds($record,$record_type,$siteownerac_id);
+                        $whois['site_ntd_count'] = self::count_ntds($record,SCART_INPUT_TYPE,$siteownerac_id);
                     }
                 }
 
                 if ($record->registrar_abusecontact_id) {
-                    $whois['registrar_ntd_count'] = self::count_ntds($record,$record_type,$record->registrar_abusecontact_id);
+                    $whois['registrar_ntd_count'] = self::count_ntds($record,SCART_INPUT_TYPE,$record->registrar_abusecontact_id);
                 }
 
                 foreach (SELF::$_whoisheaders AS $field => $label) {
                     $line = self::addLineValue($line,$whois[$field]);
+                }
+
+                // added notes at the end of the line -> replace newlines in string
+                foreach (SELF::$_basefields_notes AS $field => $label) {
+                    $exportval = trim(str_replace(["\n\r","\n","\r"],'<br/>',$record->$field));
+                    //if ($exportval) scartLog::logLine("D-exportWhoisRecords; $field with content");
+                    $line = self::addLineValue($line,$exportval);
                 }
 
                 //scartLog::logLine("Row line: $line");
@@ -288,12 +300,15 @@ class scartExport {
         foreach (SELF::$_whoisheaders AS $field => $label) {
             $line = self::addLineValue($line,$label);
         }
+        foreach (SELF::$_basefields_notes AS $field => $label) {
+            $line = self::addLineValue($line,$label);
+        }
         //scartLog::logLine("D-Header line: $line");
         scartLog::logLine("D-exportWhois($class, $from, $to) ");
 
         $lines[] = $line;
 
-        $exportlines = self::exportWhoisRecords(SCART_INPUT_TYPE,$class, $from, $to);
+        $exportlines = self::exportWhoisRecords($class, $from, $to);
         $lines = array_merge($lines , $exportlines);
 
         return $lines;
@@ -463,7 +478,7 @@ class scartExport {
         // POLICE
         $line = self::addLineValue($line,"police");
 
-        // WHOSI
+        // WHOIS
         foreach (SELF::$_whoisheaders AS $field => $label) {
             $line = self::addLineValue($line,$label );
         }
@@ -528,6 +543,9 @@ class scartExport {
         foreach (SELF::$_ntdfields AS $field => $label) {
             $line = self::addLineValue($line,$label);
         }
+        foreach (SELF::$_basefields_notes AS $field => $label) {
+            $line = self::addLineValue($line,$label);
+        }
         $lines = [$line];
 
         $ntds = Ntd::where([
@@ -559,6 +577,10 @@ class scartExport {
                 $line = self::addLineValue($line,$ntdurl->firstseen_at);
                 $line = self::addLineValue($line,$ntdurl->lastseen_at);
                 $line = self::addLineValue($line,$ntdurl->online_counter);
+                if ($ntdurl->record_type==SCART_INPUT_TYPE && ($input = Input::find($ntdurl->record_id))) {
+                    $line = self::addLineValue($line,$input->note);
+                    $line = self::addLineValue($line,$input->ntd_note);
+                }
                 $lines[] = $line;
             }
         }
@@ -593,7 +615,7 @@ class scartExport {
      * @return string[]
      */
 
-    public function exportNTDclosed($to) {
+    public static function exportNTDclosed($to) {
 
         $from = date('Y-m-d H:i:s',strtotime("$to -1 day"));
         scartLog::logLine("D-exportNTDclosed; period is: '$from' > status_time <= '$to' ");
@@ -612,7 +634,7 @@ class scartExport {
             ->where(SCART_NTD_TABLE.'.status_time','<=',$to)
             ->select(SCART_NTD_URL_TABLE.'.*')
             ->distinct();
-        scartLog::logLine("D-SQL=".$ntdurls->toSql());
+        //scartLog::logLine("D-SQL=".$ntdurls->toSql());
 
         if ($ntdurls->exists()) {
 
@@ -632,15 +654,6 @@ class scartExport {
 
                     // detect if urls has NOT CHECKONLINE or CHANGED status anymore
 
-                    /*
-                    $input = Input::where('url',$ntdurl->url)
-                        ->whereNotIn('status_code',[
-                            SCART_STATUS_ABUSECONTACT_CHANGED,
-                            SCART_STATUS_FIRST_POLICE,
-                            SCART_STATUS_SCHEDULER_CHECKONLINE,
-                            SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL])
-                        ->first();
-                    */
                     $input = Input::where('url',$ntdurl->url)
                         ->whereIn('status_code',[
                             SCART_STATUS_CLOSE_OFFLINE,
@@ -709,7 +722,7 @@ class scartExport {
      *
      */
 
-    public static function exportFiltered($filter_grade_code,$filter_status_code,$filter_host_country,$filter_start,$filter_end) {
+    public static function exportFiltered($filter_grade_code,$filter_status_code,$filter_host_country,$filter_start,$filter_end,$logname) {
 
         // select all
         $queryrecords = Input::where(SCART_INPUT_TABLE.'.id','>',0);
@@ -783,21 +796,22 @@ class scartExport {
             }
         }
 
-        // get data (collection)
-        scartLog::logLine("D-scartExport; report query: " . $queryrecords->toSql() );
-        $records = $queryrecords->get();
+        // show query
+        scartLog::logSQL("D-{$logname}; report query: ", $queryrecords );
 
-        return $records;
+        return $queryrecords->get();
     }
 
 
     public static function inFilter($filter,$value) {
 
         $found = false;
-        foreach ($filter AS $item) {
-            if (in_array($value,$item)) {
-                $found = true;
-                break;
+        if ($filter) {
+            foreach ($filter AS $item) {
+                if (in_array($value,$item)) {
+                    $found = true;
+                    break;
+                }
             }
         }
         return $found;

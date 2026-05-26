@@ -1,0 +1,6 @@
+fields:
+    test:
+        label: test
+        span: full
+        type: text
+

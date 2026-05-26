@@ -1,0 +1,14 @@
+fields:
+    url:
+        label: URL
+        span: full
+        type: text
+    source_code:
+        label: source
+        span: left
+        type: dropdown
+    type_code:
+        label: type
+        span: right
+        required: 1
+        type: dropdown

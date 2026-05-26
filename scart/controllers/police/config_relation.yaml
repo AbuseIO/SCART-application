@@ -8,10 +8,22 @@ logs:
     showSorting: false
     recordsPerPage: 10
 history:
-    label: history
-    modelClass: abuseio\scart\models\Input_history
-    readOnly: true
+  label: history
+  modelClass: abuseio\scart\models\Input_history
+  readOnly: true
+  view:
+    list: $/abuseio/scart/models/input_history/columns.yaml
+    showSorting: false
+    recordsPerPage: 10
+extrafields:
+    label: extrafields
+    modelClass: abuseio\scart\models\Input_extrafield
+    readOnly: false
     view:
-        list: $/abuseio/scart/models/input_history/columns.yaml
+        list: $/abuseio/scart/models/input_extrafield/columns.yaml
+        customViewPath: '$/abuseio/scart/controllers/police/extrafieldlist'
         showSorting: false
         recordsPerPage: 10
+        toolbarButtons:
+            Delete: 'Remove extra field'
+

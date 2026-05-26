@@ -43,6 +43,7 @@ return [
         'whoiscache' => 'WhoIs cache',
         'iccamhotline' => 'ICCAM hotlines',
         'exporterrors' => 'Export errors',
+        'webforms' => 'Import webforms',
     ],
 
     'dosendntd' => [
@@ -87,6 +88,7 @@ return [
         'bulk_set_not_illegal' => 'Set selected on not illegal',
         'bulk_set_police' => 'Set selected on first police',
         'bulk_edit_input' => 'Edit selected input',
+        'bulk_open_urls' => 'Open all urls on this page',
         'refresh_title' => 'Refresh screen',
         'rules' => 'Rules',
         'done' => 'Done',
@@ -110,8 +112,11 @@ return [
         'browse_image' => "Browse images found",
         'import' => "Import",
         'export' => "Export",
-        'start_ntd' => "Start check online for selected",
+        'start_ntd' => "Check online (scheduler)",
+        'start_ntd_manual' => "Check online (manual)",
         'language' => "Language",
+        'send_lea' => 'Send to LEA',
+        'classify_lea' => 'Classify LEA',
     ],
 
     'flash' => [
@@ -132,7 +137,9 @@ return [
         'scrape_selected' => "Selected scrape (again)?",
         'classify_selected' => "Set selected records on classify? (no scrape)",
         'reset_recreate' => "Reprocess (reset) reports?",
-        'continue_withmywork' => "Are you sure you want to go back to the previous rating list?"
+        'continue_withmywork' => "Are you sure you want to go back to the previous rating list?",
+        'set_checkntd' => "Set selected on status checkonline (scheduler)?",
+        'set_checkntd_manual' => "Set selected on status checkonline (manual)?",
     ],
 
     'head' => [
@@ -160,7 +167,7 @@ return [
         'changed_next_action' => "The abusecontact information of the records below is changed due to WhoIs changes. Please specify the next action.",
         'analyzing' => "Analyzing...",
         'loading' => "Loading...",
-        'police_next_action' => "The records below are set on POLICE-FIRST. Please specify the next action.",
+        'police_next_action' => "The records below are set for POLICE. Please specify the next action.",
     ],
 
     'backend' => [
@@ -387,6 +394,8 @@ return [
             'delete_selected_empty' => 'There are no selected records to delete.',
             'delete_selected_confirm' => 'Delete the selected records?',
             'delete_selected_success' => 'Deleted selected records.',
+            'copy_selected' => "Copy selected",
+            'copy_selected_confirm' => 'Copy the selected records?',
             'column_switch_true' => 'Yes',
             'column_switch_false' => 'No',
         ],

@@ -38,16 +38,11 @@ class scartSchedulerSendNTD extends scartScheduler {
 
         if (SELF::startScheduler('SendNTD','sendntd')) {
 
-            $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
-            if ($alt_email) scartLog::logLine('D-' . SELF::$logname . "; ALT_EMAIL=$alt_email (TEST MODE)");
-
-            // not use $scheduler_process_count -> process ALL NTD's
-            //$scheduler_process_count = Systemconfig::get('abuseio.scart::scheduler.scheduler_process_count',15);
-
-            // login okay
-
             $cnt = 0;
             $ntd_nots = array();
+
+            $alt_email  = Systemconfig::get('abuseio.scart::scheduler.sendntd.alt_email','');
+            if ($alt_email) scartLog::logLine('D-' . SELF::$logname . "; ALT_EMAIL=$alt_email (TEST MODE)");
 
             try {
 

@@ -6,6 +6,9 @@ columns:
         label: sortnr
         type: text
         sortable: true
+    required:
+        label: required
+        type: switch
     type:
         label: type
         type: text

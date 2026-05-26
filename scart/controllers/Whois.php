@@ -49,12 +49,11 @@ class Whois extends scartController {
                 'value' => 'phpWhois',
                 'option' => 'Open Source (free) phpWhois library [SCART current]'
                 ],
-            'Hexilion' => [
-                'selected' => (($provider=='Hexilion') ? 'selected="selected"' : ''),
-                'value' => 'Hexilion',
-                'option' => 'Centralops (pay) Hexilion WhoIs provider',
-
-            ]
+//            'Hexilion' => [
+//                'selected' => (($provider=='Hexilion') ? 'selected="selected"' : ''),
+//                'value' => 'Hexilion',
+//                'option' => 'Centralops (pay) Hexilion WhoIs provider',
+//            ],
         ];
 
         $this->vars['providers'] = $providers;
@@ -73,12 +72,17 @@ class Whois extends scartController {
 
         if ($domain) {
 
-            $whois = scartWhois::getHostingInfo($domain);
+            set_time_limit(0);
+
+            $whois = scartWhois::getHostingInfo($domain, false);
             //trace_log($whois);
 
             if ($whois['status_success']) {
 
-                $fields = [];
+                $fields = [
+                    'input_url' => $domain,
+                    'effective_url' => scartWhois::getDestinationUrl($domain),
+                ];
                 $flds = $this->whoisfields;
                 foreach ($flds AS $fld) {
                     $fields[$fld] = $whois[$fld];

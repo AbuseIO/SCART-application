@@ -2,6 +2,7 @@
 
 namespace abuseio\scart\classes\base;
 
+use abuseio\scart\classes\helpers\scartLog;
 use abuseio\scart\models\Input;
 use Backend\Classes\Controller;
 use BackendMenu;
@@ -33,14 +34,15 @@ class scartController extends Controller {
         $this->finderConfig = $this->makeConfig(plugins_path('abuseio/scart/controllers/finder/config/config.yaml'));
 
         // @TO-DO; make this "filter" var specific for FINDER function to avoid conflicts with other session vars
-        $filters = current(\Session::get('filter', []));
+        //$filters = current(\Session::get(SCART_FINDER_FILTERS, []));
+        //scartLog::logLine("D-scartController; init, filter=".implode(',',$filters));
 
-        // init list widget
-        $this->scartFinderInputListWidget = $this->widget->finder->makeList(['name' => 'input', 'alias' => 'scartFinderInputListWidget', 'filters' => $filters],'', true);
+        // init list widget with empty filters
+        $this->scartFinderInputListWidget = $this->widget->finder->makeList(['name' => 'input', 'alias' => 'scartFinderInputListWidget', 'filters' => []],'', true);
         $this->scartFinderInputListWidget->bindToController();
-        $this->scartFinderNtdListWidget = $this->widget->finder->makeList(['name' => 'ntd', 'alias' => 'scartFinderNtdListWidget', 'filters' => $filters], '', true);
+        $this->scartFinderNtdListWidget = $this->widget->finder->makeList(['name' => 'ntd', 'alias' => 'scartFinderNtdListWidget', 'filters' => []], '', true);
         $this->scartFinderNtdListWidget->bindToController();
-        $this->scartFinderDomainruleListWidget = $this->widget->finder->makeList(['name' => 'domainrule', 'alias' => 'scartFinderDomainruleListWidget', 'filters' => $filters], '', true);
+        $this->scartFinderDomainruleListWidget = $this->widget->finder->makeList(['name' => 'domainrule', 'alias' => 'scartFinderDomainruleListWidget', 'filters' => []], '', true);
         $this->scartFinderDomainruleListWidget->bindToController();
     }
 

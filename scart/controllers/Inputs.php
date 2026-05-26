@@ -1,5 +1,6 @@
 <?php namespace abuseio\scart\Controllers;
 
+use abuseio\scart\models\Input_extrafield;
 use abuseio\scart\models\Systemconfig;
 use abuseio\scart\widgets\Dropdown;
 use BackendMenu;
@@ -191,7 +192,7 @@ class Inputs extends scartController {
                     $record->removeNtdIccam(false);
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_SCHEDULER_SCRAPE,'Inputs; set by analist');
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_SCHEDULER_SCRAPE,'Inputs; set by analyst');
 
                     $record->status_code = SCART_STATUS_SCHEDULER_SCRAPE;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
@@ -216,7 +217,7 @@ class Inputs extends scartController {
                     $record->removeNtdIccam(false);
 
                     // log old/new for history
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_GRADE,'Inputs; set by analist');
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,SCART_STATUS_GRADE,'Inputs; set by analyst');
 
                     $record->status_code = SCART_STATUS_GRADE;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
@@ -242,7 +243,7 @@ class Inputs extends scartController {
 
                     // log old/new for history
                     $new = ($record->status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_CLOSE_OFFLINE_MANUAL : SCART_STATUS_CLOSE_OFFLINE;
-                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Inputs; set by analist');
+                    $record->logHistory(SCART_INPUT_HISTORY_STATUS,$record->status_code,$new,'Inputs; set by analyst');
                     $record->status_code = $new;
                     $record->logText("Set status_code=$record->status_code by " . scartUsers::getFullName() );
                     $record->save();
@@ -294,4 +295,16 @@ class Inputs extends scartController {
 
     }
 
+
+    public function onGetPasswordField() {
+
+        $input_id = input('input_id');
+        $field_label = input('field_label');
+        $password = input('password');
+        scartLog::logLine("D-onGetPasswordField; input_id=$input_id, field_label=$field_label, password=$password");
+        if (!($decrypted = Input_extrafield::getDecryptedExtraField($input_id,$field_label,$password))) {
+            Flash::warning('Password not valid');
+        }
+        return $decrypted;
+    }
 }

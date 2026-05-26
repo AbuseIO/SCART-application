@@ -210,11 +210,10 @@ class Domainrule extends scartController
                 $question->leftright = $grade->span;
                 $toggle = !$toggle;
 
-                $value = (isset($valuegrades[$grade->id])) ? $valuegrades[$grade->id] : [];
+                $value = (isset($valuegrades[$grade->id])) ? $valuegrades[$grade->id] : (($grade->type=='text')?'':[]);
 
                 if ($question->type == 'select' || $question->type == 'checkbox' || $question->type == 'radio') {
 
-                    $selected = '';
                     $options = [];
                     $opts = Grade_question_option::where('grade_question_id',$grade->id)->orderBy('sortnr')->get();
                     foreach ($opts AS $opt) {
@@ -229,7 +228,7 @@ class Domainrule extends scartController
 
                 } elseif ($question->type == 'text') {
 
-                    $question->value = $values;
+                    $question->value = (is_array($value)) ? implode(',',$value) : $value;
 
                 }
 
@@ -396,7 +395,7 @@ class Domainrule extends scartController
 
                 } elseif ($question->type == 'text') {
 
-                    $question->value = $values;
+                    $question->value = implode(',',$values);
 
                 }
 

@@ -89,7 +89,7 @@ class sendCustomNTD extends Command
 
         }
 
-        $from = 'noreply@nbip.nl';
+        $from = 'noreply@svsnet.nl';
         $to = 'support@brug-it.nl';
         //$to = 'bureau@nbip.nl';
         $body = file_get_contents($bodyfile);

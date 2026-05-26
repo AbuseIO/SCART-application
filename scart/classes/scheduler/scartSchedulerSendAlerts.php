@@ -48,10 +48,10 @@ class scartSchedulerSendAlerts extends scartScheduler {
                 if ($iccammaintenance!==null) {
                     if ($iccammaintenance) {
                         scartLog::logLine("D-schedulerSendAlerts; ICCAM maintenance; set ICCAM active on false");
-                        Systemconfig::set('abuseio.scart::scheduler.importexport.iccam_active',false);
+                        Systemconfig::set('abuseio.scart::scheduler.import.iccam_active',false);
                     } else {
                         scartLog::logLine("D-schedulerSendAlerts; ICCAM maintenance; set ICCAM active on true");
-                        Systemconfig::set('abuseio.scart::scheduler.importexport.iccam_active',true);
+                        Systemconfig::set('abuseio.scart::scheduler.import.iccam_active',true);
                     }
                 }
 

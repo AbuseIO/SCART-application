@@ -1,9 +1,10 @@
 <?php
 namespace abuseio\scart\widgets;
 
+use abuseio\scart\classes\cleanup\scartArchive;
 use abuseio\scart\classes\helpers\scartLog;
 use Backend\Classes\WidgetBase;
-use Illuminate\Support\Facades\Session;
+use Session;
 use Input;
 
 
@@ -29,12 +30,19 @@ class Finder extends WidgetBase
      * @return array|bool
      */
     public function onSearch() {
+
         $this->starttime = microtime(true);
+
         $filters = Input::all();
-        \Session::forget('filter');
+        if (!empty($filters['archiveActive']) && scartArchive::isActiveValid()) {
+            scartArchive::setArchiveDefault();
+        }
+
+        Session::forget(SCART_FINDER_FILTERS);
         if (is_array($filters) && count($filters) > 0) {
+
             scartLog::logLine("D-Finder(widget): begin process finder, with the term: " . $filters['criteria']);
-            \Session::push('filter', $filters);
+            Session::put(SCART_FINDER_FILTERS, $filters);
 
             $results = [];
             if (!isset($filters['typeTable']) || $filters['typeTable'] == 'input') {
@@ -78,6 +86,7 @@ class Finder extends WidgetBase
      * @return \Backend\Widgets\Form
      */
     public function makeForm($data, $page = 'inputscreen/', $return = false) {
+
         $config = $this->makeConfig("$/abuseio/scart/widgets/finder/config/fields/{$page}{$data['name']}_fields_view.yaml");
 
         $prefix = '\abuseio\scart\models';
@@ -114,8 +123,6 @@ class Finder extends WidgetBase
                     $config->model->orderBy($data['oldest'], 'ASC');
                 }
 
-
-
                if ($config->model->exists()) {
                    $config->model = $config->model->first();
                } else {
@@ -143,7 +150,8 @@ class Finder extends WidgetBase
     /**
      * @param $data
      */
-    public function makeList($data, $dir = '', $return = false, $setup = true, $filter = false)
+    // , $filter = false
+    public function makeList($data, $dir = '', $return = false, $setup = false)
     {
 
         $config = $this->makeConfig("$/abuseio/scart/widgets/finder/config/list/{$dir}{$data['name']}_columns_view.yaml");
@@ -181,11 +189,12 @@ class Finder extends WidgetBase
         }
 
         // query
-        if (isset($data['filters']) && $data['filters']) {
+        if (!empty($data['filters'])) {
             scartLog::logLine("D-Finder(widget): load list, search filter is given. ");
             $filters = $data['filters'];
             $widget->bindEvent('list.extendQueryBefore', function ($query) use ($filters, $data) {
 
+                $this->totalRecords = 3;
 
                 if($data['name'] == 'input' || ($data['name'] == 'ntd' && $filters['type'] == 'filenumber')) {
                     return $query->where($filters['type'], 'like', '%' . $filters['criteria'] . '%');
@@ -199,25 +208,24 @@ class Finder extends WidgetBase
             });
         }
 
-        if ($filter) {
-
-
-            scartLog::logLine("D-Finder(widget): load list, future project:  Filters are loading. ");
-            // make filter
-            $filterConfig = $this->makeConfig("$/abuseio/scart/widgets/finder/config/input/config_filter.yaml");
-            $filterConfig->scopes['url']['default'] = Session::pull('inputfield', '');
-            $filterWidget = $this->makeWidget('Backend\Widgets\Filter', $filterConfig);
-            $filterWidget->bindToController();
-
-            // events
-//            $listwidget = $this->inputlistinputwidget;
-//            $filterWidget->bindEvent('filter.update', function () use ($listwidget, $filterWidget) {
-//                return $listwidget->onRefresh();
-//            });
-
-            $this->$key->addFilter([$filterWidget, 'applyAllScopesToQuery']);
-            $this->filterWidget = $filterWidget;
-        }
+//        if ($filter) {
+//
+//            scartLog::logLine("D-Finder(widget): load list, future project:  Filters are loading. ");
+//            // make filter
+//            $filterConfig = $this->makeConfig("$/abuseio/scart/widgets/finder/config/input/config_filter.yaml");
+//            $filterConfig->scopes['url']['default'] = Session::pull('inputfield', '');
+//            $filterWidget = $this->makeWidget('Backend\Widgets\Filter', $filterConfig);
+//            $filterWidget->bindToController();
+//
+//            // events
+////            $listwidget = $this->inputlistinputwidget;
+////            $filterWidget->bindEvent('filter.update', function () use ($listwidget, $filterWidget) {
+////                return $listwidget->onRefresh();
+////            });
+//
+//            //$this->$key->addFilter([$filterWidget, 'applyAllScopesToQuery']);
+//            $this->filterWidget = $filterWidget;
+//        }
 
         if($return) {
             return $widget;
@@ -241,6 +249,12 @@ class Finder extends WidgetBase
     public function LoadFinderForm()
     {
         $this->vars['finderconfig'] = $this->makeConfig(plugins_path('abuseio/scart/controllers/finder/config/config.yaml'));
+        $this->vars['archiveActive'] = scartArchive::isActiveValid();
+        $filters = Session::get(SCART_FINDER_FILTERS,[]);
+        //scartLog::logDump("D-LoadFinderForm: ",$filters);
+        $this->vars['searchtype'] = (!empty($filters) && isset($filters['type'])) ? $filters['type'] : 'urladres';
+        $this->vars['searchvalue'] = (!empty($filters) && isset($filters['criteria'])) ? $filters['criteria'] : '';
+        $this->vars['searcharchive'] = (!empty($filters) && isset($filters['archiveActive'])) ? 'checked' : '';
         return $this->makePartial('form/search');
     }
 

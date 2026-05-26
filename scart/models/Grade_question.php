@@ -45,6 +45,7 @@ class Grade_question extends scartModel {
             'illegal' => 'illegal',
             'not_illegal' => 'not illegal',
             'police' => 'police',
+//            'direct police' => 'direct police',
         ];
         return $ret;
 
@@ -107,6 +108,18 @@ class Grade_question extends scartModel {
                 scartLog::logLine("D-Grade_question.afterSave; iccam_field not filled or changed");
             }
 
+        }
+
+        if (!empty($this->default) && ($this->type == 'select' || $this->type == 'checkbox' || $this->type == 'radio')) {
+
+            if (!Grade_question_option::where('grade_question_id',$this->id)->where('value',$this->default)->exists()) {
+                throw new \ValidationException(['default' => 'Default must be one of the option values (or empty)']);
+            }
+
+        }
+
+        if (strpos($this->name,' ')!==false) {
+            $this->name = str_replace(' ','_',$this->name);
         }
 
     }

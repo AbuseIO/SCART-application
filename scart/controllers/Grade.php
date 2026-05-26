@@ -21,6 +21,7 @@ use abuseio\scart\classes\helpers\scartImage;
 use abuseio\scart\classes\mail\scartAlerts;
 use abuseio\scart\classes\iccam\scartICCAMinterface;
 use abuseio\scart\models\Input_extrafield;
+use abuseio\scart\models\Scrape_cache;
 use abuseio\scart\widgets\Tiles;
 use Backend\Models\User;
 use Backend\Widgets\Form;
@@ -54,6 +55,7 @@ use abuseio\scart\models\Domainrule;
 use abuseio\scart\Plugin;
 use abuseio\scart\classes\helpers\scartUsers;
 use abuseio\scart\models\Systemconfig;
+use abuseio\scart\Models\ImportWebform;
 
 class Grade extends scartController
 {
@@ -255,10 +257,9 @@ class Grade extends scartController
         $listrecords = $this->getListRecords();
         $txt = '';
         foreach ($listrecords AS $input_id) {
-            $ipcnt = Input_parent::where('parent_id',$input_id)
+            if (Input_parent::where('parent_id',$input_id)
                 ->where('input_id',$input_id)
-                ->count();
-            if ($ipcnt == 0) {
+                ->doesntExist()) {
                 $ip = new Input_parent();
                 $ip->parent_id = $ip->input_id= $input_id;
                 $ip->save();
@@ -285,7 +286,7 @@ class Grade extends scartController
                     $item->grade_code = SCART_GRADE_IGNORE;
 
                     // log old/new for history
-                    $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_CLOSE,'Set by analist');
+                    $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_CLOSE,'Set by analyst');
 
                     $item->status_code = SCART_STATUS_CLOSE;
                     $item->save();
@@ -307,7 +308,7 @@ class Grade extends scartController
                 // @TO-DO; not SCART_GRADE_IGNORE?!
                 $input->grade_code = SCART_GRADE_NOT_ILLEGAL;
                 // log old/new for history
-                $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_CLOSE,'Set by analist');
+                $input->logHistory(SCART_INPUT_HISTORY_STATUS,$input->status_code,SCART_STATUS_CLOSE,'Set by analyst');
                 $input->status_code = SCART_STATUS_CLOSE;
                 $input->save();
                 $input->logText('closed with classification ignore');
@@ -435,6 +436,7 @@ class Grade extends scartController
                     $filterlabel = str_replace('_',' ',$label->label);
                     $filterlabel = ucfirst($filterlabel);
                     $filter_attributes[$label->label] = $filterlabel;
+                    $filter_attributes[$label->label.'_not'] = 'NOT '.$filterlabel;
                 }
             }
             if (empty($filter_attributes)) {
@@ -724,8 +726,11 @@ class Grade extends scartController
             }
         }
 
+        $add_edit_media = Systemconfig::get('abuseio.scart::classify.add_edit_media',false);
+
         $inputtxt = $this->makePartial('show_grade_input',
             [   'id' => '0',
+                'add_edit_media' => $add_edit_media,
                 'workuser_id' => $workuser_id,
                 'locked_workuser' => $locked_workuser,
                 'screensize' => $screensize,
@@ -858,28 +863,36 @@ class Grade extends scartController
                         if ($item->grade_code==SCART_GRADE_ILLEGAL) {
 
                             // check if already active -> can be linked by another input
-                            if ($item->status_code != SCART_STATUS_SCHEDULER_CHECKONLINE && $item->status_code != SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) {
+                            if ($item->status_code != SCART_STATUS_SCHEDULER_CHECKONLINE &&
+                                $item->status_code != SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL &&
+                                $item->status_code != SCART_STATUS_FIRST_POLICE &&
+                                $item->status_code != SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL) {
 
                                 $item->firstseen_at = date('Y-m-d H:i:s');
                                 $item->online_counter = 0;  // start first NTD
                                 // reset error counters
                                 $item->browse_error_retry = $item->whois_error_retry = 0;
 
-                                if ($item->classify_status_code != SCART_STATUS_FIRST_POLICE) {
-                                    // check alywas and set default
-                                    if ($item->classify_status_code != SCART_STATUS_SCHEDULER_CHECKONLINE && $item->classify_status_code != SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL)
-                                        $item->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
-                                    // log old/new for history
-                                    $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,$item->classify_status_code,'Classify done; illegal; checkonline');
-                                    $item->status_code = $item->classify_status_code;
-                                    $item->logText("Classification done; CHECKONLINE; status set on '$item->status_code' ");
-                                } else {
-                                    // log old/new for history
-                                    $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,SCART_STATUS_FIRST_POLICE,'Classify done; illegal; first police');
-                                    $item->status_code = SCART_STATUS_FIRST_POLICE;
-                                    $item->logText("Classification done; FIRST POLICE; status set on '$item->status_code' ");
+                                // check always and set default
+                                if ($item->classify_status_code != SCART_STATUS_SCHEDULER_CHECKONLINE &&
+                                    $item->classify_status_code != SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL &&
+                                    $item->classify_status_code != SCART_STATUS_FIRST_POLICE &&
+                                    $item->classify_status_code != SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) {
+                                    $item->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
                                 }
 
+                                // is generated, then always DIRECT_POLICE
+                                if (ImportWebform::isGeneratedUrl($item->url) && $item->classify_status_code != SCART_STATUS_DIRECT_POLICE) {
+                                    $item->classify_status_code = SCART_STATUS_DIRECT_POLICE;
+                                    scartLog::logLine("D-onDone; item $item->filenumber url is generated - forced status on FIRST POLICE" );
+                                }
+
+                                // log old/new for history
+                                $item->logHistory(SCART_INPUT_HISTORY_STATUS,$item->status_code,$item->classify_status_code,'Classify done; illegal');
+                                $item->status_code = $item->classify_status_code;
+                                $item->logText("Classification done; status set on '$item->status_code' ");
+
+                                // alwasy report to ICCAM when active
                                 if (scartICCAMinterface::isActive()) {
                                     scartICCAMinterface::exportReport($item);
                                 }
@@ -897,6 +910,7 @@ class Grade extends scartController
                             $item->firstseen_at = date('Y-m-d H:i:s');
                             $item->logText("Classification done; $item->grade_code; status set on '$item->status_code' ");
 
+                            // only when coming from ICCAM report back
                             if (scartICCAMinterface::isActive()) {
                                 scartICCAMinterface::exportReport($item);
                             }
@@ -934,23 +948,48 @@ class Grade extends scartController
         $record_id = input('record_id');
         scartLog::logLine("D-onImagePolice; record_id=$record_id");
 
-        $single = true; $show_questions = '';
+        $single = true;
+        $show_questions = $this->makePartial('show_close_popup');
         $rec = Input::find($record_id);
         if ($rec) {
-
-
             if (in_array($rec->grade_code, [SCART_GRADE_NOT_ILLEGAL, SCART_GRADE_ILLEGAL])) {
-                $show_questions = $this->show_grade_questions(SCART_GRADE_QUESTION_GROUP_POLICE,$workuser_id,$single, $rec);
-            }
+                if ($rec->classify_status_code == SCART_STATUS_FIRST_POLICE) {
 
-            else {
+                    $rec->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
+                    $rec->save();
+                    Flash::info('Reset FIRST POLICE');
+
+                    $setbuttons = $this->setButtons($rec,$workuser_id);
+                    $show_questions .= $this->makePartial('js_buttonresult',
+                        ['hash' => $rec->filenumber,
+                            'buttonsets' => $setbuttons['buttonsets'],
+                            'class' => $setbuttons['class']
+                        ]
+                    );
+
+                } elseif ($rec->classify_status_code == SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL) {
+
+                    $rec->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL;
+                    $rec->save();
+                    Flash::info('Reset FIRST POLICE');
+
+                    $setbuttons = $this->setButtons($rec,$workuser_id);
+                    $show_questions .= $this->makePartial('js_buttonresult',
+                        ['hash' => $rec->filenumber,
+                            'buttonsets' => $setbuttons['buttonsets'],
+                            'class' => $setbuttons['class']
+                        ]
+                    );
+
+                } else {
+                    $show_questions = $this->show_grade_questions(SCART_GRADE_QUESTION_GROUP_POLICE,$workuser_id,$single, $rec);
+                }
+            } else {
                 Flash::warning('Is not set on a status' );
-                $show_questions = $this->makePartial('show_close_popup');
             }
 
         } else {
             Flash::error("Unknown (image)!?");
-            $show_questions = false;
         }
 
         return $show_questions;
@@ -973,7 +1012,22 @@ class Grade extends scartController
 
             if ($item->grade_code == SCART_GRADE_ILLEGAL) {
 
-                $item->classify_status_code = ($item->classify_status_code == SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_SCHEDULER_CHECKONLINE : SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL;
+                // toggle between different statussen
+
+                if ($item->classify_status_code == SCART_STATUS_FIRST_POLICE) {
+                    $item->classify_status_code = SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL;
+                    Flash::info('item (image) set on manual (online) check');
+                } elseif ($item->classify_status_code == SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL) {
+                    $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
+                    Flash::info('item (image) reset on only police');
+                } else {
+                    $item->classify_status_code = ($item->classify_status_code == SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? SCART_STATUS_SCHEDULER_CHECKONLINE : SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL;
+                    if ($item->classify_status_code == SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) {
+                        Flash::info('item (image) set on manual (online) check');
+                    } else {
+                        Flash::info('item (image) reset ');
+                    }
+                }
                 $item->logText("Set status_code=$item->classify_status_code");
                 $item->save();
 
@@ -984,11 +1038,6 @@ class Grade extends scartController
                         'class' => $setbuttons['class']
                     ]
                 );
-                if ($item->classify_status_code == SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) {
-                    Flash::info('item (image) set on manual (online) check');
-                } else {
-                    Flash::info('item (image) set on SCART (online) check');
-                }
 
             } else {
 
@@ -1147,13 +1196,20 @@ class Grade extends scartController
             $config->model = $rec;
             $this->inputWidget = $this->makeWidget('Backend\Widgets\Form', $config);
 
+            $add_edit_media = Systemconfig::get('abuseio.scart::classify.add_edit_media',false);
+
             $workuser_id = scartUsers::getId();
+
+            $extra_webform_inputs = $rec->getExtrafields(SCART_INPUT_EXTRAFIELD_WEBFORM);
 
             $show_whois = $this->makePartial('show_input_edit',[
                 'single' => true,
                 'record_id' => $record_id,
                 'workuser_id' => $workuser_id,
+                'mainurltype' => ($rec->url_type == SCART_URL_TYPE_MAINURL),
+                'add_edit_media' => $add_edit_media,
                 'inputWidget' => $this->inputWidget,
+                'extra_webform_inputs' => $extra_webform_inputs,
             ]);
 
         } else {
@@ -1191,6 +1247,7 @@ class Grade extends scartController
 
         $setbuts = [];
         $showresult = '';
+        $mediavalidupload = false;
         if (count($recs) > 0) {
 
             foreach ($recs AS $rec) {
@@ -1208,6 +1265,68 @@ class Grade extends scartController
                     $item->ntd_note = $ntd_note;
                     $item->source_code = $source_code;
                     $item->type_code = $type_code;
+
+                    if ( \Input::hasFile('mediafile') && \Input::file('mediafile')->isValid() ) {
+
+                        // Object off Symfony\Component\HttpFoundation\File\UploadedFile
+                        $fileObject = \Input::file('mediafile');
+                        $data = $fileObject->getContent();
+                        $mimetype = $fileObject->getMimeType();
+                        $name = $fileObject->getClientOriginalName();
+                        $size = $fileObject->getSize();
+
+                        if ( in_array($mimetype, scartBrowser::$_imageMimeTypes) ) {
+
+                            // image
+                            $imageHash = scartBrowser::getImageHash($data);
+                            list($width, $height) = getimagesizefromstring($data);
+                            $url_type = SCART_URL_TYPE_IMAGEURL;
+
+                        }
+                        elseif ( in_array($mimetype, scartBrowser::$_videoMimeTypes) ) {
+
+                            // video
+                            $imageHash = scartBrowser::getImageHash($data);
+
+//                            // video width and height
+//                            $mediaInfo = (object)( new getID3() )->analyze($fileObject->getRealPath());
+//                            //scartLog::logDump("Media info=",$mediaInfo->video);
+//                            $width = ( isset($mediaInfo->video['resolution_x']) ? $mediaInfo->video['resolution_x'] : 1920 );
+//                            $height = ( isset($mediaInfo->video['resolution_y']) ? $mediaInfo->video['resolution_y'] : 1080 );
+
+                            $width = 1920;
+                            $height = 1080;
+
+                            $url_type = SCART_URL_TYPE_VIDEOURL;
+
+                        }
+                        else {
+
+                            // unknown type
+                            throw new \ValidationException([ 'name' => Lang::get('abuseio.scart::lang.backend.media.selection_not_image') ]);
+                        }
+
+                        scartLog::logLine("D-onInputEditSave; media name=$name, size=$size, width=$width, height=$height, mimetype=$mimetype");
+
+                        $item->url_image_width = $width;
+                        $item->url_image_height = $height;
+                        $item->url_hash = $imageHash;
+                        if ($item->url_type != SCART_URL_TYPE_MAINURL) $item->url_type = $url_type;
+
+                        // when cache active, put in cache
+                        if ( scartBrowser::useCached() ) {
+                            // (RE)FILL CACHE
+                            if (Scrape_cache::inCache($imageHash) ) {
+                                Scrape_cache::delCache($imageHash);
+                            }
+                            $cache = "data:" . $mimetype . ";base64," . base64_encode($data) ;
+                            Scrape_cache::addCache($imageHash, $cache);
+                        }
+
+                        $mediavalidupload = true;
+
+                    }
+
                     $item->save();
 
                     $cssfield = 'idButtonNote' . $item->filenumber;
@@ -1237,8 +1356,237 @@ class Grade extends scartController
             $showresult = false;
         }
 
-        return ['show_result' => $showresult ];
+        if ($mediavalidupload) {
+            return Redirect::refresh();
+        } else {
+            return ['show_result' => $showresult ];
+        }
     }
+
+    public function onUploadInput() {
+
+        $record_id = input('record_id');
+        scartLog::logLine("D-onUploadInput; record_id=$record_id ");
+
+        if (!empty($record_id)) {
+
+            $config = $this->makeConfig('$/abuseio/scart/models/input/fields_upload.yaml');
+            $config->model = new Input();
+            $this->inputWidget = $this->makeWidget('Backend\Widgets\Form', $config);
+
+            $workuser_id = scartUsers::getId();
+
+            $show_upload = $this->makePartial('show_input_upload',[
+                'single' => true,
+                'workuser_id' => $workuser_id,
+                'record_id' => $record_id,
+                'inputWidget' => $this->inputWidget,
+            ]);
+
+            return $show_upload;
+        }
+
+    }
+
+    public function onUploadInputSave() {
+
+        $postinput = \Input::all();
+        scartLog::logDump("D-onUploadInputSave; ");
+
+        $validation = \Illuminate\Support\Facades\Validator::make($postinput, [
+            'url'         => 'required',
+            'type_code'   => 'required',
+            'source_code' => 'required'
+        ],                                                        [ 'url' => 'url is not valid' ]);
+
+        if ( $validation->fails() ) {
+            throw new \ValidationException($validation);
+        }
+
+        if ( \Input::hasFile('mediafile') && \Input::file('mediafile')->isValid() ) {
+
+            $whois = scartWhois::getHostingInfo($postinput['url']);
+
+            $status_text = (isset($whois['status_text']) ? $whois['status_text'] : '(unknown?)');
+            $ip = (isset($whois['domain_ip']) ? $whois['domain_ip'] : '');
+            $host = (isset($url['host']) ? $url['host'] : '');
+            $registrar_abusecontact_id = (isset($whois[ SCART_REGISTRAR . '_abusecontact_id' ]) ?$whois[ SCART_REGISTRAR . '_abusecontact_id' ] : 0);
+            $registrar_owner = (isset($whois[ SCART_REGISTRAR . '_owner' ]) ?$whois[ SCART_REGISTRAR . '_owner' ] : '?');
+            $host_abusecontact_id = (isset($whois[ SCART_HOSTER . '_abusecontact_id' ]) ? $whois[ SCART_HOSTER . '_abusecontact_id' ] : 0);
+            $host_owner = (isset($whois[ SCART_HOSTER . '_owner' ]) ?$whois[ SCART_HOSTER . '_owner' ] : '?');
+            $host_country = (isset($whois[ SCART_HOSTER . '_country' ]) ?$whois[ SCART_HOSTER . '_country' ] : '?');
+
+            // Create new input record with this import
+
+            // Object off Symfony\Component\HttpFoundation\File\UploadedFile
+            $fileObject = \Input::file('mediafile');
+            $data = $fileObject->getContent();
+
+            $mimetype = $fileObject->getMimeType();
+            $name = $fileObject->getClientOriginalName();
+            $size = $fileObject->getSize();
+            scartLog::logLine("D-onUploadInputSave; name=$name, size=$size, mimetype=$mimetype");
+
+            if ( in_array($mimetype, scartBrowser::$_imageMimeTypes) ) {
+
+                // image
+                $imageHash = scartBrowser::getImageHash($data);
+                list($width, $height) = getimagesizefromstring($data);
+
+                $url_type = SCART_URL_TYPE_IMAGEURL;
+
+            }
+            elseif ( in_array($mimetype, scartBrowser::$_videoMimeTypes) ) {
+
+                // video
+                $imageHash = scartBrowser::getImageHash($data);
+
+//                    $mediaInfo = (object)( new getID3() )->analyze($fileObject->getRealPath());
+//                    $width = ( isset($mediaInfo->video['resolution_x']) ? $mediaInfo->video['resolution_x'] : 1920 );
+//                    $height = ( isset($mediaInfo->video['resolution_y']) ? $mediaInfo->video['resolution_y'] : 1080 );
+
+                $width = 1920;
+                $height = 1080;
+
+                $url_type = SCART_URL_TYPE_VIDEOURL;
+
+            } else {
+                scartLog::logLine("W-no valid (supported) media mimetype '$mimetype' ");
+                throw new \ValidationException([ 'name' => 'no valid (supported) media mimetype: '.$mimetype ]);
+            }
+
+            $input = new Input();
+            $input->url = $postinput['url'];
+            $input->url_base = scartBrowser::parse_base($postinput['url']);
+            $input->url_image_width = $width;
+            $input->url_image_height = $height;
+            $input->url_hash = $imageHash;
+            $input->url_type = $url_type;
+
+            $input->type_code = $postinput['type_code'];
+            $input->source_code = $postinput['source_code'];
+            $input->workuser_id = scartUsers::getId();
+            $input->status_code = SCART_STATUS_GRADE;
+
+            $input->url_ip = $ip;
+            $input->url_host = $host;
+            $input->registrar_abusecontact_id = $registrar_abusecontact_id;
+            $input->host_abusecontact_id = $host_abusecontact_id;
+            // add proxy_abusecontact_id if set
+            $input = Abusecontact::fillProxyservice($input, $whois);
+            $input->save();
+
+            // log history
+            $input->logHistory(SCART_INPUT_HISTORY_HOSTER, '', $input->host_abusecontact_id, "Found hoster");
+            $input->logHistory(SCART_INPUT_HISTORY_IP, '', $input->url_ip, "Found IP");
+
+            $input->logText("Whois information; $status_text; registrar_owner=$registrar_owner, host_owner=$host_owner, proxy_abusecontact_id={$input->proxy_abusecontact_id}, country=$host_country");
+
+            // InputGradeid
+            $iteminp = new Input_parent();
+            $iteminp->parent_id = $postinput['record_id'];
+            $iteminp->input_id = $input->id;
+            $iteminp->save();
+
+            // when cache active, put in cache
+            if ( scartBrowser::useCached() ) {
+                // (RE)FILL CACHE
+                if (Scrape_cache::inCache($imageHash) ) {
+                    Scrape_cache::delCache($imageHash);
+                }
+                $cache = "data:" . $mimetype . ";base64," . base64_encode($data) ;
+                Scrape_cache::addCache($imageHash, $cache);
+            }
+
+        } else {
+            scartLog::logLine("W-No valid media file specified");
+            throw new \ValidationException([ 'name' => 'No (valid) media file specified' ]);
+        }
+
+        Flash::success('Input added');
+
+        return Redirect::refresh();
+    }
+
+
+    public function onInputDelete() {
+
+        $record_id = input('record_id');
+        scartLog::logLine("D-onInputDelete; record_id=$record_id ");
+
+        if ($record = Input::find($record_id)) {
+
+            $record->delete();
+
+            return Redirect::refresh();
+        } else {
+            Flash::error('Record not found (!?)');
+        }
+    }
+
+    public function onWhoIs() {
+
+        scartLog::logLine("D-onWhoIs");
+
+        $listrecords = $this->getListRecords();
+        $domainrule = new \abuseio\scart\models\Domainrule();
+        $domainrule->setInputrecord($listrecords);
+
+        $config = $this->makeConfig('$/abuseio/scart/models/whois/fields_input.yaml');
+        $config->model = $domainrule;
+        $this->rulesWidget = $this->makeWidget('Backend\Widgets\Form', $config);
+
+        $show_whois = $this->makePartial('show_whois',[
+            'inputWidget' => $this->rulesWidget,
+        ]);
+
+        return ['result' => $show_whois];
+    }
+
+    public function onWhoisSearch() {
+
+        $default = Systemconfig::get('abuseio.scart::whois.provider', '');
+        $provider = Session::get('whois_provider',$default);
+        scartWhois::setProvider($provider);
+
+        $domain = input('domain_full', '');
+
+        scartLog::logLine("D-onWhoisSearch; domain=$domain");
+
+        $whois = scartWhois::getHostingInfo($domain, false);
+        //trace_log($whois);
+
+        if ($whois['status_success']) {
+
+            $fields = [
+                'input_url' => $domain,
+                'effective_url' => scartWhois::getDestinationUrl($domain),
+            ];
+            $flds = [
+                'host_lookup',
+                'host_owner',                     // host owner
+                'host_country',                   // host country
+                'host_abusecontact',              // host abuse contact
+            ];
+            foreach ($flds AS $fld) {
+                $fields[$fld] = $whois[$fld];
+            }
+
+            $rawtext = $whois[SCART_REGISTRAR.'_rawtext'] . "\n\n" . $whois[SCART_HOSTER.'_rawtext'];
+
+            $show_whois = $this->makePartial('show_whois_found', [
+                'whois' => $fields,
+                'whoisraw' => scartWhois::htmlOutputRaw($rawtext),
+            ] );
+
+        } else {
+            Flash::warning($whois['status_text']);
+            $show_whois = '';
+        }
+
+        return ['#show_result2' => $show_whois];
+    }
+
 
     public function onDomainruleList($id=0,$refresh=false) {
 
@@ -1499,7 +1847,6 @@ class Grade extends scartController
 
         // refresh
         return Redirect::refresh();
-
     }
 
     /**
@@ -1634,7 +1981,6 @@ class Grade extends scartController
 
                 // set select off
                 scartGrade::setGradeSelected($workuser_id, $item->id, false);
-
 
                 // like the example onManualCheck: set status on SCART_GRADE_IGNORE
                 if ($item && $item->grade_code == SCART_GRADE_ILLEGAL) {
@@ -1826,9 +2172,13 @@ class Grade extends scartController
 
         }
 
-        $buttonsets['POLICE'] = ( ($item->classify_status_code==SCART_STATUS_FIRST_POLICE) ? 'true' : 'false');
+        $buttonsets['POLICE'] =
+            (in_array($item->classify_status_code,[SCART_STATUS_FIRST_POLICE,SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL]) ? 'true' : 'false');
 
-        $buttonsets['MANUAL'] = ( ($item->classify_status_code==SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) ? 'true' : 'false');
+        $buttonsets['MANUAL'] =
+            (in_array($item->classify_status_code,[SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL,SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL]) ? 'true' : 'false');
+
+        //scartLog::logDump("D-setButtons;",$buttonsets);
 
         return [
             'class' => $class,
@@ -1904,7 +2254,7 @@ class Grade extends scartController
                 $question->value    = [];
 
                 // get answer
-                if (count($values) > 0 && ($question->type == 'select' || $question->type == 'checkbox' || $question->type == 'radio')) {
+                if (!empty($values) && ($question->type == 'select' || $question->type == 'checkbox' || $question->type == 'radio')) {
                     $options = [];
                     $opts = Grade_question_option::where('grade_question_id',$grade->id)->orderBy('sortnr')->get();
                     foreach ($opts AS $opt) {
@@ -1977,6 +2327,7 @@ class Grade extends scartController
                 $question = new \stdClass();
                 $question->type = $grade->type;
                 $question->label = $grade->label;
+                $question->required = $grade->required;
                 $question->name = $grade->name;
                 $question->leftright = $grade->span;
                 //$question->leftright = ($toggle) ? 'left' : 'right';
@@ -1984,7 +2335,7 @@ class Grade extends scartController
 
                 if ($question->type == 'select' || $question->type == 'checkbox' || $question->type == 'radio') {
 
-                    if ($values=='') $values = array();
+                    if ($values=='') $values = [$grade->default];
 
                     $options = [];
                     $opts = Grade_question_option::where('grade_question_id',$grade->id)->orderBy('sortnr')->get();
@@ -2000,7 +2351,7 @@ class Grade extends scartController
 
                 } elseif ($question->type == 'text') {
 
-                    $question->value = $values;
+                    $question->value = ($values)?$values:$grade->default;
 
                 }
 
@@ -2057,7 +2408,7 @@ class Grade extends scartController
         $questiongroup = input('questiongroup');
         // always input type
         $recordtype = SCART_INPUT_TYPE;
-        scartLog::logLine("D-onQuestionsSave; single=$single, record_id=$record_id, recordtype=$recordtype ");
+        scartLog::logLine("D-onQuestionsSave; single=$single, record_id=$record_id, recordtype=$recordtype, questiongroup=$questiongroup ");
 
         // set buttons
         $setbuts = []; $showresult = '';
@@ -2081,8 +2432,18 @@ class Grade extends scartController
             // questions depending on url_type
             $grades  = Grade_question::getClassifyQuestions($questiongroup,$item->url_type);
 
+            scartLog::logLine("D-onQuestionsSave; questiongroup=$questiongroup, url_type={$item->url_type}, grades count: ".count($grades));
+
             foreach ($grades AS $grade) {
+
                 $inp = input($grade->name, '');
+                //scartLog::logDump("D-onQuestionsSave; name={$grade->name}, input=",$inp);
+
+                if ($grade->requred && empty($inp)) {
+                    // @To-Do: extra backend check; throw application exception field required
+                    throw new \ValidationException([ 'name' => "Field ".$grade->label."' is required" ]);
+                }
+
                 $ans = Grade_answer::where('record_type',$recordtype)
                     ->where('record_id', $item->id)
                     ->where('grade_question_id', $grade->id)
@@ -2096,17 +2457,30 @@ class Grade extends scartController
                 // serialize -> multiselect values also
                 $ans->answer = serialize($inp);
                 $ans->save();
-                //scartLog::logLine("D-Save question '$grade->name' (id=$grade->id), record_id=$item->id, answer=$ans->answer");
+                scartLog::logLine("D-Save question '$grade->name' (id=$grade->id), record_id=$item->id, answer=$ans->answer");
+
             }
 
             if ($questiongroup == SCART_GRADE_QUESTION_GROUP_ILLEGAL) {
                 $item->classify_status_code = SCART_STATUS_SCHEDULER_CHECKONLINE;
                 $item->grade_code = SCART_GRADE_ILLEGAL;
+
+                // check in generated url, if then
+                if (ImportWebform::isGeneratedUrl($item->url) && $item->classify_status_code != SCART_STATUS_DIRECT_POLICE) {
+                    $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
+                    scartLog::logLine("D-onQuestionsSave; item $item->filenumber url is generated - forced on FIRST POLICE" );
+                }
+
             } elseif ($questiongroup==SCART_GRADE_QUESTION_GROUP_NOT_ILLEGAL) {
                 $item->classify_status_code = SCART_STATUS_CLOSE;
                 $item->grade_code = SCART_GRADE_NOT_ILLEGAL;
             } elseif ($questiongroup==SCART_GRADE_QUESTION_GROUP_POLICE) {
-                $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
+                if ($item->classify_status_code == SCART_STATUS_SCHEDULER_CHECKONLINE_MANUAL) {
+                    $item->classify_status_code = SCART_STATUS_FIRST_POLICE_CHECKONLINE_MANUAL;
+                } else {
+                    $item->classify_status_code = SCART_STATUS_FIRST_POLICE;
+                }
+
                 $item->grade_code = SCART_GRADE_ILLEGAL;
             }
             $item->logText("Set classify_status_code on: " . $item->classify_status_code . ", grade_code=" . $item->grade_code);
@@ -2115,7 +2489,6 @@ class Grade extends scartController
             $setbutton = $this->setButtons($item, $workuser_id, false);
             $setbutton['hash'] = $item->filenumber;
             $setbuts[] = $setbutton;
-
 
         }
 

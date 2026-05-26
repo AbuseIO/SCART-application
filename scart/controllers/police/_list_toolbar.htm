@@ -1,4 +1,5 @@
 <div data-control="toolbar">
+    <?php if ($this->hasFirstPolice()) { ?>
     <button
             class="btn btn-default oc-icon-check-square"
             disabled="disabled"
@@ -9,23 +10,74 @@
             data-trigger-action="enable"
             data-trigger=".control-list input[type=checkbox]"
             data-trigger-condition="checked"
+            data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.set_checkntd')) ?>"
             data-request-success="$(this).prop('disabled', true)"
             data-stripe-load-indicator>
         <?= e(trans('abuseio.scart::lang.button.start_ntd')) ?>
     </button>
     <button
-            class="btn btn-default oc-icon-window-close"
-            disabled="disabled"
-            onclick="$(this).data('request-data', {
+        class="btn btn-default oc-icon-check-square"
+        disabled="disabled"
+        onclick="$(this).data('request-data', {
                 checked: $('.control-list').listWidget('getChecked')
             })"
-            data-request="onClose"
-            data-trigger-action="enable"
-            data-trigger=".control-list input[type=checkbox]"
-            data-trigger-condition="checked"
-            data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.close_selected')) ?>"
-            data-request-success="$(this).prop('disabled', true)"
-            data-stripe-load-indicator>
+        data-request="onCheckNTDmanual"
+        data-trigger-action="enable"
+        data-trigger=".control-list input[type=checkbox]"
+        data-trigger-condition="checked"
+        data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.set_checkntd_manual')) ?>"
+        data-request-success="$(this).prop('disabled', true)"
+        data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.start_ntd_manual')) ?>
+    </button>
+    <?php } ?>
+    <?php if ($this->hasLea()) { ?>
+    <button
+        class="btn btn-default oc-icon-check-square"
+        disabled="disabled"
+        onclick="$(this).data('extra-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+        data-control="popup"
+        data-handler="onClassify"
+        data-type="input"
+        data-size="giant"
+        data-trigger-action="enable"
+        data-trigger=".control-list input[type=checkbox]"
+        data-trigger-condition="checked"
+        data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.classify_lea')) ?>
+    </button>
+    <button
+        class="btn btn-default oc-icon-check-square"
+        disabled="disabled"
+        onclick="$(this).data('extra-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+        data-control="popup"
+        data-handler="onCheckedSend"
+        data-type="input"
+        data-size="giant"
+        data-trigger-action="enable"
+        data-trigger=".control-list input[type=checkbox]"
+        data-trigger-condition="checked"
+        data-stripe-load-indicator>
+        <?= e(trans('abuseio.scart::lang.button.send_lea')) ?>
+    </button>
+    <?php } ?>
+    <button
+        class="btn btn-default oc-icon-window-close"
+        disabled="disabled"
+        onclick="$(this).data('request-data', {
+                checked: $('.control-list').listWidget('getChecked')
+            })"
+        data-request="onClose"
+        data-trigger-action="enable"
+        data-trigger=".control-list input[type=checkbox]"
+        data-trigger-condition="checked"
+        data-request-confirm="<?= e(trans('abuseio.scart::lang.confirm.close_selected')) ?>"
+        data-request-success="$(this).prop('disabled', true)"
+        data-stripe-load-indicator>
         <?= e(trans('abuseio.scart::lang.button.close_selected')) ?>
     </button>
 </div>

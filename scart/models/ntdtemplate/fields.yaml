@@ -10,11 +10,11 @@ fields:
         type: checkbox
         comment: 'If checked only the abuse link url(s) will be included'
     csv_attachment:
-        label: 'CSV attachment'
+        label: 'Add attachment(s)'
         span: left
         default: true
         type: checkbox
-        comment: 'If checked the abuse urls will be included in a CSV-attachment (and not in the body)'
+        comment: 'If checked the abuse urls will be included in a CSV-attachment - if LEA (abusecontact) then then received files will be attached'
     subject:
         label: Subject
         span: full

@@ -70,11 +70,21 @@ class Input extends scartModel
             'key' => 'code',
             'otherKey' => 'type_code'
         ],
+        'hoster' => [
+            'abuseio\scart\models\Abusecontact',
+            'key' => 'id',
+            'otherKey' => 'host_abusecontact_id'
+        ],
         'workuser' => [
             'Backend\Models\User',
             'table' => 'backend_users',
             'key' => 'id',
             'otherKey' => 'workuser_id',
+        ],
+        'inputParent' => [
+            'abuseio\scart\models\Input_parent',
+            'key'          => 'input_id',
+            'otherKey'     => 'id',
         ],
     ];
 
@@ -90,6 +100,11 @@ class Input extends scartModel
             'key' => 'input_id',
             'order' => 'id DESC',
             'delete' => true],
+        'extrafields' => [
+            'abuseio\scart\models\Input_extrafield',
+            'key' => 'input_id',
+            'order' => 'id DESC',
+            'delete' => true],
     ];
 
     public $belongsToMany = [
@@ -100,9 +115,16 @@ class Input extends scartModel
             'parentKey' => 'id',
             'otherKey' => 'input_id',
             'relatedKey' => 'id',
-            // do not forget this condition when join table has soft delete
             'conditions' => 'abuseio_scart_input_parent.deleted_at is null',
             ],
+    ];
+
+    public $belongsTo = [
+        'abusecontact'      => [
+            'abuseio\scart\models\Abusecontact',
+            'key'      => 'host_abusecontact_id',
+            'otherKey' => 'id',
+        ],
     ];
 
     // @To-do; lang select
@@ -133,7 +155,6 @@ class Input extends scartModel
     public function getSourceCodeOptions($value,$formData) {
 
         $recs = Input_source::orderBy('sortnr')->select('code','title','description')->get();
-        // convert to [$code] -> $text
         $ret = array();
         foreach ($recs AS $rec) {
             $ret[$rec->code] = $rec->title . ' - ' . $rec->description;
@@ -273,7 +294,8 @@ class Input extends scartModel
         $extra = [];
         $extradata = '{}';
 
-        $extrafields = Input_extrafield::where('input_id',$this->id)->get();
+        // don't show webform fields (here)
+        $extrafields = Input_extrafield::where('input_id',$this->id)->whereNot('type',SCART_INPUT_EXTRAFIELD_WEBFORM)->get();
         if ($extrafields) {
 
             // When type=SCART_INPUT_EXTRAFIELD_PWCAI fill also object with extrafield values
@@ -283,10 +305,15 @@ class Input extends scartModel
 
             foreach ($extrafields AS $extrafield) {
 
-                $fieldname = $extrafield->type.'_'.$extrafield->label;
+                // deal with password protected fields -> try to detect and don't show these in this view
+                if (!empty($extrafield->secondvalue) && ($webform_field = ImportWebformField::where('id',$extrafield->secondvalue)->first())) {
+                    $protected = ($webform_field->password_protected);
+                } else {
+                    $protected = false;
+                }
 
-                // patch: skip always name from PWC AI module
-                if ($fieldname != SCART_INPUT_EXTRAFIELD_PWCAI_naamafbeelding) {
+                if (!$protected) {
+                    $fieldname = $extrafield->type.'_'.$extrafield->label;
 
                     if (scartAIanalyze::isActive() && $extrafield->type == SCART_INPUT_EXTRAFIELD_PWCAI) {
                         if ($extradata != '{') {
@@ -303,7 +330,6 @@ class Input extends scartModel
                         'link' => false,
                     ];
                     $extra[] = $field;
-
                 }
 
             }
@@ -421,10 +447,10 @@ class Input extends scartModel
             }
         }
 
-        // always check if double
-        if (Input::where('url',$this->url)->exists()) {
-            throw new ValidationException(['url' => 'The url "'.$this->url.'" is already active for a report']);
-        }
+        // Allow duplicated URLs
+        //        if (Input::where('url',$this->url)->exists()) {
+        //            throw new ValidationException(['url' => 'The url "'.$this->url.'" is already active for a report']);
+        //        }
 
     }
 
@@ -491,10 +517,10 @@ class Input extends scartModel
      */
     public function deleteRelated() {
 
-        $items = Input_parent::where('parent_id', $this->id)->get();
-        if (count($items) > 0) {
-            scartLog::logLine("D-Input.beforeDelete; delete all related records; input_id=" . $this->id);
-            foreach ($items AS $itemparent) {
+        $items = Input_parent::where('parent_id', $this->id);
+        if ($items->count() > 0) {
+            scartLog::logLine("D-Input.deleteRelated; delete all related records; input_id=" . $this->id);
+            foreach ($items->get() AS $itemparent) {
                 // skip parent
                 if ($itemparent->input_id != $this->id) {
                     // check if not connected to other input
@@ -509,7 +535,7 @@ class Input extends scartModel
                     }
                 }
             }
-            Input_parent::where('parent_id', $this->id)->delete();
+            $items->delete();
         }
     }
 
@@ -560,8 +586,8 @@ class Input extends scartModel
      * @param $hash
      * @return mixed
      */
-    public static function getItemOnHash($hash) {
-        return Input::where('url_hash',$hash)->where('url_type','<>',SCART_URL_TYPE_MAINURL)->first();
+    public static function getItemOnHash($hash,$ownid) {
+        return Input::where('url_hash',$hash)->where('id','<>',$ownid)->first();
     }
 
     /**
@@ -582,7 +608,24 @@ class Input extends scartModel
         return ($extrafield) ? $extrafield->value : '';
     }
 
-    public function addExtrafield($type,$field,$value) {
+    public function getExtrafields($type) {
+        $extrafields = Input_extrafield::where('input_id',$this->id)->where('type',$type)->get();
+        if ($type == SCART_INPUT_EXTRAFIELD_WEBFORM) {
+            // add webform field info
+            foreach ($extrafields as $key => $extrafield) {
+                if (!empty($extrafield->secondvalue)) {
+                    if ($webformfield = ImportWebformField::find($extrafield->secondvalue)) {
+                        $extrafields[$key]->webform_name = $webformfield->name;
+                        $extrafields[$key]->webform_type = $webformfield->type;
+                        $extrafields[$key]->webform_protected = $webformfield->password_protected;
+                    }
+                }
+            }
+        }
+        return $extrafields;
+    }
+
+    public function addExtrafield($type,$field,$value,$secondvalue='') {
         try {
             $extrafield = Input_extrafield::where('input_id',$this->id)->where('type',$type)->where('label',$field)->first();
             if (!$extrafield) {
@@ -592,6 +635,7 @@ class Input extends scartModel
                 $extrafield->label = $field;
             }
             $extrafield->value = $value;
+            $extrafield->secondvalue = $secondvalue;
             $extrafield->save();
 
         } catch (\Exception $err) {
@@ -635,32 +679,51 @@ class Input extends scartModel
 
     public function scopeAttribute($query,$value) {
 
-        /**
-         *
-         *
-        SELECT COUNT(*)
-        FROM `abuseio_scart_input_parent`,abuseio_scart_input_extrafield
-        WHERE abuseio_scart_input_parent.`deleted_at` IS NULL
-        AND abuseio_scart_input_parent.`parent_id` = 2071
-        AND abuseio_scart_input_extrafield.input_id=abuseio_scart_input_parent.input_id
-        AND abuseio_scart_input_extrafield.label='Aantal_keer_blote_borsten'
-        AND abuseio_scart_input_extrafield.value <> 0
-         *
-         *
-         */
-
         scartLog::logLine("D-scopeAttribute call");
         scartLog::logLine("D-value=" . print_r($value,true));
-        trace_sql();
-        foreach ($value AS $val) {
+        //trace_sql();
+        foreach ($value as $val) {
             $query = $query->whereExists(function($query) use ($val) {
-                $query->select(Db::raw(1))
-                    ->from('abuseio_scart_input_extrafield')
-                    ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
-                    ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
-                    ->where('abuseio_scart_input_extrafield.label',$val)
-                    ->where('abuseio_scart_input_extrafield.value','<>',0);
-
+                if (substr($val,-4) == '_not') {
+                    $label = substr($val,0,strlen($val)-4);
+                    $not = true;
+                } else {
+                    $label = $val;
+                    $not = false;
+                }
+                if ($label == 'expliciete_content_cat') {
+                    if ($not) {
+                        $query->select(Db::raw(1))
+                            ->from('abuseio_scart_input_extrafield')
+                            ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
+                            ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
+                            ->where('abuseio_scart_input_extrafield.label',$label)
+                            ->where('abuseio_scart_input_extrafield.value','=','Niet expliciet');
+                    } else {
+                        $query->select(Db::raw(1))
+                            ->from('abuseio_scart_input_extrafield')
+                            ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
+                            ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
+                            ->where('abuseio_scart_input_extrafield.label',$label)
+                            ->where('abuseio_scart_input_extrafield.value','<>','Niet expliciet');
+                    }
+                } else {
+                    if ($not) {
+                        $query->select(Db::raw(1))
+                            ->from('abuseio_scart_input_extrafield')
+                            ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
+                            ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
+                            ->where('abuseio_scart_input_extrafield.label',$label)
+                            ->where('abuseio_scart_input_extrafield.value','=',0);
+                    } else {
+                        $query->select(Db::raw(1))
+                            ->from('abuseio_scart_input_extrafield')
+                            ->join('abuseio_scart_input_parent','abuseio_scart_input_extrafield.input_id','=','abuseio_scart_input_parent.input_id')
+                            ->whereRaw('abuseio_scart_input_parent.parent_id=abuseio_scart_input.id')
+                            ->where('abuseio_scart_input_extrafield.label',$label)
+                            ->where('abuseio_scart_input_extrafield.value','<>',0);
+                    }
+                }
             });
         }
         return $query;
